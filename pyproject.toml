@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+
+[tool.distutils.bdist_wheel]
+universal = true
+
+
+[project]
+name = 'Mutahunter'
+description = "AI Language Agnostic Mutation Testing"
+requires-python = ">= 3.11"
+version = "1.0.0"
+dependencies = [
+    "tree-sitter==0.21.3",
+    'tree_sitter_languages==1.10.2',
+    "tiktoken",
+    "tqdm",
+    'diff-match-patch',
+    'grep_ast',
+    'pygments',
+    'networkx',
+    'numpy',
+    'scipy',
+    'setuptools',
+    'jinja2',
+    'litellm'
+]
+
+authors = [
+    { name = "Steven Jung", email = "jungsteven@codeintegrity.ai" },
+]
+
+[project.optional-dependencies]
+dev = ['isort', 'black']
+testing = ['pytest']
+
+[project.scripts]
+mutahunter = "mutahunter.main:run"
+
+[tool.setuptools.package-data]
+mutahunter = ['*.scm']
