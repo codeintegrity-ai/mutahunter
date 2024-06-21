@@ -2,7 +2,8 @@
   <h1>Mutahunter</h1>
 
   Open-Source AI LLM-based Mutation Testing for Automated Software Testing
-  Maintained by [CodeIntegrity](https://codeintegrity.ai). Anyone is welcome to contribute. 🌟
+  
+  Maintained by [CodeIntegrity](https://www.codeintegrity.ai). Anyone is welcome to contribute. 🌟
 
   [![GitHub license](https://img.shields.io/badge/License-AGPL_3.0-blue.svg)](https://github.com/yourcompany/mutahunter/blob/main/LICENSE)
   [![Twitter](https://img.shields.io/twitter/follow/CodeIntegrity)](https://twitter.com/CodeIntegrity)
