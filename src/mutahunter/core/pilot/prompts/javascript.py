@@ -64,5 +64,6 @@ Your output must follow the format below:
 3. The potential impact of the mutation.
 4. Description on how to fix the mutation.
 5. The mutated code snippet.
-6. No other information should be included in the output.
+6. Do not include any external libraries in the mutated code.
+7. No other information should be included in the output.
 """
