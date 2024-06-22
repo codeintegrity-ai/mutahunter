@@ -1,7 +1,7 @@
 <div align="center">
   <h1>Mutahunter</h1>
 
-  Open-Source AI LLM-based Mutation Testing for Automated Software Testing
+  Open-Source Language Agnostic LLM-based Mutation Testing for Automated Software Testing
   
   Maintained by [CodeIntegrity](https://www.codeintegrity.ai). Anyone is welcome to contribute. 🌟
 
@@ -22,22 +22,23 @@
 
 ## Overview
 
-Mutahunter leverages advanced LLM models to inject context-aware faults into your codebase. As the first AI-based mutation testing tool, it moves beyond traditional AST-based mutation methods. Mutahunter’s AI-driven approach provides full contextual understanding of the entire codebase, enabling it to identify and inject relevant mutations with unprecedented accuracy. This ensures comprehensive and effective testing, significantly enhancing software security and quality.
+If you don't know what mutation testing is, you must be living under a rock! 🪨
 
-1. **Identify:** Mutahunter analyzes your test coverage report to pinpoint covered function blocks.
-2. **Mutate:** Leveraging LLMs, Mutahunter injects context-aware mutations into these function blocks.
-3. **Test:** The tool executes mutation testing to validate the effectiveness of the mutations and ensure thorough coverage.
-4. **Report:** Mutahunter generates a detailed report highlighting the mutations, test results, and coverage metrics.
+Mutation testing is a way to verify how good your test cases are. It involves creating small changes, or "mutants," in the code and checking if the test cases can catch these changes. Line coverage only tells you how much of the code has been executed, not how well it's been tested. We all know line coverage is bullshit.
+
+Mutahunter leverages LLM models to inject context-aware faults into your codebase. As the first AI-based mutation testing tool, it surpasses traditional “dumb” AST-based methods. Mutahunter’s AI-driven approach provides full contextual understanding of the entire codebase, enabling it to identify and inject mutations that closely resemble real vulnerabilities. This ensures comprehensive and effective testing, significantly enhancing software security and quality.
+
+Mutation testing is used by big tech companies like [Google](https://research.google/pubs/state-of-mutation-testing-at-google/) to ensure the robustness of their test suites. With Mutahunter, we want other companies and developers to use this powerful tool to enhance their test suites and improve software quality.
 
 <!-- For more detailed technical information, engineers can visit: [Mutahunter Documentation](https://docs.mutahunter.ai) (WIP) -->
 
-Currently supports JavaScript, Python, and Go (see [/examples](/examples)). It can theoretically work with any programming language that provides a coverage report in Cobertura XML format and has a language grammar available in [TreeSitter](https://github.com/tree-sitter/tree-sitter).
+We added examples for JavaScript, Python, and Go (see [/examples](/examples)). It can theoretically work with any programming language that provides a coverage report in Cobertura XML format (more supported soon) and has a language grammar available in [TreeSitter](https://github.com/tree-sitter/tree-sitter).
 
 ## Installation and Usage
 
 ### Requirements
 
-- API KEY. We use [LiteLLM](https://www.litellm.ai/).
+- LLM API KEY (OpenAI, Anthropic, and many more). Check [here](https://litellm.vercel.app/docs/) to set up your environment.
 - Cobertura XML code coverage report for a specific test suite.
 - Python to install the Mutahunter package.
 
@@ -54,7 +55,7 @@ For more detailed examples and to understand how Mutahunter works in practice, p
 ### How to Execute Mutahunter
 
 To run Mutahunter, use the following command format.
-
+```plaintext
 1. **--model**
    - **Description:** LLM model to use for mutation testing. We use LiteLLM to call the model.
    - **Default:** `gpt-4o`
@@ -84,27 +85,30 @@ To run Mutahunter, use the following command format.
    - **Description:** Specifies which files to mutate. This is useful when you want to focus on specific files and it makes the mutations faster!
    - **Required:** No
    - **Example:** `--only-mutate-file-paths file1.py file2.py`
-
+```
 #### Mutation Testing Report
 
+Check the logs directory to view the report:
 - `mutants_killed.json` - Contains the list of mutants that were killed by the test suite.
 - `mutants_survived.json` - Contains the list of mutants that survived the test suite.
 - `mutation_coverage.json` - Contains the mutation coverage report.
 
-Each mutant will have the following structure:
-
+An example mutant information would be like so:
 ```json
-{
-  "id": "10",
-  "source_path": "app.go",
-  "mutant_path": "mutahunter/examples/go_webservice/logs/_latest/mutants/10_app.go",
-  "mutant_description": "Introduce a Cross-Site Scripting (XSS) vulnerability by not properly sanitizing user input. This mutation can lead to the execution of malicious scripts in the context of the user's browser, reflecting a real-world security issue in web applications that handle user-generated content without proper sanitization.",
-  "impact_level": "High",
-  "potential_impact": "Allowing unsanitized user input to be rendered in the response can lead to XSS attacks. This can be exploited to steal user cookies, session tokens, or other sensitive information, and can also be used to perform actions on behalf of the user without their consent.",
-  "status": "SURVIVED",
-  "error_msg": "",
-  "test_file_path": "app_test.go"
-}
+[
+    {
+    "id": "1",
+    "source_path": "app.py",
+    "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/1_app.py",
+    "mutant_description": "Introduce a Cross-Site Scripting (XSS) vulnerability by directly embedding user input into the response without proper sanitization. This mutation simulates a real-world bug where user input is not properly escaped, leading to potential XSS attacks.",
+    "impact_level": "High",
+    "potential_impact": "Embedding user input directly into the response without sanitization can allow attackers to inject malicious scripts. This can lead to XSS attacks, where attackers can steal cookies, session tokens, or other sensitive information, and potentially perform actions on behalf of the user.",
+    "suggestion_fix": "Always sanitize and escape user inputs before embedding them into the response. Use libraries or frameworks that provide built-in protection against XSS attacks.",
+    "status": "KILLED",
+    "error_msg": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.9, pytest-8.2.0, pluggy-1.5.0\nrootdir: /Users/taikorind/Documents/personal/codeintegrity/mutahunter\nconfigfile: pyproject.toml\nplugins: cov-5.0.0, anyio-4.4.0, timeout-2.3.1\ncollected 12 items\n\ntest_app.py F...........                                                 [100%]\n\n=================================== FAILURES ===================================\n__________________________________ test_root ___________________________________\n\n    def test_root():\n        \"\"\"\n        Test the root endpoint by sending a GET request to \"/\" and checking the response status code and JSON body.\n        \"\"\"\n        response = client.get(\"/\")\n        assert response.status_code == 200\n>       assert response.json() == {\"message\": \"Welcome to the FastAPI application!\"}\nE       assert {'message': \"...');</script>\"} == {'message': '...application!'}\nE         \nE         Differing items:\nE         {'message': \"Welcome to the FastAPI application! <script>alert('XSS');</script>\"} != {'message': 'Welcome to the FastAPI application!'}\nE         Use -v to get more diff\n\ntest_app.py:14: AssertionError\n=========================== short test summary info ============================\nFAILED test_app.py::test_root - assert {'message': \"...');</script>\"} == {'me...\n========================= 1 failed, 11 passed in 0.32s =========================\n",
+    "test_file_path": "test_app.py"
+  }
+]
 ```
 
 ## Roadmap
@@ -131,7 +135,7 @@ Each mutant will have the following structure:
 
 Mutahunter makes use of the following open-source libraries:
 
-- [aider](https://github.com/paul-gauthier/aider) by Paul Gauthier, licensed under the Apache-2.0 license.
+- [aider's](https://github.com/paul-gauthier/aider) repomap by Paul Gauthier, licensed under the Apache-2.0 license.
 - [TreeSitter](https://github.com/tree-sitter/tree-sitter) by TreeSitter, MIT License.
 - [LiteLLM](https://github.com/BerriAI/litellm) by BerriAI, MIT License.
 
