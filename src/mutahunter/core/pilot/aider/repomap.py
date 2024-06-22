@@ -304,30 +304,19 @@ class RepoMap:
             ranked_definitions.items(), reverse=True, key=lambda x: x[1]
         )
 
-        # dump(ranked_definitions)
-
         for (fname, ident), rank in ranked_definitions:
             if fname in chat_rel_fnames:
                 continue
             ranked_tags += list(definitions.get((fname, ident), []))
 
-        rel_other_fnames_without_tags = set(
-            self.get_rel_fname(fname) for fname in other_fnames
-        )
+        # NOTE:// If we have no ranked tags, we should include all other files
+        if not ranked_tags:
+            for fname in other_fnames:
+                rel_fname = self.get_rel_fname(fname)
+                tags = self.get_tags(fname, rel_fname)
+                for tag in tags:
+                    ranked_tags.append(tag)
 
-        fnames_already_included = set(rt[0] for rt in ranked_tags)
-
-        top_rank = sorted(
-            [(rank, node) for (node, rank) in ranked.items()], reverse=True
-        )
-        for rank, fname in top_rank:
-            if fname in rel_other_fnames_without_tags:
-                rel_other_fnames_without_tags.remove(fname)
-            if fname not in fnames_already_included:
-                ranked_tags.append((fname,))
-
-        for fname in rel_other_fnames_without_tags:
-            ranked_tags.append((fname,))
         return ranked_tags
 
     def get_ranked_tags_map(
