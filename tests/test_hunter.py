@@ -1,8 +1,10 @@
-import pytest
-from unittest.mock import patch, MagicMock
-from mutahunter.core.hunter import MutantHunter
-from mutahunter.core.entities.mutant import Mutant
 import os
+from unittest.mock import MagicMock, patch
+
+import pytest
+
+from mutahunter.core.entities.mutant import Mutant
+from mutahunter.core.hunter import MutantHunter
 
 
 @pytest.fixture

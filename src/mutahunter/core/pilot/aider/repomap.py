@@ -12,11 +12,10 @@ from pathlib import Path
 
 import networkx as nx
 from grep_ast import TreeContext, filename_to_lang
+from litellm import encode as litellm_encode
 from pygments.lexers import guess_lexer_for_filename
 from pygments.token import Token
 from pygments.util import ClassNotFound
-from litellm import encode as litellm_encode
-
 
 # tree_sitter is throwing a FutureWarning
 warnings.simplefilter("ignore", category=FutureWarning)

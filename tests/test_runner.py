@@ -1,7 +1,9 @@
-import pytest
-from unittest.mock import patch, MagicMock
-import subprocess
 import os
+import subprocess
+from unittest.mock import MagicMock, patch
+
+import pytest
+
 from mutahunter.core.runner import TestRunner
 
 

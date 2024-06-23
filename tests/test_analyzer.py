@@ -1,7 +1,8 @@
-import pytest
-from unittest.mock import Mock, patch
-from unittest.mock import mock_open
 import xml.etree.ElementTree as ET
+from unittest.mock import Mock, mock_open, patch
+
+import pytest
+
 from mutahunter.core.analyzer import Analyzer
 
 

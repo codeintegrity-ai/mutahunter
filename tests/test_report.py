@@ -1,6 +1,8 @@
-import pytest
-from unittest.mock import patch, mock_open
 import json
+from unittest.mock import mock_open, patch
+
+import pytest
+
 from mutahunter.core.entities.mutant import Mutant
 from mutahunter.core.report import MutantReport
 
