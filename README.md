@@ -38,7 +38,7 @@ We added examples for JavaScript, Python, and Go (see [/examples](/examples)). I
 
 ### Requirements
 
-- LLM API KEY (OpenAI, Anthropic, and many more). Check [here](https://litellm.vercel.app/docs/) to set up your environment.
+- LLM API Key (OpenAI, Anthropic, and others): Follow the instructions [here](https://litellm.vercel.app/docs/) to set up your environment.
 - Cobertura XML code coverage report for a specific test suite.
 - Python to install the Mutahunter package.
 
@@ -50,42 +50,58 @@ To install the Python Pip package directly via GitHub:
 pip install git+https://github.com/codeintegrity-ai/mutahunter.git
 ```
 
-For more detailed examples and to understand how Mutahunter works in practice, please visit the [/examples](/examples/python_fastapi/) directory in our GitHub repository.
-
 ### How to Execute Mutahunter
 
-To run Mutahunter, use the following command format.
-```plaintext
-1. **--model**
-   - **Description:** LLM model to use for mutation testing. We use LiteLLM to call the model.
-   - **Default:** `gpt-4o`
-   - **Example:** `--model gpt-4o`
+To use MutaHunter, you first need a Cobertura XML line coverage report of a specific test file. MutaHunter currently supports mutating on a per-test-file basis.
 
-2. **--test-command**
-   - **Description:** The command used to execute the tests.
-   - **Required:** Yes
-   - **Example:** `--test-command pytest`
+For more detailed examples and to understand how Mutahunter works in practice, please visit the [/examples](/examples/python_fastapi/) directory in our GitHub repository.
 
-3. **--code-coverage-report-path**
-   - **Description:** Path to the code coverage report file.
-   - **Required:** No
-   - **Example:** `--code-coverage-report-path /path/to/coverage.xml`
+To see the available options for the Mutahunter run command, use the following command:
 
-4. **--test-file-path**
-   - **Description:** Path to the test file to run the tests on.
-   - **Required:** Yes
-   - **Example:** `--test-file-path /path/to/test_file.py`
-
-5. **--exclude-files**
-   - **Description:** Files to exclude from analysis.
-   - **Required:** No
-   - **Example:** `--exclude-files file1.py file2.py`
-
-6. **--only-mutate-file-paths**
-   - **Description:** Specifies which files to mutate. This is useful when you want to focus on specific files and it makes the mutations faster!
-   - **Required:** No
-   - **Example:** `--only-mutate-file-paths file1.py file2.py`
+```bash
+mutahunter run -h
 ```
+
+Example command to run Mutahunter on a Python FastAPI [application](/examples/python_fastapi/):
+
+```bash
+mutahunter run --test-command "pytest test_app.py" --test-file-path "test_app.py" --code-coverage-report-path "coverage.xml" --only-mutate-file-paths "app.py"
+```
+
+The mutahunter run command has the following options:
+
+```plaintext
+1. --model
+      - Description: LLM model to use for mutation testing. We use LiteLLM to call the model.
+      - Default: `gpt-4o`
+      - Example: `--model gpt-4o`
+
+2. --test-command
+      - Description: The command used to execute the tests. Specify a single test file to run the tests on.
+      - Required: Yes
+      - Example: `--test-command pytest test_app.py`
+
+3. --code-coverage-report-path
+      - Description: Path to the code coverage report of the test suite.
+      - Required: No
+      - Example: `--code-coverage-report-path /path/to/coverage.xml`
+
+4. --test-file-path
+      - Description: Path to the test file to run the tests on.
+      - Required: Yes
+      - Example: `--test-file-path /path/to/test_file.py`
+
+5. --exclude-files
+      - Description: Files to exclude from analysis.
+      - Required: No
+      - Example: `--exclude-files file1.py file2.py`
+
+6. --only-mutate-file-paths
+      - Description: Specifies which files to mutate. This is useful when you want to focus on specific files and it makes the mutations faster!
+      - Required: No
+      - Example: `--only-mutate-file-paths file1.py file2.py`
+```
+
 #### Mutation Testing Report
 
 Check the logs directory to view the report:
