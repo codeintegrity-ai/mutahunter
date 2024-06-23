@@ -46,11 +46,16 @@ class MutantHunter:
             if self.config["only_mutate_file_paths"]:
                 if filename not in self.config["only_mutate_file_paths"]:
                     continue
-            else:
-                if filename in self.config["exclude_files"]:
-                    continue
-                if "test/" in filename or "tests/" in filename:
-                    continue
+            if filename in self.config["exclude_files"]:
+                continue
+            if (
+                "test/" in filename
+                or "tests/" in filename
+                or "test_" in filename
+                or "_test" in filename
+                or ".test" in filename
+            ):
+                continue
 
             covered_function_blocks = self.analyzer.get_covered_function_blocks(
                 executed_lines=executed_lines,
