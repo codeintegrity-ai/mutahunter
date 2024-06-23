@@ -11,11 +11,12 @@ from importlib import resources
 from pathlib import Path
 
 import networkx as nx
-import tiktoken
 from grep_ast import TreeContext, filename_to_lang
 from pygments.lexers import guess_lexer_for_filename
 from pygments.token import Token
 from pygments.util import ClassNotFound
+from litellm import encode as litellm_encode
+
 
 # tree_sitter is throwing a FutureWarning
 warnings.simplefilter("ignore", category=FutureWarning)
@@ -37,13 +38,12 @@ class RepoMap:
         if not root:
             root = os.getcwd()
         self.root = root
-        self.tokenizer = tiktoken.encoding_for_model(model)
 
         self.max_map_tokens = map_tokens
         self.max_context_window = max_context_window
 
     def token_count(self, string):
-        return len(self.tokenizer.encode(string))
+        return len(litellm_encode(string))
 
     def get_repo_map(
         self, chat_files, other_files, mentioned_fnames=None, mentioned_idents=None
