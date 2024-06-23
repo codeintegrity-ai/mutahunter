@@ -2,9 +2,9 @@ import re
 
 from jinja2 import Template
 
-from mutahunter.core.router import LLMRouter
 from mutahunter.core.pilot.aider.repomap import RepoMap
 from mutahunter.core.pilot.prompts.factory import PromptFactory
+from mutahunter.core.router import LLMRouter
 
 
 class MutantGenerator:
@@ -23,7 +23,7 @@ class MutantGenerator:
         self.filename = filename
         self.function_block_source_code = function_block_source_code
 
-        self.router = LLMRouter(model=config["model"])
+        self.router = LLMRouter(model=config["model"], api_base=config["api_base"])
         self.language = language
 
         self.repo_map = RepoMap(model=config["model"])

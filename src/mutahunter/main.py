@@ -20,6 +20,12 @@ def parse_arguments():
         help="",
     )
     main_parser.add_argument(
+        "--api-base",  # for self hosted LLM models
+        type=str,
+        default="",
+        help="",
+    )
+    main_parser.add_argument(
         "--test-command",
         type=str,
         default=None,
@@ -82,6 +88,7 @@ def run():
     args = parse_arguments()
     config = {
         "model": args.model,
+        "api_base": args.api_base,
         "code_coverage_report_path": args.code_coverage_report_path,
         "test_command": args.test_command,
         "test_file_path": args.test_file_path,
