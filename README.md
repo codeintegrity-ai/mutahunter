@@ -74,6 +74,7 @@ The mutahunter run command has the following options:
 1. --model
       - Description: LLM model to use for mutation testing. We use LiteLLM to call the model.
       - Default: `gpt-4o`
+      - Required: Yes
       - Example: `--model gpt-4o`
 
 2. --test-command
@@ -83,7 +84,7 @@ The mutahunter run command has the following options:
 
 3. --code-coverage-report-path
       - Description: Path to the code coverage report of the test suite.
-      - Required: No
+      - Required: Yes
       - Example: `--code-coverage-report-path /path/to/coverage.xml`
 
 4. --test-file-path
