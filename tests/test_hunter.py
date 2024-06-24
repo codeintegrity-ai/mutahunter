@@ -86,11 +86,7 @@ def test_run_mutation_testing(
                 "source_path": "source.py",
                 "start_byte": 0,
                 "end_byte": 10,
-                "mutant_description": "mutant desc",
-                "mutant_impact_level": "High",
-                "mutant_potential_impact": "High",
                 "mutant_code_snippet": "mutant code",
-                "mutant_suggestion_fix": "suggestion fix",
                 "test_file_path": "tests/test_file.py",
             }
         ],
@@ -139,16 +135,11 @@ def test_generate_mutations(
             ) as mock_mutant_generator:
                 mock_mutant_generator_instance = mock_mutant_generator.return_value
                 mock_mutant_generator_instance.generate.return_value = {
-                    "description": "mutant desc",
-                    "impact_level": "High",
-                    "potential_impact": "High",
-                    "suggestion_fix": "suggestion fix",
                     "code_snippet": "mutant code",
                 }
                 mutations = list(mutant_hunter.generate_mutations())
 
     assert len(mutations) == 1
-    assert mutations[0]["mutant_description"] == "mutant desc"
 
 
 def test_prepare_mutant_file_syntax_error(mutant_hunter):
@@ -192,11 +183,7 @@ def test_run_mutation_testing_handles_unknown_errors(mock_logger, mutant_hunter)
                 "source_path": "source.py",
                 "start_byte": 0,
                 "end_byte": 10,
-                "mutant_description": "mutant desc",
-                "mutant_impact_level": "High",
-                "mutant_potential_impact": "High",
                 "mutant_code_snippet": "mutant code",
-                "mutant_suggestion_fix": "suggestion fix",
                 "test_file_path": "tests/test_file.py",
             }
         ],

@@ -1,104 +1,119 @@
 import os
 import subprocess
-from unittest.mock import MagicMock, patch
-
 import pytest
-
-from mutahunter.core.runner import TestRunner
+from unittest.mock import patch, MagicMock
+from mutahunter.core.runner import (
+    TestRunner,
+)
 
 
 @pytest.fixture
-def runner():
+def test_runner():
     return TestRunner()
 
 
-@pytest.fixture
-def params():
-    return {
-        "module_path": "path/to/original_module.py",
-        "replacement_module_path": "path/to/replacement_module.py",
-        "test_command": "pytest tests/",
+def test_run_test_success(test_runner):
+    params = {
+        "module_path": "original_module.py",
+        "replacement_module_path": "replacement_module.py",
+        "test_command": "echo 'test'",
     }
 
+    with (
+        patch("subprocess.run") as mock_run,
+        patch.object(test_runner, "create_symlink") as mock_create_symlink,
+        patch.object(test_runner, "revert_symlink") as mock_revert_symlink,
+    ):
+        mock_run.return_value = subprocess.CompletedProcess(
+            params["test_command"], 0, stdout="test", stderr=""
+        )
+        result = test_runner.run_test(params)
 
-@patch("mutahunter.core.runner.os.path.exists")
-@patch("mutahunter.core.runner.os.rename")
-@patch("mutahunter.core.runner.os.symlink")
-@patch("mutahunter.core.runner.os.remove")
-@patch("mutahunter.core.runner.subprocess.run")
-def test_run_test(
-    mock_subprocess_run,
-    mock_os_remove,
-    mock_os_symlink,
-    mock_os_rename,
-    mock_os_path_exists,
-    runner,
-    params,
-):
-    mock_os_path_exists.side_effect = [False, True]
-    mock_subprocess_run.return_value = subprocess.CompletedProcess(
-        args=params["test_command"], returncode=0, stdout="Test passed", stderr=""
-    )
+        mock_create_symlink.assert_called_once_with(
+            params["module_path"], params["replacement_module_path"]
+        )
+        mock_run.assert_called_once_with(
+            params["test_command"],
+            text=True,
+            capture_output=True,
+            shell=True,
+            cwd=os.getcwd(),
+            timeout=30,
+        )
+        mock_revert_symlink.assert_called_once_with(params["module_path"])
 
-    result = runner.run_test(params)
-
-    # Ensure symlink creation calls
-    mock_os_rename.assert_any_call(
-        params["module_path"], params["module_path"] + ".bak"
-    )
-    mock_os_symlink.assert_called_with(
-        params["replacement_module_path"], params["module_path"]
-    )
-
-    # Ensure subprocess run call
-    mock_subprocess_run.assert_called_with(
-        params["test_command"],
-        text=True,
-        capture_output=True,
-        shell=True,
-        cwd=os.getcwd(),
-    )
-
-    # Ensure symlink reversion calls
-    mock_os_remove.assert_called_with(params["module_path"])
-    mock_os_rename.assert_any_call(
-        params["module_path"] + ".bak", params["module_path"]
-    )
-
-    assert result.returncode == 0
-    assert result.stdout == "Test passed"
-    assert result.stderr == ""
+        assert result.returncode == 0
+        assert result.stdout == "test"
+        assert result.stderr == ""
 
 
-@patch("mutahunter.core.runner.os.path.exists")
-@patch("mutahunter.core.runner.os.rename")
-@patch("mutahunter.core.runner.os.symlink")
-@patch("mutahunter.core.runner.os.remove")
-def test_create_symlink(
-    mock_os_remove, mock_os_symlink, mock_os_rename, mock_os_path_exists, runner
-):
-    original = "path/to/original_module.py"
-    replacement = "path/to/replacement_module.py"
+def test_revert_symlink(test_runner):
+    original = "original_module.py"
     backup = original + ".bak"
 
-    mock_os_path_exists.return_value = False
+    with (
+        patch("os.path.islink", return_value=True) as mock_islink,
+        patch("os.unlink") as mock_unlink,
+        patch("os.path.exists", return_value=True) as mock_exists,
+        patch("os.rename") as mock_rename,
+    ):
+        test_runner.revert_symlink(original)
 
-    runner.create_symlink(original, replacement)
+        mock_islink.assert_called_once_with(original)
+        mock_unlink.assert_called_once_with(original)
+        mock_exists.assert_called_once_with(backup)
+        mock_rename.assert_called_once_with(backup, original)
 
-    mock_os_rename.assert_called_with(original, backup)
-    mock_os_symlink.assert_called_with(replacement, original)
 
-
-@patch("mutahunter.core.runner.os.path.exists")
-@patch("mutahunter.core.runner.os.rename")
-@patch("mutahunter.core.runner.os.remove")
-def test_revert_symlink(mock_os_remove, mock_os_rename, mock_os_path_exists, runner):
-    original = "path/to/original_module.py"
+def test_create_symlink(test_runner):
+    original = "original_module.py"
+    replacement = "replacement_module.py"
     backup = original + ".bak"
 
-    mock_os_path_exists.return_value = True
+    with (
+        patch("os.path.exists", return_value=False) as mock_exists,
+        patch("os.rename") as mock_rename,
+        patch("os.symlink") as mock_symlink,
+    ):
+        test_runner.create_symlink(original, replacement)
 
-    runner.revert_symlink(original)
+        mock_exists.assert_called_once_with(backup)
+        mock_rename.assert_called_once_with(original, backup)
+        mock_symlink.assert_called_once_with(replacement, original)
 
-    mock_os_remove.assert_called_with(original)
-    mock_os_rename.assert_called_with(backup, original)
+
+def test_run_test_timeout(test_runner):
+    params = {
+        "module_path": "original_module.py",
+        "replacement_module_path": "replacement_module.py",
+        "test_command": "echo 'test'",
+    }
+
+    with (
+        patch(
+            "subprocess.run",
+            side_effect=subprocess.TimeoutExpired(
+                cmd=params["test_command"], timeout=30
+            ),
+        ) as mock_run,
+        patch.object(test_runner, "create_symlink") as mock_create_symlink,
+        patch.object(test_runner, "revert_symlink") as mock_revert_symlink,
+    ):
+        result = test_runner.run_test(params)
+
+        mock_create_symlink.assert_called_once_with(
+            params["module_path"], params["replacement_module_path"]
+        )
+        mock_run.assert_called_once_with(
+            params["test_command"],
+            text=True,
+            capture_output=True,
+            shell=True,
+            cwd=os.getcwd(),
+            timeout=30,
+        )
+        mock_revert_symlink.assert_called_once_with(params["module_path"])
+
+        assert result.returncode == 1
+        assert result.stdout == ""
+        assert result.stderr == "TimeoutExpired"
