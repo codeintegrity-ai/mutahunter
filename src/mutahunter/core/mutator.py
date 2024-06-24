@@ -58,10 +58,6 @@ class MutantGenerator:
 def extract_mutation_details(text):
     # Define regex patterns for each section
     patterns = {
-        "description": r"### Mutation Description:\n(.*?)\n",
-        "impact_level": r"### Impact Level:\n(.*?)\n",
-        "potential_impact": r"### Potential Impact:\n(.*?)\n",
-        "suggestion_fix": r"### Fix Suggestion:\n(.*?)\n",
         "code_snippet": r"```.*?\n(.*?)\n```",
     }
 

@@ -86,10 +86,6 @@ class MutantHunter:
                     "source_path": filename,
                     "start_byte": start_byte,
                     "end_byte": end_byte,
-                    "mutant_description": mutant_info["description"],
-                    "mutant_impact_level": mutant_info["impact_level"],
-                    "mutant_potential_impact": mutant_info["potential_impact"],
-                    "mutant_suggestion_fix": mutant_info["suggestion_fix"],
                     "mutant_code_snippet": mutant_info["code_snippet"],
                     "test_file_path": self.config["test_file_path"],
                 }
@@ -101,10 +97,6 @@ class MutantHunter:
                 source_path = mutant["source_path"]
                 start_byte = mutant["start_byte"]
                 end_byte = mutant["end_byte"]
-                mutant_description = mutant["mutant_description"]
-                impact_level = mutant["mutant_impact_level"]
-                potential_impact = mutant["mutant_potential_impact"]
-                suggestion_fix = mutant["mutant_suggestion_fix"]
                 mutant_code = mutant["mutant_code_snippet"]
                 test_file_path = mutant["test_file_path"]
 
@@ -120,10 +112,6 @@ class MutantHunter:
                     id=mutant_id,
                     source_path=source_path,
                     mutant_path=mutant_path,
-                    mutant_description=mutant_description,
-                    suggestion_fix=suggestion_fix,
-                    impact_level=impact_level,
-                    potential_impact=potential_impact,
                     test_file_path=test_file_path,
                 )
                 result = self.run_test(

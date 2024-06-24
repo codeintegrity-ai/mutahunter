@@ -22,28 +22,12 @@ class MutantReport:
     def generate_killed_mutants(self, mutants: list[Mutant]) -> None:
         killed_mutants = [mutant for mutant in mutants if mutant.status == "KILLED"]
         killed_mutants = [asdict(mutant) for mutant in killed_mutants]
-        killed_mutants.sort(
-            key=lambda x: (
-                x["impact_level"] == "High",
-                x["impact_level"] == "Medium",
-                x["impact_level"] == "Low",
-            ),
-            reverse=True,
-        )
         with open("logs/_latest/mutants_killed.json", "w") as f:
             json.dump(killed_mutants, f, indent=2)
 
     def generate_survived_mutants(self, mutants: list[Mutant]) -> None:
         survived_mutants = [mutant for mutant in mutants if mutant.status == "SURVIVED"]
         survived_mutants = [asdict(mutant) for mutant in survived_mutants]
-        survived_mutants.sort(
-            key=lambda x: (
-                x["impact_level"] == "High",
-                x["impact_level"] == "Medium",
-                x["impact_level"] == "Low",
-            ),
-            reverse=True,
-        )
         with open("logs/_latest/mutants_survived.json", "w") as f:
             json.dump(survived_mutants, f, indent=2)
 
