@@ -13,7 +13,17 @@ class TestRunner:
         try:
             self.create_symlink(module_path, replacement_module_path)
             result = subprocess.run(
-                cmd, text=True, capture_output=True, shell=True, cwd=os.getcwd()
+                cmd,
+                text=True,
+                capture_output=True,
+                shell=True,
+                cwd=os.getcwd(),
+                timeout=30,
+            )
+        except subprocess.TimeoutExpired:
+            # Mutant Killed
+            result = subprocess.CompletedProcess(
+                cmd, 1, stdout="", stderr="TimeoutExpired"
             )
         finally:
             self.revert_symlink(module_path)
@@ -29,6 +39,7 @@ class TestRunner:
     def revert_symlink(self, original):
         """Revert the symlink to the original file using the backup."""
         backup = original + ".bak"
+        if os.path.islink(original):
+            os.unlink(original)
         if os.path.exists(backup):
-            os.remove(original)
             os.rename(backup, original)
