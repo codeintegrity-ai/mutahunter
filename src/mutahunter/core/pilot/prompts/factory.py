@@ -1,13 +1,7 @@
-from mutahunter.core.pilot.prompts.go import SYSTEM_PROMPT as GO_SYSTEM_PROMPT
-from mutahunter.core.pilot.prompts.go import USER_PROMPT as GO_USER_PROMPT
-from mutahunter.core.pilot.prompts.javascript import \
-    SYSTEM_PROMPT as JAVASCRIPT_SYSTEM_PROMPT
-from mutahunter.core.pilot.prompts.javascript import \
-    USER_PROMPT as JAVASCRIPT_USER_PROMPT
-from mutahunter.core.pilot.prompts.python import \
-    SYSTEM_PROMPT as PYTHON_SYSTEM_PROMPT
-from mutahunter.core.pilot.prompts.python import \
-    USER_PROMPT as PYTHON_USER_PROMPT
+from mutahunter.core.pilot.prompts.examples import (GO_UDIFF, JAVASCRIPT_UDIFF,
+                                                    PYTHON_UDIFF)
+from mutahunter.core.pilot.prompts.system import SYSTEM_PROMPT
+from mutahunter.core.pilot.prompts.user import USER_PROMPT
 
 
 class PromptFactory:
@@ -25,17 +19,20 @@ class PromptFactory:
 
 class PythonPrompt:
     def __init__(self):
-        self.system_prompt = PYTHON_SYSTEM_PROMPT
-        self.user_prompt = PYTHON_USER_PROMPT
+        self.system_prompt = SYSTEM_PROMPT
+        self.user_prompt = USER_PROMPT
+        self.example_output = PYTHON_UDIFF
 
 
 class JavaScriptPrompt:
     def __init__(self):
-        self.system_prompt = JAVASCRIPT_SYSTEM_PROMPT
-        self.user_prompt = JAVASCRIPT_USER_PROMPT
+        self.system_prompt = SYSTEM_PROMPT
+        self.user_prompt = USER_PROMPT
+        self.example_output = JAVASCRIPT_UDIFF
 
 
 class GoPrompt:
     def __init__(self):
-        self.system_prompt = GO_SYSTEM_PROMPT
-        self.user_prompt = GO_USER_PROMPT
+        self.system_prompt = SYSTEM_PROMPT
+        self.user_prompt = USER_PROMPT
+        self.example_output = GO_UDIFF

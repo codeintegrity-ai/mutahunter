@@ -141,6 +141,7 @@ class MutantHunter:
                     mutant.error_msg = result.stderr + result.stdout
                     self.mutants.append(mutant)
                 else:
+                    logger.error(f"Mutant {mutant_id} failed to run tests.")
                     continue
             except Exception as e:
                 logger.error(f"Error generating mutant: {e}")

@@ -34,10 +34,12 @@ class MutantGenerator:
             test_file_content = f.read()
         system_template = Template(self.prompt.system_prompt).render()
         user_template = Template(self.prompt.user_prompt).render(
+            language=self.language,
             test_file_path=self.test_file_path,
             test_file_content=test_file_content,
             ast=repo_map_result,
             filename=self.filename,
+            example_output=self.prompt.example_output,
             function_block=self.function_block_source_code,
         )
         prompt = {

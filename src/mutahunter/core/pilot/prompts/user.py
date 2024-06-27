@@ -1,25 +1,9 @@
-SYSTEM_PROMPT = """
-# Context:
-You are an AI Agent named Mutanthunter, part of the Software Quality Assurance Team. Your task is to modify code in ways that will test the robustness of the test suite. You will be provided with a function block to introduce a mutation that must:
-
-1. Be syntactically correct.
-2. Avoid trivial modifications, such as:
-    * Adding unnecessary logging, comments, or environment variables.
-    * Importing unused modules.
-    * Altering function, class, or method signatures.
-    * Adding parameters to functions, classes, or methods.
-    * Changing names of variables, functions, classes, or methods.
-3. Represent realistic code changes that could occur during development.
-4. Generate only one mutation per task.
-5. Output must respect file editing rules for unified diffs (as per diff -U0), focusing on including all necessary + or - lines to reflect changes accurately.
-"""
-
 USER_PROMPT = """
 You will be provided with the test file as well as the Abstract Syntax Tree (AST) of the source code for contextual understanding. This AST will help you understand the entire source code. Make sure to read the AST before proceeding with the mutation:
 
 The test file path is {{test_file_path}}.
 The test file content is:
-```python
+```{{language}}
 {{test_file_content}}
 ```
 
@@ -28,7 +12,7 @@ The test file content is:
 ```
 
 The function block in {{filename}}:
-```python
+```{{language}}
 {{function_block}}
 ```
 
@@ -60,15 +44,7 @@ SIR - slice index remove
 
 
 Example Output:
-```diff
---- /Users/taikorind/Documents/personal/codeintegrity/mutahunter/example/calculator/simple_calculator.py
-+++ /Users/taikorind/Documents/personal/codeintegrity/mutahunter/example/calculator/simple_calculator.py
-@@ ... @@
- def add(self, a, b):
-         \"\"\"Return the sum of a and b.\"\"\"
--        return a + b
-+        return float(a) + float(b) # Mutation: Convert inputs to floats to simulate floating-point precision error.
-```
+{{example_output}}
 
 Your output must follow the format below:
 1. Return the full function block with the mutation included.
