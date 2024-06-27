@@ -47,6 +47,10 @@ We added examples for JavaScript, Python, and Go (see [/examples](/examples)). I
 To install the Python Pip package directly via GitHub:
 
 ```bash
+# Work with GPT-4o on your repo. See litellm for other models.
+export OPENAI_API_KEY=your-key-goes-here
+# Or, work with Anthropic's models. See litellm for other models.
+export ANTHROPIC_API_KEY=your-key-goes-here
 pip install git+https://github.com/codeintegrity-ai/mutahunter.git
 ```
 
@@ -148,7 +152,7 @@ An example mutant information would be like so:
 
 Mutahunter makes use of the following open-source libraries:
 
-- [aider's](https://github.com/paul-gauthier/aider) repomap by Paul Gauthier, licensed under the Apache-2.0 license.
+- [aider's](https://github.com/paul-gauthier/aider) by Paul Gauthier, licensed under the Apache-2.0 license.
 - [TreeSitter](https://github.com/tree-sitter/tree-sitter) by TreeSitter, MIT License.
 - [LiteLLM](https://github.com/BerriAI/litellm) by BerriAI, MIT License.
 

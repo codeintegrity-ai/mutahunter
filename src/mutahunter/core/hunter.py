@@ -81,14 +81,20 @@ class MutantHunter:
                     function_block_source_code=function_block_source_code,
                     language=self.config["language"],
                 )
-                mutant_info = mutant_generator.generate()
-                yield {
-                    "source_path": filename,
-                    "start_byte": start_byte,
-                    "end_byte": end_byte,
-                    "mutant_code_snippet": mutant_info["code_snippet"],
-                    "test_file_path": self.config["test_file_path"],
-                }
+                mutants = mutant_generator.generate()
+                for (
+                    path,
+                    hunk,
+                    content,
+                ) in mutant_generator.generate():
+                    yield {
+                        "source_path": filename,
+                        "start_byte": start_byte,
+                        "end_byte": end_byte,
+                        "hunk": hunk,
+                        "mutant_code_snippet": content,
+                        "test_file_path": self.config["test_file_path"],
+                    }
 
     def run_mutation_testing(self):
         for mutant in self.generate_mutations():
@@ -97,6 +103,7 @@ class MutantHunter:
                 source_path = mutant["source_path"]
                 start_byte = mutant["start_byte"]
                 end_byte = mutant["end_byte"]
+                hunk = mutant["hunk"]
                 mutant_code = mutant["mutant_code_snippet"]
                 test_file_path = mutant["test_file_path"]
 

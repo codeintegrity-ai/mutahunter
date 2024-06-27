@@ -1,10 +1,10 @@
 import os
 import subprocess
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
-from mutahunter.core.runner import (
-    TestRunner,
-)
+
+from mutahunter.core.runner import TestRunner
 
 
 @pytest.fixture
