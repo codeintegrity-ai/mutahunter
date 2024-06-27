@@ -55,8 +55,10 @@ To install the Python Pip package directly via GitHub:
 ```bash
 # Work with GPT-4o on your repo. See litellm for other models.
 export OPENAI_API_KEY=your-key-goes-here
+
 # Or, work with Anthropic's models. See litellm for other models.
 export ANTHROPIC_API_KEY=your-key-goes-here
+
 pip install git+https://github.com/codeintegrity-ai/mutahunter.git
 ```
 
@@ -81,46 +83,49 @@ mutahunter run --test-command "pytest test_app.py" --test-file-path "test_app.py
 The mutahunter run command has the following options:
 
 ```plaintext
-1. --model
-      - Description: LLM model to use for mutation testing. We use LiteLLM to call the model.
-      - Default: `gpt-4o`
-      - Required: Yes
-      - Example: `--model gpt-4o`
+Options:
+  --model <MODEL>
+      Description: LLM model to use for mutation testing. We use LiteLLM to call the model.
+      Default: `gpt-4o`
+      Required: Yes
+      Example: `--model gpt-4o`
 
-2. --test-command
-      - Description: The command used to execute the tests. Specify a single test file to run the tests on.
-      - Required: Yes
-      - Example: `--test-command pytest test_app.py`
+  --test-command <COMMAND>
+      Description: The command used to execute the tests. Specify a single test file to run the tests on.
+      Required: Yes
+      Example: `--test-command pytest test_app.py`
 
-3. --code-coverage-report-path
-      - Description: Path to the code coverage report of the test suite.
-      - Required: Yes
-      - Example: `--code-coverage-report-path /path/to/coverage.xml`
+  --code-coverage-report-path <PATH>
+      Description: Path to the code coverage report of the test suite.
+      Required: Yes
+      Example: `--code-coverage-report-path /path/to/coverage.xml`
 
-4. --test-file-path
-      - Description: Path to the test file to run the tests on.
-      - Required: Yes
-      - Example: `--test-file-path /path/to/test_file.py`
+  --test-file-path <PATH>
+      Description: Path to the test file to run the tests on.
+      Required: Yes
+      Example: `--test-file-path /path/to/test_file.py`
 
-5. --exclude-files
-      - Description: Files to exclude from analysis.
-      - Required: No
-      - Example: `--exclude-files file1.py file2.py`
+  --exclude-files <FILES>
+      Description: Files to exclude from analysis.
+      Required: No
+      Example: `--exclude-files file1.py file2.py`
 
-6. --only-mutate-file-paths
-      - Description: Specifies which files to mutate. This is useful when you want to focus on specific files and it makes the mutations faster!
-      - Required: No
-      - Example: `--only-mutate-file-paths file1.py file2.py`
+  --only-mutate-file-paths <FILES>
+      Description: Specifies which files to mutate. This is useful when you want to focus on specific files and it makes the mutations faster!
+      Required: No
+      Example: `--only-mutate-file-paths file1.py file2.py`
 ```
 
 #### Mutation Testing Report
 
 Check the logs directory to view the report:
+
 - `mutants_killed.json` - Contains the list of mutants that were killed by the test suite.
 - `mutants_survived.json` - Contains the list of mutants that survived the test suite.
 - `mutation_coverage.json` - Contains the mutation coverage report.
 
 An example mutant information would be like so:
+
 ```json
 [
     {
@@ -139,7 +144,7 @@ An example mutant information would be like so:
 ### Automatic Mutation Testing
 
 - [x] **Fault Injection:** Utilize advanced LLM models to inject context-aware faults into the codebase, ensuring comprehensive mutation testing.
-- [ ] **Language Support:** Expand support to include various programming languages.
+- [x] **Language Support:** Expand support to include various programming languages.
 
 ### Enhanced Mutation Coverage
 
@@ -158,9 +163,8 @@ An example mutant information would be like so:
 
 Mutahunter makes use of the following open-source libraries:
 
-- [aider's](https://github.com/paul-gauthier/aider) by Paul Gauthier, licensed under the Apache-2.0 license.
+- [aider](https://github.com/paul-gauthier/aider) by Paul Gauthier, licensed under the Apache-2.0 license.
 - [TreeSitter](https://github.com/tree-sitter/tree-sitter) by TreeSitter, MIT License.
 - [LiteLLM](https://github.com/BerriAI/litellm) by BerriAI, MIT License.
 
 For more details, please refer to the LICENSE file in the repository.
-
