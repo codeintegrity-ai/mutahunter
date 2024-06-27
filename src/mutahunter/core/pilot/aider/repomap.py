@@ -12,7 +12,7 @@ from pathlib import Path
 
 import networkx as nx
 from grep_ast import TreeContext, filename_to_lang
-from litellm import encode as litellm_encode
+from litellm import token_counter
 from pygments.lexers import guess_lexer_for_filename
 from pygments.token import Token
 from pygments.util import ClassNotFound
@@ -36,13 +36,18 @@ class RepoMap:
     ):
         if not root:
             root = os.getcwd()
+        self.model = model
         self.root = root
 
         self.max_map_tokens = map_tokens
         self.max_context_window = max_context_window
 
     def token_count(self, string):
-        return len(litellm_encode(string))
+        if not string:
+            return 0
+        return token_counter(
+            model=self.model, messages=[{"user": "role", "content": "hihi"}]
+        )
 
     def get_repo_map(
         self, chat_files, other_files, mentioned_fnames=None, mentioned_idents=None
