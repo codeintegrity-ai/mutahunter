@@ -14,6 +14,12 @@
   </a>
 </div>
 
+
+<div align="center">
+<video src="https://github.com/codeintegrity-ai/mutahunter/assets/37044660/3aca86e0-593e-44a0-8d9e-d22ee808ca75"></video>
+</div>
+
+
 ## Table of Contents
 
 - [Overview](#overview)
