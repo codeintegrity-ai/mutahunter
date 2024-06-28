@@ -1,5 +1,6 @@
 import os
 import time
+from typing import Any, Dict, Generator, List
 
 from tqdm import tqdm
 
@@ -12,14 +13,60 @@ from mutahunter.core.runner import TestRunner
 
 
 class MutantHunter:
-    def __init__(self, config):
-        self.config = config
-        self.mutants: list[Mutant] = []
+    def __init__(self, config: Dict[str, Any]) -> None:
+        """
+        Initializes the MutantHunter class with the given configuration.
+
+        Args:
+            config (Dict[str, Any]): Configuration dictionary containing various settings.
+                - model (str): LLM model to use for mutation testing.
+                - api_base (str): Base URL for self-hosted LLM models.
+                - test_command (str): Command to run the tests.
+                - code_coverage_report_path (Optional[str]): Path to the code coverage report file.
+                - test_file_path (str): Path to the test file.
+                - exclude_files (List[str]): List of files to exclude from analysis.
+                - only_mutate_file_paths (List[str]): List of specific files to mutate.
+        """
+        self.config: Dict[str, Any] = config
+        self.config["language"] = self.determine_language(config["test_file_path"])
+        self.mutants: List[Mutant] = []
         self.mutant_report = MutantReport()
-        self.analyzer = Analyzer(config)
+        self.analyzer = Analyzer(self.config)
         self.test_runner = TestRunner()
 
-    def run(self):
+    def determine_language(self, filename: str) -> str:
+        """
+        Determines the programming language based on the file extension.
+
+        Args:
+            filename (str): The filename to determine the language from.
+
+        Returns:
+            str: The programming language corresponding to the file extension.
+
+        Raises:
+            ValueError: If the file extension is not supported.
+        """
+        ext = filename.split(".")[-1]
+        language_mappings = {
+            "py": "python",
+            "java": "java",
+            "js": "javascript",
+            "ts": "typescript",
+            "c": "c",
+            "cpp": "cpp",
+            "rs": "rust",
+            "go": "go",
+            "php": "php",
+            "rb": "ruby",
+            "swift": "swift",
+            "kt": "kotlin",
+        }
+        if ext not in language_mappings:
+            raise ValueError(f"Unsupported file extension: {ext}")
+        return language_mappings[ext]
+
+    def run(self) -> None:
         """
         Executes the mutation testing process from start to finish.
         """
@@ -37,42 +84,61 @@ class MutantHunter:
                 f"Error during mutation testing. Please report this issue. {e}"
             )
 
-    def generate_mutations(self):
+    def should_skip_file(self, filename: str) -> bool:
+        """
+        Determines if a file should be skipped based on various conditions.
+
+        Args:
+            filename (str): The filename to check.
+
+        Returns:
+            bool: True if the file should be skipped, False otherwise.
+        """
+        if not self.analyzer.file_lines_executed[filename]:
+            return True
+        if (
+            self.config["only_mutate_file_paths"]
+            and filename not in self.config["only_mutate_file_paths"]
+        ):
+            return True
+        if filename in self.config["exclude_files"]:
+            return True
+        if any(
+            keyword in filename
+            for keyword in ["test/", "tests/", "test_", "_test", ".test"]
+        ):
+            return True
+        return False
+
+    def generate_mutations(self) -> Generator[Dict[str, Any], None, None]:
+        """
+        Generates mutations for all covered files.
+
+        Yields:
+            Generator[Dict[str, Any], None, None]: Dictionary containing mutation details.
+        """
         all_covered_files = self.analyzer.file_lines_executed.keys()
         for filename in tqdm(all_covered_files):
-            executed_lines = self.analyzer.file_lines_executed[filename]
-            if not executed_lines:
-                continue
-            if self.config["only_mutate_file_paths"]:
-                if filename not in self.config["only_mutate_file_paths"]:
-                    continue
-            if filename in self.config["exclude_files"]:
-                continue
-            if (
-                "test/" in filename
-                or "tests/" in filename
-                or "test_" in filename
-                or "_test" in filename
-                or ".test" in filename
-            ):
+            if self.should_skip_file(filename):
                 continue
 
             covered_function_blocks = self.analyzer.get_covered_function_blocks(
-                executed_lines=executed_lines,
+                executed_lines=self.analyzer.file_lines_executed[filename],
                 filename=filename,
             )
             if not covered_function_blocks:
                 continue
 
+            with open(filename, "rb") as f:
+                source_code = f.read()
+
             for function_block in covered_function_blocks:
                 start_byte = function_block.start_byte
                 end_byte = function_block.end_byte
-
-                with open(filename, "rb") as f:
-                    source_code = f.read()
                 function_block_source_code = source_code[start_byte:end_byte].decode(
                     "utf-8"
                 )
+
                 mutant_generator = MutantGenerator(
                     config=self.config,
                     cov_files=list(all_covered_files),
@@ -81,12 +147,8 @@ class MutantHunter:
                     function_block_source_code=function_block_source_code,
                     language=self.config["language"],
                 )
-                mutants = mutant_generator.generate()
-                for (
-                    path,
-                    hunk,
-                    content,
-                ) in mutant_generator.generate():
+
+                for path, hunk, content in mutant_generator.generate():
                     yield {
                         "source_path": filename,
                         "start_byte": start_byte,
@@ -96,73 +158,75 @@ class MutantHunter:
                         "test_file_path": self.config["test_file_path"],
                     }
 
-    def run_mutation_testing(self):
-        for mutant in self.generate_mutations():
+    def run_mutation_testing(self) -> None:
+        """
+        Runs mutation testing on generated mutants.
+        """
+        for mutant_data in self.generate_mutations():
             try:
-                # Extract necessary data from the mutant
-                source_path = mutant["source_path"]
-                start_byte = mutant["start_byte"]
-                end_byte = mutant["end_byte"]
-                hunk = mutant["hunk"]
-                mutant_code = mutant["mutant_code_snippet"]
-                test_file_path = mutant["test_file_path"]
-
                 mutant_id = str(len(self.mutants) + 1)
                 mutant_path = self.prepare_mutant_file(
                     mutant_id=mutant_id,
-                    source_path=source_path,
-                    start_byte=start_byte,
-                    end_byte=end_byte,
-                    mutant_code=mutant_code,
+                    source_path=mutant_data["source_path"],
+                    start_byte=mutant_data["start_byte"],
+                    end_byte=mutant_data["end_byte"],
+                    mutant_code=mutant_data["mutant_code_snippet"],
                 )
                 mutant = Mutant(
                     id=mutant_id,
-                    source_path=source_path,
+                    source_path=mutant_data["source_path"],
                     mutant_path=mutant_path,
-                    test_file_path=test_file_path,
+                    test_file_path=mutant_data["test_file_path"],
                 )
                 result = self.run_test(
                     {
-                        "module_path": source_path,
+                        "module_path": mutant_data["source_path"],
                         "replacement_module_path": mutant_path,
                         "test_command": self.config["test_command"],
                     }
                 )
-                # 0: Mutant survived
-                # 1: Mutant was killed
-                # 255: Unknown Error occurred
-                if result.returncode == 0:
-                    logger.info(f"Mutant {mutant_id} survived by {test_file_path}")
-                    mutant.status = "SURVIVED"
-                    self.mutants.append(mutant)
-                elif result.returncode == 1:
-                    logger.info(f"Mutant {mutant_id} killed by {test_file_path}")
-                    mutant.status = "KILLED"
-                    mutant.error_msg = result.stderr + result.stdout
-                    self.mutants.append(mutant)
-                else:
-                    logger.error(f"Mutant {mutant_id} failed to run tests.")
-                    continue
+                self.process_test_result(result, mutant)
             except Exception as e:
                 logger.error(f"Error generating mutant: {e}")
-                continue
 
     def prepare_mutant_file(
-        self, mutant_id, source_path, start_byte, end_byte, mutant_code
-    ):
-        """Prepares the mutant file for testing."""
-        mutant_file_name = f"{mutant_id}" + "_" + os.path.basename(source_path)
+        self,
+        mutant_id: str,
+        source_path: str,
+        start_byte: int,
+        end_byte: int,
+        mutant_code: str,
+    ) -> str:
+        """
+        Prepares the mutant file for testing.
+
+        Args:
+            mutant_id (str): The ID of the mutant.
+            source_path (str): The path to the original source file.
+            start_byte (int): The start byte position of the mutation.
+            end_byte (int): The end byte position of the mutation.
+            mutant_code (str): The mutated code snippet.
+
+        Returns:
+            str: The path to the mutant file.
+
+        Raises:
+            Exception: If the mutant code has syntax errors.
+        """
+        mutant_file_name = f"{mutant_id}_{os.path.basename(source_path)}"
         mutant_path = os.path.join(
             os.getcwd(), f"logs/_latest/mutants/{mutant_file_name}"
         )
 
         with open(source_path, "rb") as f:
             source_code = f.read()
+
         modified_byte_code = (
             source_code[:start_byte]
             + bytes(mutant_code, "utf-8")
             + source_code[end_byte:]
         )
+
         if self.analyzer.check_syntax(modified_byte_code.decode("utf-8")):
             with open(mutant_path, "wb") as f:
                 f.write(modified_byte_code)
@@ -170,6 +234,34 @@ class MutantHunter:
         else:
             raise Exception("Mutant code has syntax errors.")
 
-    def run_test(self, params: dict[str, str]):
-        result = self.test_runner.run_test(params)
-        return result
+    def run_test(self, params: Dict[str, str]) -> Any:
+        """
+        Runs the test command on the given parameters.
+
+        Args:
+            params (Dict[str, str]): Dictionary containing test command parameters.
+
+        Returns:
+            Any: The result of the test command execution.
+        """
+        return self.test_runner.run_test(params)
+
+    def process_test_result(self, result: Any, mutant: Mutant) -> None:
+        """
+        Processes the result of a test run.
+
+        Args:
+            result (Any): The result of the test command execution.
+            mutant (Mutant): The mutant being tested.
+        """
+        if result.returncode == 0:
+            logger.info(f"Mutant {mutant.id} survived by {mutant.test_file_path}")
+            mutant.status = "SURVIVED"
+        elif result.returncode == 1:
+            logger.info(f"Mutant {mutant.id} killed by {mutant.test_file_path}")
+            mutant.status = "KILLED"
+            mutant.error_msg = result.stderr + result.stdout
+        else:
+            logger.error(f"Mutant {mutant.id} failed to run tests.")
+            return
+        self.mutants.append(mutant)

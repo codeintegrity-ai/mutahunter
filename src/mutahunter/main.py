@@ -5,44 +5,49 @@ from mutahunter.core.hunter import MutantHunter
 
 def parse_arguments():
     """
-    Parses command-line arguments.
+    Parses command-line arguments for the Mutahunter CLI.
+
+    Returns:
+        argparse.Namespace: Parsed command-line arguments.
     """
-    parser = argparse.ArgumentParser(description="MutantHunter CLI.")
+    parser = argparse.ArgumentParser(
+        description="Mutahunter CLI for performing mutation testing."
+    )
     subparsers = parser.add_subparsers(title="commands", dest="command")
 
     # Main command arguments
-    main_parser = subparsers.add_parser("run", help="Main functionality")
+    main_parser = subparsers.add_parser("run", help="Run the mutation testing process.")
 
     main_parser.add_argument(
         "--model",
         type=str,
         default="gpt-4o",
-        help="",
+        help="The LLM model to use for mutation generation. Default is 'gpt-4o'.",
     )
     main_parser.add_argument(
-        "--api-base",  # for self hosted LLM models
+        "--api-base",
         type=str,
         default="",
-        help="",
+        help="The base URL for the API if using a self-hosted LLM model.",
     )
     main_parser.add_argument(
         "--test-command",
         type=str,
         default=None,
         required=True,
-        help="The command to run the tests. Default is pytest.",
+        help="The command to run the tests (e.g., 'pytest'). This argument is required.",
     )
     main_parser.add_argument(
         "--code-coverage-report-path",
         type=str,
         required=False,
-        help="The path to the code coverage report file.",
+        help="The path to the code coverage report file. Optional.",
     )
     main_parser.add_argument(
         "--test-file-path",
         type=str,
         required=True,
-        help="The test file path to run the tests on.",
+        help="The path to the test file to run the tests on. This argument is required.",
     )
     main_parser.add_argument(
         "--exclude-files",
@@ -50,7 +55,7 @@ def parse_arguments():
         nargs="+",
         default=[],
         required=False,
-        help="Files to exclude from analysis.",
+        help="A list of files to exclude from mutation testing. Optional.",
     )
     main_parser.add_argument(
         "--only-mutate-file-paths",
@@ -58,44 +63,17 @@ def parse_arguments():
         nargs="+",
         default=[],
         required=False,
-        help="Files to ",
+        help="A list of specific files to mutate. Optional.",
     )
     return parser.parse_args()
 
 
-def determine_language(filename):
-    ext = filename.split(".")[-1]
-    language_mappings = {
-        "py": "python",
-        "java": "java",
-        "js": "javascript",
-        "ts": "typescript",
-        "c": "c",
-        "cpp": "cpp",
-        "rs": "rust",
-        "go": "go",
-        "php": "php",
-        "rb": "ruby",
-        "swift": "swift",
-        "kt": "kotlin",
-    }
-    if ext not in language_mappings:
-        raise ValueError(f"Unsupported file extension: {ext}")
-    return language_mappings[ext]
-
-
 def run():
+    """
+    Main function to parse arguments and initiate the Mutahunter run process.
+    """
     args = parse_arguments()
-    config = {
-        "model": args.model,
-        "api_base": args.api_base,
-        "code_coverage_report_path": args.code_coverage_report_path,
-        "test_command": args.test_command,
-        "test_file_path": args.test_file_path,
-        "exclude_files": args.exclude_files,
-        "only_mutate_file_paths": args.only_mutate_file_paths,
-        "language": determine_language(args.test_file_path),
-    }
+    config = vars(args)  # Convert Namespace to dictionary
     runner = MutantHunter(config=config)
     runner.run()
 
