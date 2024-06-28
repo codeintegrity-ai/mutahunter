@@ -1,4 +1,5 @@
 GO_UDIFF = """
+Example Output:
 ```diff
 --- /Users/taikorind/Documents/personal/codeintegrity/mutahunter/example/go/router.go
 +++ /Users/taikorind/Documents/personal/codeintegrity/mutahunter/example/go/router.go
@@ -17,6 +18,7 @@ GO_UDIFF = """
 """
 
 JAVASCRIPT_UDIFF = """
+Example Output:
 ```diff
 --- /Users/taikorind/Documents/personal/codeintegrity/mutahunter/example/javascript/showAlert.js
 +++ /Users/taikorind/Documents/personal/codeintegrity/mutahunter/example/javascript/showAlert.js
@@ -39,6 +41,7 @@ JAVASCRIPT_UDIFF = """
 """
 
 PYTHON_UDIFF = """
+Example Output:
 ```diff
 --- /Users/taikorind/Documents/personal/codeintegrity/mutahunter/example/calculator/simple_calculator.py
 +++ /Users/taikorind/Documents/personal/codeintegrity/mutahunter/example/calculator/simple_calculator.py

@@ -36,7 +36,7 @@ class MutantHunter:
 
     def determine_language(self, filename: str) -> str:
         """
-        Determines the programming language based on the file extension.
+        Determines the programming language based on the file extension. For Tree-Sitter language detection.
 
         Args:
             filename (str): The filename to determine the language from.

@@ -42,10 +42,6 @@ SCD - super calling deletion
 SCI - super calling insert
 SIR - slice index remove
 
-
-Example Output:
-{{example_output}}
-
 Your output must follow the format below:
 1. Return the full function block with the mutation included.
 2. Describe the mutation using the comment # Mutation: on the specific line where the mutation occurs.
@@ -53,4 +49,6 @@ Your output must follow the format below:
 4. unified diff must contain the file path in the first 2 lines.
 5. Do not include specific line numbers. Replace line number with so: `@@ ... @@`
 6. Do not include any additional information in the output.
+
+{{example_output}}
 """

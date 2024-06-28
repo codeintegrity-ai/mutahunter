@@ -1,5 +1,8 @@
-from mutahunter.core.pilot.prompts.examples import (GO_UDIFF, JAVASCRIPT_UDIFF,
-                                                    PYTHON_UDIFF)
+from mutahunter.core.pilot.prompts.examples import (
+    GO_UDIFF,
+    JAVASCRIPT_UDIFF,
+    PYTHON_UDIFF,
+)
 from mutahunter.core.pilot.prompts.system import SYSTEM_PROMPT
 from mutahunter.core.pilot.prompts.user import USER_PROMPT
 
@@ -14,7 +17,14 @@ class PromptFactory:
         elif language == "go":
             return GoPrompt()
         else:
-            raise NotImplementedError(f"Prompt for {language} is not implemented yet.")
+            return BasePrompt()
+
+
+class BasePrompt:
+    def __init__(self):
+        self.system_prompt = SYSTEM_PROMPT
+        self.user_prompt = USER_PROMPT
+        self.example_output = ""
 
 
 class PythonPrompt:
