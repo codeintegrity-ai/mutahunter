@@ -44,6 +44,14 @@ def parse_arguments():
         help="The path to the code coverage report file. Optional.",
     )
     main_parser.add_argument(
+        "--coverage-type",
+        type=str,
+        default="cobertura",
+        required=False,
+        choices=["cobertura", "jacoco"],
+        help="The type of code coverage report to parse. Default is 'cobertura'.",
+    )
+    main_parser.add_argument(
         "--test-file-path",
         type=str,
         required=True,

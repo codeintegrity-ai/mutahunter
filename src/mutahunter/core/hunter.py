@@ -94,8 +94,6 @@ class MutantHunter:
         Returns:
             bool: True if the file should be skipped, False otherwise.
         """
-        if not self.analyzer.file_lines_executed[filename]:
-            return True
         if (
             self.config["only_mutate_file_paths"]
             and filename not in self.config["only_mutate_file_paths"]
@@ -121,7 +119,6 @@ class MutantHunter:
         for filename in tqdm(all_covered_files):
             if self.should_skip_file(filename):
                 continue
-
             covered_function_blocks = self.analyzer.get_covered_function_blocks(
                 executed_lines=self.analyzer.file_lines_executed[filename],
                 filename=filename,

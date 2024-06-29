@@ -52,3 +52,17 @@ Example Output:
 +        return float(a) + float(b) # Mutation: Convert inputs to floats to simulate floating-point precision error.
 ```
 """
+
+JAVA_UDIFF = """
+Example Output:
+--- /Users/taikorind/Documents/personal/codeintegrity/mutahunter/example/calculator/simple_calculator.py
++++ /Users/taikorind/Documents/personal/codeintegrity/mutahunter/example/calculator/simple_calculator.py
+@@ ... @@
+    public double divide(double a, double b) {
+        if (b == 0) {
+            throw new IllegalArgumentException("Division by zero is not allowed.");
+        }
+-        return a / b;        
++        return a * b; // Mutation: Changed division to multiplication using AOR (Arithmetic Operator Replacement)
+    }
+"""

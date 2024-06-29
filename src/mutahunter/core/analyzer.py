@@ -1,6 +1,7 @@
 import shlex
 import subprocess
 import xml.etree.ElementTree as ET
+import re
 from typing import Any, Dict, List, Tuple
 
 from tree_sitter_languages import get_parser
@@ -17,7 +18,15 @@ class Analyzer:
         super().__init__()
         self.config = config
         self.tree_sitter_parser = get_parser(self.config["language"])
-        self.file_lines_executed = self.parse_coverage_report_cobertura()
+
+        if self.config["coverage_type"] == "cobertura":
+            self.file_lines_executed = self.parse_coverage_report_cobertura()
+        elif self.config["coverage_type"] == "jacoco":
+            self.file_lines_executed = self.parse_coverage_report_jacoco()
+        else:
+            raise Exception(
+                "Invalid coverage tool. Please specify either 'cobertura' or 'jacoco'."
+            )
 
     def parse_coverage_report_cobertura(self) -> Dict[str, List[int]]:
         """
@@ -37,7 +46,39 @@ class Analyzer:
                 hits = int(line.get("hits"))
                 if hits > 0:
                     executed_lines.append(line_number)
-            result[name_attr] = executed_lines
+            if executed_lines:
+                result[name_attr] = executed_lines
+        return result
+
+    def parse_coverage_report_jacoco(self) -> Dict[str, List[int]]:
+        """
+        Parses a JaCoCo XML code coverage report to extract covered line numbers for each file.
+
+        Returns:
+            Dict[str, List[int]]: A dictionary where keys are file paths and values are lists of covered line numbers.
+        """
+        tree = ET.parse(self.config["code_coverage_report_path"])
+        root = tree.getroot()
+        result = {}
+
+        for package in root.findall(".//package"):
+            package_name = package.get("name").replace("/", ".")
+            for sourcefile in package.findall(".//sourcefile"):
+                filename = sourcefile.get("name")
+                # Construct the full file path with the src/main/java directory
+                full_filename = (
+                    f"src/main/java/{package_name.replace('.', '/')}/{filename}"
+                )
+                executed_lines = []
+                for line in sourcefile.findall(".//line"):
+                    line_number = int(line.get("nr"))
+                    missed = int(line.get("mi"))
+                    covered = int(line.get("ci"))
+                    if covered > 0:
+                        executed_lines.append(line_number)
+                if executed_lines:
+                    result[full_filename] = executed_lines
+
         return result
 
     def dry_run(self) -> None:
@@ -148,7 +189,8 @@ class Analyzer:
             if (
                 node.type == "function_definition"
                 or node.type == "method_definition"
-                or node.type == "function_declaration"
+                or node.type == "function_declaration"  #
+                or node.type == "method_declaration"  # java
             ):
                 function_blocks.append(node)
             return False
