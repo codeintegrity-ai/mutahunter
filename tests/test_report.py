@@ -17,6 +17,7 @@ def mutants():
             status="KILLED",
             error_msg="",
             test_file_path="app_test.go",
+            diff="",
         ),
         Mutant(
             id="2",
@@ -25,6 +26,7 @@ def mutants():
             status="SURVIVED",
             error_msg="",
             test_file_path="app_test.go",
+            diff="",
         ),
         Mutant(
             id="3",
@@ -33,6 +35,7 @@ def mutants():
             status="KILLED",
             error_msg="",
             test_file_path="app_test.go",
+            diff="",
         ),
         Mutant(
             id="4",
@@ -41,6 +44,7 @@ def mutants():
             status="SURVIVED",
             error_msg="",
             test_file_path="app_test.go",
+            diff="",
         ),
     ]
 
@@ -127,6 +131,7 @@ def test_generate_survived_mutants(mutants):
                     "status": "SURVIVED",
                     "error_msg": "",
                     "test_file_path": "app_test.go",
+                    "diff": "",
                 },
                 {
                     "id": "4",
@@ -135,6 +140,7 @@ def test_generate_survived_mutants(mutants):
                     "status": "SURVIVED",
                     "error_msg": "",
                     "test_file_path": "app_test.go",
+                    "diff": "",
                 },
             ]
 
@@ -155,6 +161,7 @@ def test_generate_killed_mutants(mutants):
                     "status": "KILLED",
                     "error_msg": "",
                     "test_file_path": "app_test.go",
+                    "diff": "",
                 },
                 {
                     "id": "3",
@@ -163,5 +170,6 @@ def test_generate_killed_mutants(mutants):
                     "status": "KILLED",
                     "error_msg": "",
                     "test_file_path": "app_test.go",
+                    "diff": "",
                 },
             ]

@@ -94,18 +94,25 @@ class MutantHunter:
         Returns:
             bool: True if the file should be skipped, False otherwise.
         """
-        if (
-            self.config["only_mutate_file_paths"]
-            and filename not in self.config["only_mutate_file_paths"]
-        ):
-            return True
-        if filename in self.config["exclude_files"]:
-            return True
-        if any(
-            keyword in filename
-            for keyword in ["test/", "tests/", "test_", "_test", ".test"]
-        ):
-            return True
+        if self.config["only_mutate_file_paths"]:
+            # NOTE: Check if the file exists before proceeding.
+            for file_path in self.config["only_mutate_file_paths"]:
+                if not os.path.exists(file_path):
+                    logger.error(f"File {file_path} does not exist.")
+                    raise FileNotFoundError(f"File {file_path} does not exist.")
+            # NOTE: Only mutate the files specified in the config.
+            if filename in self.config["only_mutate_file_paths"]:
+                return False
+            else:
+                return True
+        else:
+            if filename in self.config["exclude_files"]:
+                return True
+            if any(
+                keyword in filename
+                for keyword in ["test/", "tests/", "test_", "_test", ".test"]
+            ):
+                return True
         return False
 
     def generate_mutations(self) -> Generator[Dict[str, Any], None, None]:
@@ -169,8 +176,10 @@ class MutantHunter:
                     end_byte=mutant_data["end_byte"],
                     mutant_code=mutant_data["mutant_code_snippet"],
                 )
+                unified_diff = "".join(mutant_data["hunk"])
                 mutant = Mutant(
                     id=mutant_id,
+                    diff=unified_diff,
                     source_path=mutant_data["source_path"],
                     mutant_path=mutant_path,
                     test_file_path=mutant_data["test_file_path"],

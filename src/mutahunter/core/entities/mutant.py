@@ -10,3 +10,4 @@ class Mutant:
     status: Union[None, str] = None
     error_msg: str = ""
     test_file_path: str = ""
+    diff: str = ""

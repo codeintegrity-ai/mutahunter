@@ -18,29 +18,7 @@ The function block in {{filename}}:
 
 # Task:
 1. Read the Abstract Syntax Tree of the source code to understand its context.
-2. Analyze the provided function block.
-3. Introduce a mutation using one of the following mutation operators:
-
-AOD - arithmetic operator deletion
-AOR - arithmetic operator replacement
-ASR - assignment operator replacement
-BCR - break continue replacement
-COD - conditional operator deletion
-COI - conditional operator insertion
-CRP - constant replacement
-DDL - decorator deletion
-EHD - exception handler deletion
-EXS - exception swallowing
-IHD - hiding variable deletion
-IOD - overriding method deletion
-IOP - overridden method calling position change
-LCR - logical connector replacement
-LOD - logical operator deletion
-LOR - logical operator replacement
-ROR - relational operator replacement
-SCD - super calling deletion
-SCI - super calling insert
-SIR - slice index remove
+2. Analyze the provided function block to identify a mutation that will test the robustness of the test suite.
 
 Your output must follow the format below:
 1. Return the full function block with the mutation included.

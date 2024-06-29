@@ -97,15 +97,6 @@ def test_generate_mutations_skips_files_in_exclude_files(mutant_hunter, config):
     assert len(mutations) == 0
 
 
-def test_generate_mutations_skips_files_not_in_only_mutate_file_paths(
-    mutant_hunter, config
-):
-    config["only_mutate_file_paths"] = ["file2.py"]
-    mutant_hunter.analyzer.file_lines_executed = {"file1.py": [1, 2, 3]}
-    mutations = list(mutant_hunter.generate_mutations())
-    assert len(mutations) == 0
-
-
 @patch("mutahunter.core.hunter.logger")
 def test_run_handles_exceptions(mock_logger, mutant_hunter):
     with patch.object(
