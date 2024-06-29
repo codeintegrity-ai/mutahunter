@@ -11,6 +11,7 @@ def config():
     return {
         "language": "python",
         "code_coverage_report_path": "path/to/coverage_report.xml",
+        "coverage_type": "cobertura",
         "test_command": "pytest",
     }
 
@@ -131,3 +132,53 @@ def test_traverse_ast_stop(analyzer):
 
     result = analyzer.traverse_ast(node_mock, callback)
     assert result is True
+
+
+def test_parse_coverage_report_jacoco(config):
+    xml_content = """<?xml version="1.0" ?>
+    <report>
+        <package name="com/example">
+            <sourcefile name="Example.java">
+                <line nr="1" mi="0" ci="1"/>
+                <line nr="2" mi="1" ci="0"/>
+                <line nr="3" mi="0" ci="1"/>
+            </sourcefile>
+        </package>
+    </report>"""
+
+    with patch("xml.etree.ElementTree.parse") as mock_parse:
+        mock_parse.return_value.getroot.return_value = ET.fromstring(xml_content)
+        config["coverage_type"] = "jacoco"
+        analyzer = Analyzer(config)
+        result = analyzer.parse_coverage_report_jacoco()
+        assert result == {"src/main/java/com/example/Example.java": [1, 3]}
+
+
+def test_analyzer_init_invalid_coverage_type():
+    config = {
+        "language": "python",
+        "code_coverage_report_path": "path/to/coverage_report.xml",
+        "coverage_type": "invalid",
+        "test_command": "pytest",
+    }
+    with pytest.raises(
+        Exception,
+        match="Invalid coverage tool. Please specify either 'cobertura' or 'jacoco'.",
+    ):
+        Analyzer(config)
+
+
+def test_analyzer_init_jacoco():
+    config = {
+        "language": "python",
+        "code_coverage_report_path": "path/to/coverage_report.xml",
+        "coverage_type": "jacoco",
+        "test_command": "pytest",
+    }
+    with patch.object(
+        Analyzer,
+        "parse_coverage_report_jacoco",
+        return_value={"test_file.py": [1, 3]},
+    ):
+        analyzer = Analyzer(config)
+        assert analyzer.file_lines_executed == {"test_file.py": [1, 3]}
