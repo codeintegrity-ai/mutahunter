@@ -1,6 +1,8 @@
 import argparse
 
 from mutahunter.core.hunter import MutantHunter
+from mutahunter.core.logger import logger
+import sys
 
 
 def parse_arguments():
@@ -81,6 +83,8 @@ def run():
     Main function to parse arguments and initiate the Mutahunter run process.
     """
     args = parse_arguments()
+    command_line_input = " ".join(sys.argv)
+    logger.info(f"Command line input: {command_line_input}")
     config = vars(args)  # Convert Namespace to dictionary
     runner = MutantHunter(config=config)
     runner.run()

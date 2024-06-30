@@ -101,10 +101,10 @@ class MutantHunter:
                     logger.error(f"File {file_path} does not exist.")
                     raise FileNotFoundError(f"File {file_path} does not exist.")
             # NOTE: Only mutate the files specified in the config.
-            if filename in self.config["only_mutate_file_paths"]:
-                return False
-            else:
-                return True
+            for file_path in self.config["only_mutate_file_paths"]:
+                if file_path == filename:
+                    return False
+            return True
         else:
             if filename in self.config["exclude_files"]:
                 return True
@@ -126,17 +126,23 @@ class MutantHunter:
         for filename in tqdm(all_covered_files):
             if self.should_skip_file(filename):
                 continue
-            covered_function_blocks = self.analyzer.get_covered_function_blocks(
-                executed_lines=self.analyzer.file_lines_executed[filename],
-                filename=filename,
+            covered_function_blocks, covered_function_block_executed_lines = (
+                self.analyzer.get_covered_function_blocks(
+                    executed_lines=self.analyzer.file_lines_executed[filename],
+                    filename=filename,
+                )
             )
+
             if not covered_function_blocks:
                 continue
 
             with open(filename, "rb") as f:
                 source_code = f.read()
 
-            for function_block in covered_function_blocks:
+            for function_block, executed_lines in zip(
+                covered_function_blocks,
+                covered_function_block_executed_lines,
+            ):
                 start_byte = function_block.start_byte
                 end_byte = function_block.end_byte
                 function_block_source_code = source_code[start_byte:end_byte].decode(
@@ -145,6 +151,7 @@ class MutantHunter:
 
                 mutant_generator = MutantGenerator(
                     config=self.config,
+                    executed_lines=executed_lines,
                     cov_files=list(all_covered_files),
                     test_file_path=self.config["test_file_path"],
                     filename=filename,

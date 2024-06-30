@@ -24,7 +24,7 @@ class Analyzer:
         elif self.config["coverage_type"] == "jacoco":
             self.file_lines_executed = self.parse_coverage_report_jacoco()
         else:
-            raise Exception(
+            raise ValueError(
                 "Invalid coverage tool. Please specify either 'cobertura' or 'jacoco'."
             )
 
@@ -109,19 +109,29 @@ class Analyzer:
             List[Any]: A list of covered function blocks.
         """
         covered_function_blocks = []
+        covered_function_block_executed_lines = []
         function_blocks = self.get_function_blocks(filename=filename)
         for function_block in function_blocks:
             start_point = function_block.start_point
             end_point = function_block.end_point
+
+            # start_byte = function_block.start_byte
+            # end_byte = function_block.end_byte
 
             start_line = start_point[0] + 1
             end_line = end_point[0] + 1
 
             if any(
                 line in executed_lines for line in range(start_line + 1, end_line + 1)
-            ):
+            ):  # start_line + 1 to exclude the function definition line
+                function_executed_lines = []
+                for line in range(start_line, end_line + 1):
+                    function_executed_lines.append(line - start_line + 1)
+
                 covered_function_blocks.append(function_block)
-        return covered_function_blocks
+                covered_function_block_executed_lines.append(function_executed_lines)
+
+        return covered_function_blocks, covered_function_block_executed_lines
 
     def get_function_blocks(self, filename: str) -> List[Any]:
         """

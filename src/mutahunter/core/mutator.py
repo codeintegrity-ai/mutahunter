@@ -10,13 +10,16 @@ class MutantGenerator:
     def __init__(
         self,
         config,
+        executed_lines,
         cov_files,
         test_file_path,
         filename,
         function_block_source_code,
         language,
     ):
+
         self.cov_files = cov_files
+        self.executed_lines = executed_lines
         self.test_file_path = test_file_path
 
         self.filename = filename
@@ -35,6 +38,7 @@ class MutantGenerator:
         system_template = Template(self.prompt.system_prompt).render()
         user_template = Template(self.prompt.user_prompt).render(
             language=self.language,
+            covered_lines=self.executed_lines,
             test_file_path=self.test_file_path,
             test_file_content=test_file_content,
             ast=repo_map_result,

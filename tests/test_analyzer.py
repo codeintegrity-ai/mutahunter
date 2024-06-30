@@ -93,7 +93,9 @@ def test_get_covered_function_blocks(analyzer):
     with patch.object(
         analyzer, "get_function_blocks", return_value=[function_block_mock]
     ):
-        covered_blocks = analyzer.get_covered_function_blocks(executed_lines, filename)
+        covered_blocks, covered_function_executed_lines = (
+            analyzer.get_covered_function_blocks(executed_lines, filename)
+        )
         assert len(covered_blocks) == 1
         assert covered_blocks[0] == function_block_mock
 
@@ -182,3 +184,24 @@ def test_analyzer_init_jacoco():
     ):
         analyzer = Analyzer(config)
         assert analyzer.file_lines_executed == {"test_file.py": [1, 3]}
+
+
+def test_analyzer_init_invalid_coverage_type():
+    config = {
+        "language": "python",
+        "code_coverage_report_path": "path/to/coverage_report.xml",
+        "coverage_type": "invalid",
+        "test_command": "pytest",
+    }
+    with pytest.raises(
+        ValueError,
+        match="Invalid coverage tool. Please specify either 'cobertura' or 'jacoco'.",
+    ):
+        Analyzer(config)
+
+
+def test_get_function_blocks_large_file(analyzer):
+    large_source_code = b"def func1():\n    pass\n" * 50
+    with patch("builtins.open", mock_open(read_data=large_source_code)):
+        function_blocks = analyzer.get_function_blocks("test_file.py")
+        assert len(function_blocks) == 50
