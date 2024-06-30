@@ -1,0 +1,11 @@
+[
+  {
+    "id": "2",
+    "source_path": "ui.js",
+    "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla/logs/_latest/mutants/2_ui.js",
+    "status": "SURVIVED",
+    "error_msg": "",
+    "test_file_path": "ui.test.js",
+    "diff": " clearAlert() {\n     const currentAlert = document.querySelector('.alert');\n-    if (currentAlert) {\n+    if (currentAlert && currentAlert.classList.contains('alert-danger')) {  // Mutation: Only remove alert if it has 'alert-danger' class.\n       currentAlert.remove();\n     }\n   }\n"
+  }
+]

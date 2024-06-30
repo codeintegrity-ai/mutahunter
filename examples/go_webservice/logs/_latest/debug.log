@@ -1,0 +1,9 @@
+2024-06-29 22:20:49,040 INFO: Command line input: /Users/taikorind/.pyenv/versions/mutahunter/bin/mutahunter run --test-command go test --test-file-path app_test.go --code-coverage-report-path coverage.xml --only-mutate-file-paths app.go
+2024-06-29 22:20:49,043 INFO: Starting Coverage Analysis...
+2024-06-29 22:20:55,568 INFO: 🦠 Generating Mutations... 🦠
+2024-06-29 22:20:56,424 INFO: 🎯 Generating Mutation Report... 🎯
+2024-06-29 22:20:56,426 INFO: 🦠 Total Mutants: 0 🦠
+2024-06-29 22:20:56,426 INFO: 🛡️ Survived Mutants: 0 🛡️
+2024-06-29 22:20:56,426 INFO: 🗡️ Killed Mutants: 0 🗡️
+2024-06-29 22:20:56,426 INFO: 🎯 Mutation Coverage: 0% 🎯
+2024-06-29 22:20:56,430 INFO: Mutation Testing Ended. Took 7s

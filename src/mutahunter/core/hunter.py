@@ -114,7 +114,6 @@ class MutantHunter:
                 keyword in filename
                 for keyword in ["test/", "tests/", "test_", "_test", ".test"]
             ):
-                print("file test keyword:", filename)
                 return True
         return False
 
@@ -127,8 +126,6 @@ class MutantHunter:
         """
         all_covered_files = self.analyzer.file_lines_executed.keys()
         for filename in tqdm(all_covered_files):
-            print("filename:", filename)
-            print("self.should_skip_file(filename):", self.should_skip_file(filename))
             if self.should_skip_file(filename):
                 continue
             covered_function_blocks, covered_function_block_executed_lines = (

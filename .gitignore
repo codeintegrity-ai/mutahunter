@@ -44,7 +44,6 @@ htmlcov/
 .coverage.*
 .cache
 nosetests.xml
-coverage.xml
 *.cover
 *.py,cover
 .hypothesis/
@@ -159,8 +158,4 @@ cython_debug/
 #.idea/
 .DS_Store
 
-logs
-vendor
-*.lcov
-dist*
-.aider*
+/logs

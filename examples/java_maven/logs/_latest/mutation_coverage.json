@@ -1,0 +1,7 @@
+{
+  "src/main/java/com/example/Calculator.java": {
+    "killed": 4,
+    "total": 4,
+    "mutation_score": "100.0%"
+  }
+}
