@@ -16,6 +16,8 @@ def config():
         "only_mutate_file_paths": [],
         "exclude_files": [],
         "test_file_path": "tests/test_file.py",
+        "model": "test_model",  # Adding the missing 'model' key
+        "api_base": "http://localhost:8000",  # Adding the missing 'api_base' key
     }
 
 

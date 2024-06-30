@@ -8,6 +8,14 @@ from mutahunter.core.report import MutantReport
 
 
 @pytest.fixture
+def config():
+    return {
+        "model": "test_model",
+        "api_base": "http://localhost:8000",
+    }
+
+
+@pytest.fixture
 def mutants():
     return [
         Mutant(
@@ -49,16 +57,16 @@ def mutants():
     ]
 
 
-def test_generate_mutation_coverage_by_source_file(mutants):
-    report = MutantReport()
+def test_generate_mutation_coverage_by_source_file(mutants, config):
+    report = MutantReport(config)
     mutation_coverage = report.generate_mutation_coverage_by_source_file(mutants)
     assert mutation_coverage == {
         "app.go": {"killed": 2, "total": 4, "mutation_score": "50.0%"}
     }
 
 
-def test_generate_mutant_report(mutants):
-    report = MutantReport()
+def test_generate_mutant_report(mutants, config):
+    report = MutantReport(config)
     with patch("mutahunter.core.logger.logger.info") as mock_logger_info:
         report_summary = report.generate_mutant_report(mutants)
         assert report_summary == {
@@ -73,8 +81,8 @@ def test_generate_mutant_report(mutants):
         mock_logger_info.assert_any_call("🎯 Mutation Coverage: 50.0% 🎯")
 
 
-def test_generate_report(mutants):
-    report = MutantReport()
+def test_generate_report(mutants, config):
+    report = MutantReport(config)
     with patch("builtins.open", mock_open()) as mocked_file:
         with patch("json.dump") as mock_json_dump:
             with (
@@ -96,7 +104,7 @@ def test_generate_report(mutants):
                 ) as mock_generate_mutant_report,
             ):
 
-                report.generate_report(mutants)
+                report.generate_report(mutants, "tests/test_file.py")
 
                 mock_generate_killed_mutants.assert_called_once_with(mutants)
                 mock_generate_survived_mutants.assert_called_once_with(mutants)
@@ -113,8 +121,8 @@ def test_generate_report(mutants):
                 )
 
 
-def test_generate_survived_mutants(mutants):
-    report = MutantReport()
+def test_generate_survived_mutants(mutants, config):
+    report = MutantReport(config)
     with patch("builtins.open", mock_open()) as mocked_file:
         with patch("json.dump") as mock_json_dump:
             report.generate_survived_mutants(mutants)
@@ -145,8 +153,8 @@ def test_generate_survived_mutants(mutants):
             ]
 
 
-def test_generate_killed_mutants(mutants):
-    report = MutantReport()
+def test_generate_killed_mutants(mutants, config):
+    report = MutantReport(config)
     with patch("builtins.open", mock_open()) as mocked_file:
         with patch("json.dump") as mock_json_dump:
             report.generate_killed_mutants(mutants)
