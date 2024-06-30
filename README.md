@@ -28,32 +28,35 @@
 
 If you don't know what mutation testing is, you must be living under a rock! 🪨
 
-Mutation testing is a way to verify how good your test cases are. It involves creating small changes, or "mutants," in the code and checking if the test cases can catch these changes. Line coverage only tells you how much of the code has been executed, not how well it's been tested. We all know line coverage is bullshit.
+Mutation testing is a way to verify how good your test cases are. It involves creating small changes, or "mutants," in the code and checking if the test cases can catch these changes. Line coverage only tells you how much of the code has been executed, not how well it's been tested. We all know line coverage is limited.
 
 Mutahunter leverages LLM models to inject context-aware faults into your codebase. As the first AI-based mutation testing tool, it surpasses traditional “dumb” AST-based methods. Mutahunter’s AI-driven approach provides full contextual understanding of the entire codebase, enabling it to identify and inject mutations that closely resemble real vulnerabilities. This ensures comprehensive and effective testing, significantly enhancing software security and quality.
 
 Mutation testing is used by big tech companies like [Google](https://research.google/pubs/state-of-mutation-testing-at-google/) to ensure the robustness of their test suites. With Mutahunter, we want other companies and developers to use this powerful tool to enhance their test suites and improve software quality.
 
+Examples:
 - [Go Example](/examples/go_webservice/)
 - [Java Example](/examples/java_maven/)
 - [JavaScript Example](/examples/js_vanilla/)
 - [Python FastAPI Example](/examples/python_fastapi/)
 
+Feel free to add more examples! ✨
+
 ## Why you should use Mutahunter
 
 1. **AI-Driven Mutation Testing:** Mutahunter leverages advanced LLM models to inject context-aware faults into your codebase, ensuring comprehensive mutation testing.
-2. **Language Agnostic:** Mutahunter supports various programming languages and can be extended to work with any language that provides a coverage report in Cobertura XML format.
+2. **Language Agnostic:** Mutahunter supports various programming languages and can be extended to work with any language that provides a coverage report in **Cobertura** XML format and **Jacoco** XML format.
 3. **Enhanced Mutation Coverage Report:** Mutahunter provides detailed mutation coverage reports, highlighting the effectiveness of your test suite and identifying potential weaknesses.
 
 ## Installation and Usage
 
 ### Requirements
 
-- LLM API Key (OpenAI, Anthropic, and others): Follow the instructions [here](https://litellm.vercel.app/docs/) to set up your environment.
-- Cobertura, Jacoco XML code coverage report for a specific test suite.
-- Python to install the Mutahunter package.
+- LLM API Key (OpenAI, Anthropic, self-hosted, etc): Follow the instructions [here](https://litellm.vercel.app/docs/) to set up your environment.
+- Cobertura, Jacoco XML code coverage report for a specific test file.
+- Python to install the Mutahunter package. **Versions 3.11+** are supported.
 
-#### Python Pip
+#### Python Pip 
 
 To install the Python Pip package directly via GitHub:
 
@@ -69,7 +72,7 @@ pip install git+https://github.com/codeintegrity-ai/mutahunter.git
 
 ### How to Execute Mutahunter
 
-To use MutaHunter, you first need a Cobertura, Jacoco XML line coverage report of a specific test file. MutaHunter currently supports mutating on a per-test-file basis.
+To use Mutahunter, you first need a Cobertura or Jacoco XML line coverage report of a specific test file. Currently, mutation testing works per test file level, not the entire test suite. Therefore, you need to get the coverage report per test file.
 
 Example command to run Mutahunter on a Python FastAPI [application](/examples/python_fastapi/):
 
