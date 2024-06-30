@@ -34,6 +34,7 @@ Mutahunter leverages LLM models to inject context-aware faults into your codebas
 Mutation testing is used by big tech companies like [Google](https://research.google/pubs/state-of-mutation-testing-at-google/) to ensure the robustness of their test suites. With Mutahunter, we want other companies and developers to use this powerful tool to enhance their test suites and improve software quality.
 
 Examples:
+
 - [Go Example](/examples/go_webservice/)
 - [Java Example](/examples/java_maven/)
 - [JavaScript Example](/examples/js_vanilla/)
@@ -51,11 +52,11 @@ Feel free to add more examples! ✨
 
 ### Requirements
 
-- LLM API Key (OpenAI, Anthropic, self-hosted, etc): Follow the instructions [here](https://litellm.vercel.app/docs/) to set up your environment.
+- LLM API Key (OpenAI, Anthropic, self-hosted, etc): Follow [liteLLM](https://litellm.vercel.app/docs/) instructions to set up your environment.
 - **Cobertura XML**, **Jacoco XML**, or **lcov** code coverage report for a specific test file.
-- Python to install the Mutahunter package. **Versions 3.11+** are supported.
+- Python to install the Mutahunter package. **Version 3.11+** are supported.
 
-#### Python Pip 
+#### Python Pip
 
 To install the Python Pip package directly via GitHub:
 
@@ -100,7 +101,7 @@ Options:
       Example: `--code-coverage-report-path /path/to/coverage.xml`
   
   --coverage-type <TYPE>
-      Description: Type of coverage report. Currently supports `cobertura` and `jacoco`.
+      Description: Type of coverage report. Currently supports `cobertura`, `jacoco`, `lcov`.
       Required: Yes
       Example: `--coverage-type cobertura`
 
@@ -127,7 +128,7 @@ Check the logs directory to view the report:
 - `mutants_killed.json` - Contains the list of mutants that were killed by the test suite.
 - `mutants_survived.json` - Contains the list of mutants that survived the test suite.
 - `mutation_coverage.json` - Contains the mutation coverage report.
-- `test_suite_report.md` - Contains a detailed report of identified weaknesses in the test suite and potential bugs not caught by the test suite.
+- `test_suite_report.md` **(experimental)** - Contains a detailed report of identified weaknesses in the test suite and potential bugs not caught by the test suite.
 
 An example survived mutant information would be like so:
 
