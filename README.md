@@ -124,18 +124,19 @@ Check the logs directory to view the report:
 - `mutants_survived.json` - Contains the list of mutants that survived the test suite.
 - `mutation_coverage.json` - Contains the mutation coverage report.
 
-An example mutant information would be like so:
+An example survived mutant information would be like so:
 
 ```json
 [
-    {
-    "id": "1",
-    "source_path": "app.py",
-    "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/1_app.py",
-    "status": "KILLED",
-    "error_msg": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.9, pytest-8.2.0, pluggy-1.5.0\nrootdir: /Users/taikorind/Documents/personal/codeintegrity/mutahunter\nconfigfile: pyproject.toml\nplugins: cov-5.0.0, anyio-4.4.0, timeout-2.3.1\ncollected 12 items\n\ntest_app.py F...........                                                 [100%]\n\n=================================== FAILURES ===================================\n__________________________________ test_root ___________________________________\n\n    def test_root():\n        \"\"\"\n        Test the root endpoint by sending a GET request to \"/\" and checking the response status code and JSON body.\n        \"\"\"\n        response = client.get(\"/\")\n        assert response.status_code == 200\n>       assert response.json() == {\"message\": \"Welcome to the FastAPI application!\"}\nE       assert {'message': \"...');</script>\"} == {'message': '...application!'}\nE         \nE         Differing items:\nE         {'message': \"Welcome to the FastAPI application! <script>alert('XSS');</script>\"} != {'message': 'Welcome to the FastAPI application!'}\nE         Use -v to get more diff\n\ntest_app.py:14: AssertionError\n=========================== short test summary info ============================\nFAILED test_app.py::test_root - assert {'message': \"...');</script>\"} == {'me...\n========================= 1 failed, 11 passed in 0.32s =========================\n",
-    "test_file_path": "test_app.py"
-  }
+  {
+    "id": "4",
+    "source_path": "src/mutahunter/core/analyzer.py",
+    "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/logs/_latest/mutants/4_analyzer.py",
+    "status": "SURVIVED",
+    "error_msg": "",
+    "test_file_path": "tests/test_analyzer.py",
+    "diff": "                for line in range(start_line, end_line + 1):\n-                    function_executed_lines.append(line - start_line + 1)\n+                    function_executed_lines.append(line - start_line) # Mutation: Change the calculation of executed lines to start from 0 instead of 1.\n"
+  },
 ]
 ```
 
