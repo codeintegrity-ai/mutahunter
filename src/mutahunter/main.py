@@ -50,7 +50,7 @@ def parse_arguments():
         type=str,
         default="cobertura",
         required=False,
-        choices=["cobertura", "jacoco"],
+        choices=["cobertura", "jacoco", "lcov"],
         help="The type of code coverage report to parse. Default is 'cobertura'.",
     )
     main_parser.add_argument(

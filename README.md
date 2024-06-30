@@ -7,7 +7,6 @@
 
   [![GitHub license](https://img.shields.io/badge/License-AGPL_3.0-blue.svg)](https://github.com/yourcompany/mutahunter/blob/main/LICENSE)
   [![Twitter](https://img.shields.io/twitter/follow/CodeIntegrity)](https://twitter.com/CodeIntegrity)
-  [![Discord](https://badgen.net/badge/icon/discord?icon=discord&label&color=purple)](https://discord.gg/K96jUJ3g)
   [![Unit Tests](https://github.com/codeintegrity-ai/mutahunter/actions/workflows/test.yaml/badge.svg)](https://github.com/codeintegrity-ai/mutahunter/actions/workflows/test.yaml)
   <a href="https://github.com/codeintegrity-ai/mutahunter/commits/main">
   <img alt="GitHub" src="https://img.shields.io/github/last-commit/codeintegrity-ai/mutahunter/main?style=for-the-badge" height="20">
@@ -45,7 +44,7 @@ Feel free to add more examples! ✨
 ## Why you should use Mutahunter
 
 1. **AI-Driven Mutation Testing:** Mutahunter leverages advanced LLM models to inject context-aware faults into your codebase, ensuring comprehensive mutation testing.
-2. **Language Agnostic:** Mutahunter supports various programming languages and can be extended to work with any language that provides a coverage report in **Cobertura** XML format and **Jacoco** XML format.
+2. **Language Agnostic:** Mutahunter supports various programming languages and can be extended to work with any language that provides a coverage report in **Cobertura** XML format, **Jacoco** XML format, and **lcov** format.
 3. **Enhanced Mutation Coverage Report:** Mutahunter provides detailed mutation coverage reports, highlighting the effectiveness of your test suite and identifying potential weaknesses.
 
 ## Installation and Usage
@@ -53,7 +52,7 @@ Feel free to add more examples! ✨
 ### Requirements
 
 - LLM API Key (OpenAI, Anthropic, self-hosted, etc): Follow the instructions [here](https://litellm.vercel.app/docs/) to set up your environment.
-- Cobertura, Jacoco XML code coverage report for a specific test file.
+- **Cobertura XML**, **Jacoco XML**, or **lcov** code coverage report for a specific test file.
 - Python to install the Mutahunter package. **Versions 3.11+** are supported.
 
 #### Python Pip 
@@ -72,7 +71,7 @@ pip install git+https://github.com/codeintegrity-ai/mutahunter.git
 
 ### How to Execute Mutahunter
 
-To use Mutahunter, you first need a Cobertura or Jacoco XML line coverage report of a specific test file. Currently, mutation testing works per test file level, not the entire test suite. Therefore, you need to get the coverage report per test file.
+To use Mutahunter, you first need a **Cobertura XML**, **Jacoco XML**, or **lcov** code coverage report of a specific test file. Currently, mutation testing works per test file level, not the entire test suite. Therefore, you need to get the coverage report per test file.
 
 Example command to run Mutahunter on a Python FastAPI [application](/examples/python_fastapi/):
 
@@ -165,21 +164,17 @@ Example report:
 
 ## Roadmap
 
-### Automatic Mutation Testing
+### Mutation Testing Capabilities
 
 - [x] **Fault Injection:** Utilize advanced LLM models to inject context-aware faults into the codebase, ensuring comprehensive mutation testing.
 - [x] **Language Support:** Expand support to include various programming languages.
-
-### Enhanced Mutation Coverage
-
 - [x] **Support for Other Coverage Report Formats:** Add compatibility for various coverage report formats.
+
+### Continuous Integration and Deployment
+
+- [ ] **CI/CD Integration:** Develop connectors for popular CI/CD platforms like GitHub Actions.
 - [ ] **PR Changeset Focus:** Generate mutations specifically targeting pull request changesets or modified code based on commit history.
-
-### Usability Improvements
-
-- [ ] **CI/CD Integration:** Develop connectors for popular CI/CD platforms like GitHub Actions, Jenkins, CircleCI, and Travis CI.
-- [ ] **Dashboard:** Create a user-friendly dashboard for visualizing test results and coverage metrics.
-- [ ] **Data Integration:** Integrate with databases, APIs, OpenTelemetry, and other data sources to extract relevant information for mutation testing.
+- [ ] **Automatic PR Bot:** Create a bot that automatically identifies bugs from the survived mutants list and provides fix suggestions.
 
 ---
 

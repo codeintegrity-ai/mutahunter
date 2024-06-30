@@ -23,10 +23,38 @@ class Analyzer:
             self.file_lines_executed = self.parse_coverage_report_cobertura()
         elif self.config["coverage_type"] == "jacoco":
             self.file_lines_executed = self.parse_coverage_report_jacoco()
+        elif self.config["coverage_type"] == "lcov":
+            self.file_lines_executed = self.parse_coverage_report_lcov()
         else:
             raise ValueError(
                 "Invalid coverage tool. Please specify either 'cobertura' or 'jacoco'."
             )
+
+    def parse_coverage_report_lcov(self) -> Dict[str, List[int]]:
+        """
+        Parses an LCOV code coverage report to extract covered line numbers for each file.
+
+        Returns:
+            Dict[str, List[int]]: A dictionary where keys are filenames and values are lists of covered line numbers.
+        """
+        result = {}
+        current_file = None
+
+        with open(self.config["code_coverage_report_path"], "r") as file:
+            for line in file:
+                if line.startswith("SF:"):
+                    current_file = line.strip().split(":", 1)[1]
+                    result[current_file] = []
+                elif line.startswith("DA:") and current_file:
+                    parts = line.strip().split(":")[1].split(",")
+                    line_number = int(parts[0])
+                    hits = int(parts[1])
+                    if hits > 0:
+                        result[current_file].append(line_number)
+                elif line.startswith("end_of_record"):
+                    current_file = None
+
+        return result
 
     def parse_coverage_report_cobertura(self) -> Dict[str, List[int]]:
         """
