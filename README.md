@@ -34,7 +34,10 @@ Mutahunter leverages LLM models to inject context-aware faults into your codebas
 
 Mutation testing is used by big tech companies like [Google](https://research.google/pubs/state-of-mutation-testing-at-google/) to ensure the robustness of their test suites. With Mutahunter, we want other companies and developers to use this powerful tool to enhance their test suites and improve software quality.
 
-We added examples for JavaScript, Python, and Go (see [/examples](/examples)). It can theoretically work with any programming language that provides a coverage report in Cobertura XML format (more supported soon) and has a language grammar available in [TreeSitter](https://github.com/tree-sitter/tree-sitter).
+- [Go Example](/examples/go_webservice/)
+- [Java Example](/examples/java_maven/)
+- [JavaScript Example](/examples/js_vanilla/)
+- [Python FastAPI Example](/examples/python_fastapi/)
 
 ## Why you should use Mutahunter
 
@@ -67,11 +70,6 @@ pip install git+https://github.com/codeintegrity-ai/mutahunter.git
 ### How to Execute Mutahunter
 
 To use MutaHunter, you first need a Cobertura, Jacoco XML line coverage report of a specific test file. MutaHunter currently supports mutating on a per-test-file basis.
-
-- [Go Example](/examples/go_webservice/): A simple Go application with a test suite.
-- [Java Example](/examples/java_maven/): A simple Java Spring Boot application with a test suite.
-- [JavaScript Example](/examples/js_vanilla/): A simple JavaScript Express application with a test suite.
-- [Python FastAPI Example](/examples/python_fastapi/): A simple Python FastAPI application with a test suite.
 
 Example command to run Mutahunter on a Python FastAPI [application](/examples/python_fastapi/):
 
