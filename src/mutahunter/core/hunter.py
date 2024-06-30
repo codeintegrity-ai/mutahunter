@@ -30,7 +30,7 @@ class MutantHunter:
         self.config: Dict[str, Any] = config
         self.config["language"] = self.determine_language(config["test_file_path"])
         self.mutants: List[Mutant] = []
-        self.mutant_report = MutantReport()
+        self.mutant_report = MutantReport(config=self.config)
         self.analyzer = Analyzer(self.config)
         self.test_runner = TestRunner()
 
@@ -77,7 +77,9 @@ class MutantHunter:
             logger.info("🦠 Generating Mutations... 🦠")
             self.run_mutation_testing()
             logger.info("🎯 Generating Mutation Report... 🎯")
-            self.mutant_report.generate_report(self.mutants)
+            self.mutant_report.generate_report(
+                self.mutants, self.config["test_file_path"]
+            )
             logger.info(f"Mutation Testing Ended. Took {round(time.time() - start)}s")
         except Exception as e:
             logger.error(
@@ -112,6 +114,7 @@ class MutantHunter:
                 keyword in filename
                 for keyword in ["test/", "tests/", "test_", "_test", ".test"]
             ):
+                print("file test keyword:", filename)
                 return True
         return False
 
@@ -124,6 +127,8 @@ class MutantHunter:
         """
         all_covered_files = self.analyzer.file_lines_executed.keys()
         for filename in tqdm(all_covered_files):
+            print("filename:", filename)
+            print("self.should_skip_file(filename):", self.should_skip_file(filename))
             if self.should_skip_file(filename):
                 continue
             covered_function_blocks, covered_function_block_executed_lines = (

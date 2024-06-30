@@ -14,11 +14,9 @@
   </a>
 </div>
 
-
 <div align="center">
-<video src="https://github.com/codeintegrity-ai/mutahunter/assets/37044660/3aca86e0-593e-44a0-8d9e-d22ee808ca75"></video>
+  <video src="https://github.com/codeintegrity-ai/mutahunter/assets/37044660/3aca86e0-593e-44a0-8d9e-d22ee808ca75"></video>
 </div>
-
 
 ## Table of Contents
 
@@ -36,16 +34,20 @@ Mutahunter leverages LLM models to inject context-aware faults into your codebas
 
 Mutation testing is used by big tech companies like [Google](https://research.google/pubs/state-of-mutation-testing-at-google/) to ensure the robustness of their test suites. With Mutahunter, we want other companies and developers to use this powerful tool to enhance their test suites and improve software quality.
 
-<!-- For more detailed technical information, engineers can visit: [Mutahunter Documentation](https://docs.mutahunter.ai) (WIP) -->
-
 We added examples for JavaScript, Python, and Go (see [/examples](/examples)). It can theoretically work with any programming language that provides a coverage report in Cobertura XML format (more supported soon) and has a language grammar available in [TreeSitter](https://github.com/tree-sitter/tree-sitter).
+
+## Why you should use Mutahunter
+
+1. **AI-Driven Mutation Testing:** Mutahunter leverages advanced LLM models to inject context-aware faults into your codebase, ensuring comprehensive mutation testing.
+2. **Language Agnostic:** Mutahunter supports various programming languages and can be extended to work with any language that provides a coverage report in Cobertura XML format.
+3. **Enhanced Mutation Coverage Report:** Mutahunter provides detailed mutation coverage reports, highlighting the effectiveness of your test suite and identifying potential weaknesses.
 
 ## Installation and Usage
 
 ### Requirements
 
 - LLM API Key (OpenAI, Anthropic, and others): Follow the instructions [here](https://litellm.vercel.app/docs/) to set up your environment.
-- Cobertura XML code coverage report for a specific test suite.
+- Cobertura, Jacoco XML code coverage report for a specific test suite.
 - Python to install the Mutahunter package.
 
 #### Python Pip
@@ -64,15 +66,12 @@ pip install git+https://github.com/codeintegrity-ai/mutahunter.git
 
 ### How to Execute Mutahunter
 
-To use MutaHunter, you first need a Cobertura XML line coverage report of a specific test file. MutaHunter currently supports mutating on a per-test-file basis.
+To use MutaHunter, you first need a Cobertura, Jacoco XML line coverage report of a specific test file. MutaHunter currently supports mutating on a per-test-file basis.
 
-For more detailed examples and to understand how Mutahunter works in practice, please visit the [/examples](/examples/python_fastapi/) directory in our GitHub repository.
-
-To see the available options for the Mutahunter run command, use the following command:
-
-```bash
-mutahunter run -h
-```
+- [Go Example](/examples/go_webservice/): A simple Go application with a test suite.
+- [Java Example](/examples/java_maven/): A simple Java Spring Boot application with a test suite.
+- [JavaScript Example](/examples/js_vanilla/): A simple JavaScript Express application with a test suite.
+- [Python FastAPI Example](/examples/python_fastapi/): A simple Python FastAPI application with a test suite.
 
 Example command to run Mutahunter on a Python FastAPI [application](/examples/python_fastapi/):
 
@@ -99,6 +98,11 @@ Options:
       Description: Path to the code coverage report of the test suite.
       Required: Yes
       Example: `--code-coverage-report-path /path/to/coverage.xml`
+  
+  --coverage-type <TYPE>
+      Description: Type of coverage report. Currently supports `cobertura` and `jacoco`.
+      Required: Yes
+      Example: `--coverage-type cobertura`
 
   --test-file-path <PATH>
       Description: Path to the test file to run the tests on.
@@ -123,6 +127,7 @@ Check the logs directory to view the report:
 - `mutants_killed.json` - Contains the list of mutants that were killed by the test suite.
 - `mutants_survived.json` - Contains the list of mutants that survived the test suite.
 - `mutation_coverage.json` - Contains the mutation coverage report.
+- `test_suite_report.md` - Contains a detailed report of identified weaknesses in the test suite and potential bugs not caught by the test suite.
 
 An example survived mutant information would be like so:
 
@@ -135,9 +140,26 @@ An example survived mutant information would be like so:
     "status": "SURVIVED",
     "error_msg": "",
     "test_file_path": "tests/test_analyzer.py",
-    "diff": "                for line in range(start_line, end_line + 1):\n-                    function_executed_lines.append(line - start_line + 1)\n+                    function_executed_lines.append(line - start_line) # Mutation: Change the calculation of executed lines to start from 0 instead of 1.\n"
+    "diff": "for line in range(start_line, end_line + 1):
+      - function_executed_lines.append(line - start_line + 1)
+      + function_executed_lines.append(line - start_line) # Mutation: Change the calculation of executed lines to start from 0 instead of 1.\n"
   },
 ]
+```
+
+Detailed report on identified weaknesses in the test suite and potential bugs not caught by the test suite:
+
+Example report:
+
+```markdown
+### Identified Weaknesses in the Test Suite
+1. **Callback Handling in `callback`**:
+   - **Weakness**: The test suite does not test the `callback` function for different node types, including the newly added `class_definition`.
+   - **Improvement**: Add tests to verify that the `callback` function correctly identifies and handles `class_definition` nodes, in addition to other node types.
+
+### Potential Bugs Not Caught by the Test Suite
+1. **Callback Handling**:
+   - **Bug**: The `callback` function might incorrectly handle or miss `class_definition` nodes, leading to incomplete or incorrect function block identification.
 ```
 
 ## Roadmap
@@ -149,7 +171,7 @@ An example survived mutant information would be like so:
 
 ### Enhanced Mutation Coverage
 
-- [ ] **Support for Other Coverage Report Formats:** Add compatibility for various coverage report formats.
+- [x] **Support for Other Coverage Report Formats:** Add compatibility for various coverage report formats.
 - [ ] **PR Changeset Focus:** Generate mutations specifically targeting pull request changesets or modified code based on commit history.
 
 ### Usability Improvements

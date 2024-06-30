@@ -1,16 +1,18 @@
 import json
 from dataclasses import asdict
 from typing import Any, Dict, List
-
+from jinja2 import Template
 from mutahunter.core.entities.mutant import Mutant
 from mutahunter.core.logger import logger
+from mutahunter.core.router import LLMRouter
 
 
 class MutantReport:
-    def __init__(self) -> None:
-        pass
+    def __init__(self, config) -> None:
+        self.config = config
+        self.router = LLMRouter(model=config["model"], api_base=config["api_base"])
 
-    def generate_report(self, mutants: List[Mutant]) -> None:
+    def generate_report(self, mutants: List[Mutant], test_suite_path) -> None:
         """
         Generates a comprehensive mutation testing report.
 
@@ -26,6 +28,7 @@ class MutantReport:
             "logs/_latest/mutation_coverage.json", mutation_coverage_by_test_file
         )
         self.generate_mutant_report(mutants)
+        self.generate_test_suite_report(mutants, test_suite_path)
 
     def generate_killed_mutants(self, mutants: List[Mutant]) -> None:
         """
@@ -128,3 +131,53 @@ class MutantReport:
         """
         with open(file_path, "w") as f:
             json.dump(data, f, indent=2)
+
+    def generate_test_suite_report(
+        self, mutants: List[Mutant], test_suite_path: str
+    ) -> None:
+        """
+        Generates a report of the test suite.
+
+        Args:
+            test_suite_report (Dict[str, Any]): Test suite report data.
+        """
+
+        survived_mutants = [
+            asdict(mutant) for mutant in mutants if mutant.status == "SURVIVED"
+        ]
+        with open(test_suite_path, "r") as f:
+            test_suite = f.read()
+        system_template = Template(SYSTEM_PROMPT).render()
+        user_template = Template(USER_PROMPT).render(
+            report=survived_mutants,
+            test_suite=test_suite,
+        )
+        prompt = {
+            "system": system_template,
+            "user": user_template,
+        }
+        model_response, _, _ = self.router.generate_response(prompt)
+
+        with open("logs/_latest/test_suite_report.md", "w") as f:
+            f.write(model_response)
+
+
+SYSTEM_PROMPT = """
+You are a security expert analyzing the codebase to identify critical weaknesses in the test suite based on survived mutants from mutation testing. Focus on identifying weaknesses without generating specific test cases. Be concise and only include confirmed weaknesses.
+"""
+
+USER_PROMPT = """
+Analyze the following survived mutant report to identify weaknesses in the test suite. Provide a concise list of specific weaknesses for each mutant.
+```json
+{{report}}
+```
+
+Test Suite: 
+```
+{{test_suite}}
+```
+
+Output format:
+1. Clear, concise bullet points describing the weaknesses in the test suite and how they can be improved.
+2. Potential bugs that may not be caught by the test suite, if any.
+"""
