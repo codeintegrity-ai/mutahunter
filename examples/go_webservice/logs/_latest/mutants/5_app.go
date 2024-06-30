@@ -59,7 +59,7 @@ func multiplyHandler(c *gin.Context) {
 func divideHandler(c *gin.Context) {
 	num1, _ := strconv.Atoi(c.Param("num1"))
 	num2, _ := strconv.Atoi(c.Param("num2"))
-	if num2 != 0 { // Mutation: Replaced '==' with '!=' to alter the zero division check.
+	if num2 == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot divide by zero"})
 		return
 	}
@@ -75,7 +75,7 @@ func squareHandler(c *gin.Context) {
 
 func sqrtHandler(c *gin.Context) {
 	number, _ := strconv.ParseFloat(c.Param("number"), 64)
-	if number < 0 {
+	if number <= 0 { // Mutation: Changed condition to include zero as an invalid input.
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot take square root of a negative number"})
 		return
 	}

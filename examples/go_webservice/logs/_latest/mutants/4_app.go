@@ -52,14 +52,14 @@ func subtractHandler(c *gin.Context) {
 func multiplyHandler(c *gin.Context) {
 	num1, _ := strconv.Atoi(c.Param("num1"))
 	num2, _ := strconv.Atoi(c.Param("num2"))
-	result := num1 + num2 // Mutation: AOR - Replaced multiplication with addition
+	result := num1 * num2
 	c.JSON(http.StatusOK, gin.H{"result": result})
 }
 
 func divideHandler(c *gin.Context) {
 	num1, _ := strconv.Atoi(c.Param("num1"))
 	num2, _ := strconv.Atoi(c.Param("num2"))
-	if num2 == 0 {
+	if num2 == 1 { // Mutation: Changed condition to check for division by 1 instead of 0
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot divide by zero"})
 		return
 	}

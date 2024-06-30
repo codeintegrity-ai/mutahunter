@@ -38,7 +38,7 @@ func currentDateHandler(c *gin.Context) {
 func addHandler(c *gin.Context) {
 	num1, _ := strconv.Atoi(c.Param("num1"))
 	num2, _ := strconv.Atoi(c.Param("num2"))
-	result := num1 - num2 // Mutation: AOR - Replaced addition with subtraction
+	result := num1 - num2  // Mutation: Changed addition to subtraction to test if the test suite catches this logical error.
 	c.JSON(http.StatusOK, gin.H{"result": result})
 }
 

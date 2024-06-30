@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "id": "5",
+    "source_path": "app.go",
+    "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/5_app.go",
+    "status": "SURVIVED",
+    "error_msg": "",
+    "test_file_path": "app_test.go",
+    "diff": "-\tif number < 0 {\n+\tif number <= 0 { // Mutation: Changed condition to include zero as an invalid input.\n"
+  }
+]

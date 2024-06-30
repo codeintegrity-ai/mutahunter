@@ -18,8 +18,7 @@ func SetupRouter() *gin.Engine {
 	router.GET("/subtract/:num1/:num2", subtractHandler)
 	router.GET("/multiply/:num1/:num2", multiplyHandler)
 	router.GET("/divide/:num1/:num2", divideHandler)
-	// Mutation: Removed the square endpoint to test if the test suite catches missing routes.
-	// router.GET("/square/:number", squareHandler)
+	router.GET("/square/:number", sqrtHandler) // Mutation: Changed handler for square endpoint to sqrtHandler
 	router.GET("/sqrt/:number", sqrtHandler)
 	router.GET("/is-palindrome/:text", isPalindromeHandler)
 	router.GET("/days-until-new-year", daysUntilNewYearHandler)

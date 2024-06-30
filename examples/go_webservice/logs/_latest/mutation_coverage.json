@@ -1,1 +1,7 @@
-{}
+{
+  "app.go": {
+    "killed": 4,
+    "total": 5,
+    "mutation_score": "80.0%"
+  }
+}

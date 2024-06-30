@@ -28,8 +28,8 @@ func SetupRouter() *gin.Engine {
 }
 
 func welcomeHandler(c *gin.Context) {
-	// Mutation: Changed the welcome message to simulate a content change.
-	c.JSON(http.StatusOK, gin.H{"message": "Welcome to the Mutated Go Gin application!"})
+	// Mutation: Changed the response message to test if the test suite catches this change.
+	c.JSON(http.StatusOK, gin.H{"message": "Welcome to the Gin application!"})
 }
 
 
