@@ -42,11 +42,14 @@ Examples:
 
 Feel free to add more examples! ✨
 
-## Why you should use Mutahunter
+## Why you should use Mutahunter?
 
-1. **AI-Driven Mutation Testing:** Mutahunter leverages advanced LLM models to inject context-aware faults into your codebase, ensuring comprehensive mutation testing.
-2. **Language Agnostic:** Mutahunter supports various programming languages and can be extended to work with any language that provides a coverage report in **Cobertura** XML format, **Jacoco** XML format, and **lcov** format.
-3. **Enhanced Mutation Coverage Report:** Mutahunter provides detailed mutation coverage reports, highlighting the effectiveness of your test suite and identifying potential weaknesses.
+1. **AI-Driven Mutation Testing:** Mutahunter leverages advanced LLM models to inject context-aware faults into your codebase rather than blindly mutating the code. 🧠 This allows the mutants to closely resemble real vulnerabilities.
+2. **Language Agnostic:** Mutahunter supports various programming languages and can be extended to work with any language that provides a coverage report in **Cobertura** XML format, **Jacoco** XML format, and **lcov** format. 🌐
+3. **Enhanced Mutation Coverage Report:** Mutahunter provides detailed mutation coverage reports, highlighting the effectiveness of your test suite and identifying potential weaknesses. 📊
+
+**Afraid of sending code to OpenAI or Anthropic? No problem, we support self-hosted versions as well.** 🔒
+
 
 ## Installation and Usage
 
