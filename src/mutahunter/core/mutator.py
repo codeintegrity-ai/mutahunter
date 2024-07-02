@@ -4,6 +4,7 @@ from mutahunter.core.pilot.aider.repomap import RepoMap
 from mutahunter.core.pilot.aider.udiff_coder import UnifiedDiffCoder
 from mutahunter.core.pilot.prompts.factory import PromptFactory
 from mutahunter.core.router import LLMRouter
+from mutahunter.core.logger import logger
 
 
 class MutantGenerator:
@@ -60,6 +61,8 @@ class MutantGenerator:
             chat_files=[],
             other_files=self.cov_files,
         )
+        if not repo_map_result:
+            logger.error("No repoitory map found.")
         ai_reply = self.generate_mutant(
             repo_map_result=repo_map_result,
         )

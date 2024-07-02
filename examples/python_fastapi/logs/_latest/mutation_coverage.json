@@ -1,8 +1,0 @@
-{
-  "app.py": {
-    "killed": 6,
-    "survived": 5,
-    "total": 11,
-    "mutation_score": "54.55%"
-  }
-}
