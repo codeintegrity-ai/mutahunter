@@ -1,5 +1,5 @@
 USER_PROMPT = """
-You will be provided with the test file as well as the Abstract Syntax Tree (AST) of the source code for contextual understanding. This AST will help you understand the entire source code. Make sure to read the AST before proceeding with the mutation:
+You will be provided with the {{language}} test file as well as the Abstract Syntax Tree (AST) of the source code for contextual understanding. This AST will help you understand the entire source code. Make sure to read the AST before proceeding with the mutation:
 
 The test file path is {{test_file_path}}.
 The test file content is:
@@ -26,7 +26,7 @@ Covered executed lines: {{covered_lines}}
 
 Your output must follow the format below:
 1.	Return the full function block with the mutation included.
-2.	Describe the mutation using the comment # Mutation: on the specific line where the mutation occurs.
+2.	Describe the mutation using a comment in {{language}} syntax on the specific line where the mutation occurs.
 3.	Unified diff format.
 4.	Unified diff must contain the file path in the first 2 lines.
 5.	Do not include specific line numbers. Replace line number with so: @@ ... @@
