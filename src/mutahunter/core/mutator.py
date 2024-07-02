@@ -50,7 +50,9 @@ class MutantGenerator:
             "system": system_template,
             "user": user_template,
         }
-        model_response, _, _ = self.router.generate_response(prompt)
+        model_response, _, _ = self.router.generate_response(
+            prompt=prompt, streaming=True
+        )
         return model_response
 
     def generate(self):

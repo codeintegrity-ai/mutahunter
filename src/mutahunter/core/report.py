@@ -1,7 +1,10 @@
 import json
+import os
 from dataclasses import asdict
 from typing import Any, Dict, List
+
 from jinja2 import Template
+
 from mutahunter.core.entities.mutant import Mutant
 from mutahunter.core.logger import logger
 from mutahunter.core.router import LLMRouter
@@ -12,7 +15,7 @@ class MutantReport:
         self.config = config
         self.router = LLMRouter(model=config["model"], api_base=config["api_base"])
 
-    def generate_report(self, mutants: List[Mutant], test_suite_path) -> None:
+    def generate_report(self, mutants: List[Mutant]) -> None:
         """
         Generates a comprehensive mutation testing report.
 
@@ -28,7 +31,6 @@ class MutantReport:
             "logs/_latest/mutation_coverage.json", mutation_coverage_by_test_file
         )
         self.generate_mutant_report(mutants)
-        self.generate_test_suite_report(mutants, test_suite_path)
 
     def generate_killed_mutants(self, mutants: List[Mutant]) -> None:
         """
@@ -40,7 +42,8 @@ class MutantReport:
         killed_mutants = [
             asdict(mutant) for mutant in mutants if mutant.status == "KILLED"
         ]
-        self.save_report("logs/_latest/mutants_killed.json", killed_mutants)
+        output = {self.config["test_file_path"]: killed_mutants}
+        self.save_report("logs/_latest/mutants_killed.json", output)
 
     def generate_survived_mutants(self, mutants: List[Mutant]) -> None:
         """
@@ -52,7 +55,10 @@ class MutantReport:
         survived_mutants = [
             asdict(mutant) for mutant in mutants if mutant.status == "SURVIVED"
         ]
-        self.save_report("logs/_latest/mutants_survived.json", survived_mutants)
+
+        # add test file as key to group mutants by test file
+        output = {self.config["test_file_path"]: survived_mutants}
+        self.save_report("logs/_latest/mutants_survived.json", output)
 
     def generate_mutation_coverage_by_source_file(
         self, mutants: List[Mutant]
@@ -72,10 +78,13 @@ class MutantReport:
             if source_path not in mutation_coverage_by_source_file:
                 mutation_coverage_by_source_file[source_path] = {
                     "killed": 0,
+                    "survived": 0,
                     "total": 0,
                 }
             if mutant.status == "KILLED":
                 mutation_coverage_by_source_file[source_path]["killed"] += 1
+            if mutant.status == "SURVIVED":
+                mutation_coverage_by_source_file[source_path]["survived"] += 1
             mutation_coverage_by_source_file[source_path]["total"] += 1
 
         for source_path, data in mutation_coverage_by_source_file.items():
@@ -132,9 +141,7 @@ class MutantReport:
         with open(file_path, "w") as f:
             json.dump(data, f, indent=2)
 
-    def generate_test_suite_report(
-        self, mutants: List[Mutant], test_suite_path: str
-    ) -> None:
+    def generate_test_suite_report(self, mutants: List[Mutant]) -> None:
         """
         Generates a report of the test suite.
 
@@ -145,8 +152,9 @@ class MutantReport:
         survived_mutants = [
             asdict(mutant) for mutant in mutants if mutant.status == "SURVIVED"
         ]
-        with open(test_suite_path, "r") as f:
+        with open(self.config["test_file_path"], "r") as f:
             test_suite = f.read()
+
         system_template = Template(SYSTEM_PROMPT).render()
         user_template = Template(USER_PROMPT).render(
             report=survived_mutants,
@@ -156,7 +164,9 @@ class MutantReport:
             "system": system_template,
             "user": user_template,
         }
-        model_response, _, _ = self.router.generate_response(prompt)
+        model_response, _, _ = self.router.generate_response(
+            prompt=prompt, streaming=False
+        )
 
         with open("logs/_latest/test_suite_report.md", "w") as f:
             f.write(model_response)

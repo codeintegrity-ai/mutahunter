@@ -1,8 +1,8 @@
 import argparse
+import sys
 
 from mutahunter.core.hunter import MutantHunter
 from mutahunter.core.logger import logger
-import sys
 
 
 def parse_arguments():
@@ -74,6 +74,12 @@ def parse_arguments():
         default=[],
         required=False,
         help="A list of specific files to mutate. Optional.",
+    )
+    main_parser.add_argument(
+        "--generate-report",
+        default=False,
+        action="store_true",
+        help="Generate a test suite report after running the mutation testing.",
     )
     return parser.parse_args()
 

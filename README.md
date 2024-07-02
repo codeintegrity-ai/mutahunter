@@ -122,6 +122,11 @@ Options:
       Description: Specifies which files to mutate. This is useful when you want to focus on specific files and it makes the mutations faster!
       Required: No
       Example: `--only-mutate-file-paths file1.py file2.py`
+      
+  --generate-report
+      Description: Generate a detailed report on identified weaknesses in the test suite and potential bugs not caught by the test suite.
+      Required: No
+      Example: `--generate-report`
 ```
 
 #### Mutation Testing Report

@@ -12,6 +12,7 @@ def config():
     return {
         "model": "test_model",
         "api_base": "http://localhost:8000",
+        "test_file_path": "app_test.go",
     }
 
 
@@ -61,7 +62,7 @@ def test_generate_mutation_coverage_by_source_file(mutants, config):
     report = MutantReport(config)
     mutation_coverage = report.generate_mutation_coverage_by_source_file(mutants)
     assert mutation_coverage == {
-        "app.go": {"killed": 2, "total": 4, "mutation_score": "50.0%"}
+        "app.go": {"killed": 2, "survived": 2, "total": 4, "mutation_score": "50.0%"}
     }
 
 
@@ -96,7 +97,12 @@ def test_generate_report(mutants, config):
                     report,
                     "generate_mutation_coverage_by_source_file",
                     return_value={
-                        "app.go": {"killed": 2, "total": 4, "mutation_score": "50.0%"}
+                        "app.go": {
+                            "killed": 2,
+                            "survived": 2,
+                            "total": 4,
+                            "mutation_score": "50.0%",
+                        }
                     },
                 ) as mock_generate_mutation_coverage_by_source_file,
                 patch.object(
@@ -104,7 +110,7 @@ def test_generate_report(mutants, config):
                 ) as mock_generate_mutant_report,
             ):
 
-                report.generate_report(mutants, "tests/test_file.py")
+                report.generate_report(mutants)
 
                 mock_generate_killed_mutants.assert_called_once_with(mutants)
                 mock_generate_survived_mutants.assert_called_once_with(mutants)
@@ -115,7 +121,14 @@ def test_generate_report(mutants, config):
 
                 mocked_file.assert_any_call("logs/_latest/mutation_coverage.json", "w")
                 mock_json_dump.assert_called_once_with(
-                    {"app.go": {"killed": 2, "total": 4, "mutation_score": "50.0%"}},
+                    {
+                        "app.go": {
+                            "killed": 2,
+                            "survived": 2,
+                            "total": 4,
+                            "mutation_score": "50.0%",
+                        }
+                    },
                     mocked_file(),
                     indent=2,
                 )
@@ -131,26 +144,28 @@ def test_generate_survived_mutants(mutants, config):
             )
             mock_json_dump.assert_called_once()
             written_data = mock_json_dump.call_args[0][0]
-            assert written_data == [
-                {
-                    "id": "2",
-                    "source_path": "app.go",
-                    "mutant_path": "mutant2.py",
-                    "status": "SURVIVED",
-                    "error_msg": "",
-                    "test_file_path": "app_test.go",
-                    "diff": "",
-                },
-                {
-                    "id": "4",
-                    "source_path": "app.go",
-                    "mutant_path": "mutant4.py",
-                    "status": "SURVIVED",
-                    "error_msg": "",
-                    "test_file_path": "app_test.go",
-                    "diff": "",
-                },
-            ]
+            assert written_data == {
+                "app_test.go": [
+                    {
+                        "id": "2",
+                        "source_path": "app.go",
+                        "mutant_path": "mutant2.py",
+                        "status": "SURVIVED",
+                        "error_msg": "",
+                        "test_file_path": "app_test.go",
+                        "diff": "",
+                    },
+                    {
+                        "id": "4",
+                        "source_path": "app.go",
+                        "mutant_path": "mutant4.py",
+                        "status": "SURVIVED",
+                        "error_msg": "",
+                        "test_file_path": "app_test.go",
+                        "diff": "",
+                    },
+                ]
+            }
 
 
 def test_generate_killed_mutants(mutants, config):
@@ -161,23 +176,25 @@ def test_generate_killed_mutants(mutants, config):
             mocked_file.assert_called_once_with("logs/_latest/mutants_killed.json", "w")
             mock_json_dump.assert_called_once()
             written_data = mock_json_dump.call_args[0][0]
-            assert written_data == [
-                {
-                    "id": "1",
-                    "source_path": "app.go",
-                    "mutant_path": "mutant1.py",
-                    "status": "KILLED",
-                    "error_msg": "",
-                    "test_file_path": "app_test.go",
-                    "diff": "",
-                },
-                {
-                    "id": "3",
-                    "source_path": "app.go",
-                    "mutant_path": "mutant3.py",
-                    "status": "KILLED",
-                    "error_msg": "",
-                    "test_file_path": "app_test.go",
-                    "diff": "",
-                },
-            ]
+            assert written_data == {
+                "app_test.go": [
+                    {
+                        "id": "1",
+                        "source_path": "app.go",
+                        "mutant_path": "mutant1.py",
+                        "status": "KILLED",
+                        "error_msg": "",
+                        "test_file_path": "app_test.go",
+                        "diff": "",
+                    },
+                    {
+                        "id": "3",
+                        "source_path": "app.go",
+                        "mutant_path": "mutant3.py",
+                        "status": "KILLED",
+                        "error_msg": "",
+                        "test_file_path": "app_test.go",
+                        "diff": "",
+                    },
+                ]
+            }

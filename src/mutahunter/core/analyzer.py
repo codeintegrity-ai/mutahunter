@@ -1,7 +1,7 @@
+import re
 import shlex
 import subprocess
 import xml.etree.ElementTree as ET
-import re
 from typing import Any, Dict, List, Tuple
 
 from tree_sitter_languages import get_parser

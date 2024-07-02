@@ -77,11 +77,15 @@ class MutantHunter:
             logger.info("🦠 Generating Mutations... 🦠")
             self.run_mutation_testing()
             logger.info("🎯 Generating Mutation Report... 🎯")
-            self.mutant_report.generate_report(
-                self.mutants, self.config["test_file_path"]
-            )
+            self.mutant_report.generate_report(self.mutants)
+            if self.config["generate_report"]:
+                logger.info("📊 Analyzing Survived Mutants... 📊")
+                self.mutant_report.generate_test_suite_report(self.mutants)
             logger.info(f"Mutation Testing Ended. Took {round(time.time() - start)}s")
         except Exception as e:
+            import traceback
+
+            print(traceback.format_exc())
             logger.error(
                 f"Error during mutation testing. Please report this issue. {e}"
             )

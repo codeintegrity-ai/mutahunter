@@ -11,28 +11,35 @@ class LLMRouter:
         self.model = model
         self.api_base = api_base
 
-    def generate_response(self, prompt: dict, max_tokens: int = 4096) -> tuple:
+    def generate_response(
+        self, prompt: dict, max_tokens: int = 4096, streaming: bool = False
+    ) -> tuple:
         """
         Call the LLM model with the provided prompt and return the generated response.
 
         Args:
             prompt (dict): A dictionary containing 'system' and 'user' keys.
             max_tokens (int): Maximum number of tokens for the response.
+            streaming (bool): Flag to enable or disable streaming response.
 
         Returns:
             tuple: Generated response, prompt tokens used, and completion tokens used.
         """
         self._validate_prompt(prompt)
         messages = self._build_messages(prompt)
-        completion_params = self._build_completion_params(messages, max_tokens)
+        completion_params = self._build_completion_params(
+            messages, max_tokens, streaming
+        )
 
         try:
-            response_chunks = self._stream_response(completion_params)
+            if streaming:
+                response_chunks = self._stream_response(completion_params)
+                return self._process_response(response_chunks, messages)
+            else:
+                return self._non_stream_response(completion_params)
         except Exception as e:
-            print(f"Error during streaming: {e}")
+            print(f"Error during response generation: {e}")
             return "", 0, 0
-
-        return self._process_response(response_chunks, messages)
 
     def _validate_prompt(self, prompt: dict):
         """
@@ -52,7 +59,9 @@ class LLMRouter:
             {"role": "user", "content": prompt["user"]},
         ]
 
-    def _build_completion_params(self, messages: list, max_tokens: int) -> dict:
+    def _build_completion_params(
+        self, messages: list, max_tokens: int, streaming: bool
+    ) -> dict:
         """
         Build the parameters for the LLM completion call.
         """
@@ -60,7 +69,7 @@ class LLMRouter:
             "model": self.model,
             "messages": messages,
             "max_tokens": max_tokens,
-            "stream": True,
+            "stream": streaming,
             "temperature": 0.1,
         }
         if (
@@ -86,6 +95,16 @@ class LLMRouter:
             )  # Optional: Delay to simulate more 'natural' response pacing
         print("\n")
         return response_chunks
+
+    def _non_stream_response(self, completion_params: dict) -> tuple:
+        """
+        Get the non-streamed response from the LLM model.
+        """
+        response = litellm.completion(**completion_params)
+        content = response["choices"][0]["message"]["content"]
+        prompt_tokens = int(response["usage"]["prompt_tokens"])
+        completion_tokens = int(response["usage"]["completion_tokens"])
+        return content, prompt_tokens, completion_tokens
 
     def _process_response(self, response_chunks: list, messages: list) -> tuple:
         """

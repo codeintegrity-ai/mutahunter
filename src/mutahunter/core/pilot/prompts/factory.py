@@ -1,9 +1,6 @@
-from mutahunter.core.pilot.prompts.examples import (
-    GO_UDIFF,
-    JAVASCRIPT_UDIFF,
-    PYTHON_UDIFF,
-    JAVA_UDIFF,
-)
+from mutahunter.core.pilot.prompts.examples import (GO_UDIFF, JAVA_UDIFF,
+                                                    JAVASCRIPT_UDIFF,
+                                                    PYTHON_UDIFF)
 from mutahunter.core.pilot.prompts.system import SYSTEM_PROMPT
 from mutahunter.core.pilot.prompts.user import USER_PROMPT
 
