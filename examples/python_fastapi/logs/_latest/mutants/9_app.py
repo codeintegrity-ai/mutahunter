@@ -103,7 +103,7 @@ async def is_palindrome(text: str):
     """
     Check if a string is a palindrome.
     """
-    return {"is_palindrome": text.lower() == text[::-1].lower()} # Mutation: Convert text to lowercase to test case insensitivity.
+    return {"is_palindrome": text.lower() == text[::-1].lower()} # Mutation: Ignore case when checking for palindrome.
 
 
 

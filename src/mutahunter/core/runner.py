@@ -1,5 +1,6 @@
 import os
 import subprocess
+import shutil
 
 
 class TestRunner:
@@ -10,8 +11,9 @@ class TestRunner:
         module_path = params["module_path"]
         replacement_module_path = params["replacement_module_path"]
         cmd = params["test_command"]
+        backup_path = module_path + ".bak"
         try:
-            self.create_symlink(module_path, replacement_module_path)
+            self.replace_file(module_path, replacement_module_path, backup_path)
             result = subprocess.run(
                 cmd,
                 text=True,
@@ -26,20 +28,17 @@ class TestRunner:
                 cmd, 1, stdout="", stderr="TimeoutExpired"
             )
         finally:
-            self.revert_symlink(module_path)
+            self.revert_file(module_path, backup_path)
         return result
 
-    def create_symlink(self, original, replacement):
-        """Backup original file and create a symlink to the replacement file."""
-        backup = original + ".bak"
+    def replace_file(self, original, replacement, backup):
+        """Backup original file and replace it with the replacement file."""
         if not os.path.exists(backup):
-            os.rename(original, backup)
-        os.symlink(replacement, original)
+            shutil.copy2(original, backup)
+        shutil.copy2(replacement, original)
 
-    def revert_symlink(self, original):
-        """Revert the symlink to the original file using the backup."""
-        backup = original + ".bak"
-        if os.path.islink(original):
-            os.unlink(original)
+    def revert_file(self, original, backup):
+        """Revert the file to the original using the backup."""
         if os.path.exists(backup):
-            os.rename(backup, original)
+            shutil.copy2(backup, original)
+            os.remove(backup)

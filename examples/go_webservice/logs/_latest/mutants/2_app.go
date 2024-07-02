@@ -45,7 +45,7 @@ func addHandler(c *gin.Context) {
 func subtractHandler(c *gin.Context) {
 	num1, _ := strconv.Atoi(c.Param("num1"))
 	num2, _ := strconv.Atoi(c.Param("num2"))
-	result := num1 + num2 // Mutation: Changed subtraction to addition to test if the test suite catches this logical error.
+	result := num1 + num2 // Mutation: Changed subtraction to addition to test if the test suite catches logical errors.
 	c.JSON(http.StatusOK, gin.H{"result": result})
 }
 

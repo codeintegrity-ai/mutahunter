@@ -43,7 +43,9 @@ async def subtract(num1: int, num2: int):
     Returns:
         dict: A dictionary containing the result of the subtraction.
     """
-    return {"result": num1 - num2 - 1}  # Mutation: Introduce an off-by-one error in the subtraction result.
+    return {"result": num1 - num2}
+    # Mutation: Introduce an off-by-one error in the subtraction result.
+    return {"result": num1 - num2 - 1}
 
 
 

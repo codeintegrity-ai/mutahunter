@@ -1,38 +1,49 @@
-[
-  {
-    "id": "6",
-    "source_path": "app.py",
-    "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/6_app.py",
-    "status": "SURVIVED",
-    "error_msg": "",
-    "test_file_path": "test_app.py",
-    "diff": "    \"\"\"\n    An asynchronous function that handles a GET request to divide two numbers.\n    Parameters:\n    - num1: an integer representing the numerator\n    - num2: an integer representing the denominator\n    Returns:\n    - A dictionary containing the result of the division\n    Raises:\n    - HTTPException with status code 400 if num2 is 0\n    \"\"\"\n    if num2 == 0:\n        raise HTTPException(status_code=400, detail=\"Cannot divide by zero\")\n-    return {\"result\": num1 / num2}\n+    return {\"result\": num1 // num2}  # Mutation: Use integer division instead of floating-point division.\n"
-  },
-  {
-    "id": "8",
-    "source_path": "app.py",
-    "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/8_app.py",
-    "status": "SURVIVED",
-    "error_msg": "",
-    "test_file_path": "test_app.py",
-    "diff": " async def sqrt(number: float):\n     \"\"\"\n     Return the square root of a number. Returns an error for negative numbers.\n     \"\"\"\n     if number < 0:\n         raise HTTPException(\n             status_code=400, detail=\"Cannot take square root of a negative number\"\n         )\n-    return {\"result\": math.sqrt(number)}\n+    return {\"result\": math.sqrt(number) if number != 0 else 0} # Mutation: Handle zero as a special case.\n"
-  },
-  {
-    "id": "9",
-    "source_path": "app.py",
-    "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/9_app.py",
-    "status": "SURVIVED",
-    "error_msg": "",
-    "test_file_path": "test_app.py",
-    "diff": " async def is_palindrome(text: str):\n     \"\"\"\n     Check if a string is a palindrome.\n     \"\"\"\n-    return {\"is_palindrome\": text == text[::-1]}\n+    return {\"is_palindrome\": text.lower() == text[::-1].lower()} # Mutation: Convert text to lowercase to test case insensitivity.\n"
-  },
-  {
-    "id": "10",
-    "source_path": "app.py",
-    "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/10_app.py",
-    "status": "SURVIVED",
-    "error_msg": "",
-    "test_file_path": "test_app.py",
-    "diff": " async def days_until_new_year():\n     \"\"\"\n     Calculates the number of days until the next New Year.\n     \"\"\"\n     today = date.today()\n-    next_new_year = date(today.year + 1, 1, 1)\n+    next_new_year = date(today.year, 1, 1) # Mutation: Change next New Year to the current year's New Year.\n     delta = next_new_year - today\n     return {\"days_until_new_year\": delta.days}\n"
-  }
-]
+{
+  "test_app.py": [
+    {
+      "id": "4",
+      "source_path": "app.py",
+      "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/4_app.py",
+      "status": "SURVIVED",
+      "error_msg": "",
+      "test_file_path": "test_app.py",
+      "diff": "    return {\"result\": num1 - num2}\n+    # Mutation: Introduce an off-by-one error in the subtraction result.\n+    return {\"result\": num1 - num2 - 1}\n"
+    },
+    {
+      "id": "6",
+      "source_path": "app.py",
+      "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/6_app.py",
+      "status": "SURVIVED",
+      "error_msg": "",
+      "test_file_path": "test_app.py",
+      "diff": "    \"\"\"\n    An asynchronous function that handles a GET request to divide two numbers.\n    Parameters:\n    - num1: an integer representing the numerator\n    - num2: an integer representing the denominator\n    Returns:\n    - A dictionary containing the result of the division\n    Raises:\n    - HTTPException with status code 400 if num2 is 0\n    \"\"\"\n-    if num2 == 0:\n+    if num2 <= 0:  # Mutation: Change condition to raise an error for zero or negative denominator\n        raise HTTPException(status_code=400, detail=\"Cannot divide by zero\")\n    return {\"result\": num1 / num2}\n"
+    },
+    {
+      "id": "8",
+      "source_path": "app.py",
+      "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/8_app.py",
+      "status": "SURVIVED",
+      "error_msg": "",
+      "test_file_path": "test_app.py",
+      "diff": "    \"\"\"\n    Return the square root of a number. Returns an error for negative numbers.\n    \"\"\"\n    if number < 0:\n        raise HTTPException(\n            status_code=400, detail=\"Cannot take square root of a negative number\"\n        )\n-    return {\"result\": math.sqrt(number)}\n+    return {\"result\": math.sqrt(number) if number != 0 else 0.1} # Mutation: Return 0.1 instead of 0 for input 0 to test boundary condition.\n"
+    },
+    {
+      "id": "9",
+      "source_path": "app.py",
+      "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/9_app.py",
+      "status": "SURVIVED",
+      "error_msg": "",
+      "test_file_path": "test_app.py",
+      "diff": " async def is_palindrome(text: str):\n     \"\"\"\n     Check if a string is a palindrome.\n     \"\"\"\n-    return {\"is_palindrome\": text == text[::-1]}\n+    return {\"is_palindrome\": text.lower() == text[::-1].lower()} # Mutation: Ignore case when checking for palindrome.\n"
+    },
+    {
+      "id": "10",
+      "source_path": "app.py",
+      "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/10_app.py",
+      "status": "SURVIVED",
+      "error_msg": "",
+      "test_file_path": "test_app.py",
+      "diff": " async def days_until_new_year():\n     \"\"\"\n     Calculates the number of days until the next New Year.\n     \"\"\"\n     today = date.today()\n-    next_new_year = date(today.year + 1, 1, 1)\n+    next_new_year = date(today.year, 1, 1) # Mutation: Change next New Year calculation to current year instead of next year.\n     delta = next_new_year - today\n     return {\"days_until_new_year\": delta.days}\n"
+    }
+  ]
+}

@@ -103,7 +103,7 @@ func echoHandler(c *gin.Context) {
 
 func reverse(s string) string {
 	runes := []rune(s)
-	for i, j := 0, len(runes)-1; i <= j; i, j = i+1, j-1 { // Mutation: Changed condition from i < j to i <= j to test boundary condition handling.
+	for i, j := 0, len(runes)-1; i <= j; i, j = i+1, j-1 { // Mutation: Changed condition from i < j to i <= j to test boundary condition
 		runes[i], runes[j] = runes[j], runes[i]
 	}
 	return string(runes)

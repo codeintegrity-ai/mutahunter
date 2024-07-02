@@ -73,10 +73,9 @@ async def divide(num1: int, num2: int):
     Raises:
     - HTTPException with status code 400 if num2 is 0
     """
-    if num2 == 0:
+    if num2 <= 0:  # Mutation: Change condition to raise an error for zero or negative denominator
         raise HTTPException(status_code=400, detail="Cannot divide by zero")
-    return {"result": num1 // num2}  # Mutation: Use integer division instead of floating-point division.
-
+    return {"result": num1 / num2}
 
 
 @app.get("/square/{number}")

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE coverage SYSTEM "http://cobertura.sourceforge.net/xml/coverage-04.dtd">
-<coverage line-rate="0.9655172" branch-rate="0" lines-covered="56" lines-valid="58" branches-covered="0" branches-valid="0" complexity="0" version="" timestamp="1719892806698">
+<coverage line-rate="0.9655172" branch-rate="0" lines-covered="56" lines-valid="58" branches-covered="0" branches-valid="0" complexity="0" version="" timestamp="1719894533802">
 	<packages>
 		<package name="go_webservice" line-rate="0.9655172" branch-rate="0" complexity="0" line-count="58" line-hits="56">
 			<classes>

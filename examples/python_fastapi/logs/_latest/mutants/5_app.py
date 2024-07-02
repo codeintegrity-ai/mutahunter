@@ -58,7 +58,7 @@ async def multiply(num1: int, num2: int):
     Returns:
     - dict: A dictionary containing the result of the multiplication.
     """
-    return {"result": num1 * num2 + 1}  # Mutation: Added 1 to the multiplication result to test boundary conditions.
+    return {"result": num1 * num2 + 1} # Mutation: Introduce an off-by-one error in the multiplication result.
 
 
 

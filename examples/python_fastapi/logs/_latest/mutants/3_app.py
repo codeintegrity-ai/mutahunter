@@ -28,7 +28,7 @@ async def add(num1: int, num2: int):
     """
     An asynchronous function that takes two integer parameters 'num1' and 'num2', and returns a dictionary containing the result of adding 'num1' and 'num2' under the key 'result'.
     """
-    return {"result": num1 - num2}  # Mutation: Changed addition to subtraction to test robustness of addition functionality.
+    return {"result": num1 - num2} # Mutation: Change addition to subtraction to test if the test suite catches this logical error.
 
 
 

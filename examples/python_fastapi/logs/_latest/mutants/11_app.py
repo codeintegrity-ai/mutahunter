@@ -122,5 +122,5 @@ async def echo(message: str):
     """
     Returns the same message that is sent to it.
     """
-    return {"message": message[::-1]}  # Mutation: Return the reversed message to test if the test suite catches this logical error.
+    return {"message": message.upper()} # Mutation: Convert the message to uppercase to test case sensitivity.
 

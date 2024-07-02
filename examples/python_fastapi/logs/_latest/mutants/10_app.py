@@ -112,7 +112,7 @@ async def days_until_new_year():
     Calculates the number of days until the next New Year.
     """
     today = date.today()
-    next_new_year = date(today.year, 1, 1) # Mutation: Change next New Year to the current year's New Year.
+    next_new_year = date(today.year, 1, 1) # Mutation: Change next New Year calculation to current year instead of next year.
     delta = next_new_year - today
     return {"days_until_new_year": delta.days}
 

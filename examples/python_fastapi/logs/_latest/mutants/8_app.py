@@ -95,7 +95,7 @@ async def sqrt(number: float):
         raise HTTPException(
             status_code=400, detail="Cannot take square root of a negative number"
         )
-    return {"result": math.sqrt(number) if number != 0 else 0} # Mutation: Handle zero as a special case.
+    return {"result": math.sqrt(number) if number != 0 else 0.1} # Mutation: Return 0.1 instead of 0 for input 0 to test boundary condition.
 
 
 

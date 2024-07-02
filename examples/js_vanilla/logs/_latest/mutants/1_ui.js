@@ -18,9 +18,9 @@ export default class UI {
                         <br> <br>
                         <ul class="list-group">
                             <li class="list-group-item">Company : ${user.company}</li>
-                            <li class="list-group-item">Website : <a href="${user.blog}" target="_blank">${user.blog}</a></li> {/* Mutation: Changed website text to a clickable link */}
+                            <li class="list-group-item">Website : ${user.blog}</li>
                             <li class="list-group-item">Location : ${user.location}</li>
-                            <li class="list-group-item">Member Since : ${user.created_at}</li>
+                            <li class="list-group-item">Member Since : ${new Date(user.created_at).toLocaleDateString()}</li> // Mutation: Format the date to a locale-specific string.
                         </ul>
                     </div>
                 </div>

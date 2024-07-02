@@ -12,7 +12,7 @@ async def root():
     No parameters are passed into the function.
     Returns a dictionary with a welcome message.
     """
-    return {"message": "Welcome to the FastAPI app!"} # Mutation: Changed the welcome message to test string matching.
+    return {"message": "Welcome to the FastAPI app!"} # Mutation: Changed the welcome message to test string comparison.
 
 
 

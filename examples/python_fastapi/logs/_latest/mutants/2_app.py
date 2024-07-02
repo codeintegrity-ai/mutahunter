@@ -20,7 +20,7 @@ async def current_date():
     """
     Get the current date as an ISO-formatted string.
     """
-    return {"date": (date.today() + timedelta(days=1)).isoformat()} # Mutation: Return the date of the next day instead of the current date.
+    return {"date": (date.today() + timedelta(days=1)).isoformat()}  # Mutation: Return the date of the next day to test date validation.
 
 
 

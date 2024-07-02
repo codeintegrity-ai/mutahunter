@@ -73,7 +73,6 @@ func squareHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"result": result})
 }
 
-
 func sqrtHandler(c *gin.Context) {
 	number, _ := strconv.ParseFloat(c.Param("number"), 64)
 	if number < 0 {
