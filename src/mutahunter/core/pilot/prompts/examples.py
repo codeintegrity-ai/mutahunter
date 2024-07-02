@@ -15,6 +15,7 @@ Example Output:
 +    // Mutation: Removing validation for large input values to simulate Integer Overflow vulnerability.
      c.JSON(http.StatusOK, gin.H{"result": result})
  })
+```
 """
 
 JAVASCRIPT_UDIFF = """
@@ -55,6 +56,7 @@ Example Output:
 
 JAVA_UDIFF = """
 Example Output:
+```diff
 --- /Users/taikorind/Documents/personal/codeintegrity/mutahunter/example/calculator/simple_calculator.py
 +++ /Users/taikorind/Documents/personal/codeintegrity/mutahunter/example/calculator/simple_calculator.py
 @@ ... @@
@@ -65,4 +67,5 @@ Example Output:
 -        return a / b;        
 +        return a * b; // Mutation: Changed division to multiplication using AOR (Arithmetic Operator Replacement)
     }
+```
 """
