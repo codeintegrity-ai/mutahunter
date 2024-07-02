@@ -38,7 +38,7 @@ func currentDateHandler(c *gin.Context) {
 func addHandler(c *gin.Context) {
 	num1, _ := strconv.Atoi(c.Param("num1"))
 	num2, _ := strconv.Atoi(c.Param("num2"))
-	result := num1 - num2  // Mutation: Changed addition to subtraction to test if the test suite catches this logical error.
+	result := num1 + num2
 	c.JSON(http.StatusOK, gin.H{"result": result})
 }
 
@@ -52,7 +52,7 @@ func subtractHandler(c *gin.Context) {
 func multiplyHandler(c *gin.Context) {
 	num1, _ := strconv.Atoi(c.Param("num1"))
 	num2, _ := strconv.Atoi(c.Param("num2"))
-	result := num1 * num2
+	result := num1 * num2 * 2 // Mutation: Incorrect multiplication logic to test if the test suite catches this error.
 	c.JSON(http.StatusOK, gin.H{"result": result})
 }
 

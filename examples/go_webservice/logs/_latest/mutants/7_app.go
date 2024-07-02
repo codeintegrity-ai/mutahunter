@@ -85,7 +85,7 @@ func sqrtHandler(c *gin.Context) {
 
 func isPalindromeHandler(c *gin.Context) {
 	text := c.Param("text")
-	isPalindrome := text != reverse(text) // Mutation: Replaced equality check with inequality check to test palindrome logic.
+	isPalindrome := len(text) > 0 && text == reverse(text) // Mutation: Added check to ensure text is not empty before comparing with its reverse.
 	c.JSON(http.StatusOK, gin.H{"is_palindrome": isPalindrome})
 }
 

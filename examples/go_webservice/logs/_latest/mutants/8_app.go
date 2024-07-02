@@ -92,15 +92,14 @@ func isPalindromeHandler(c *gin.Context) {
 func daysUntilNewYearHandler(c *gin.Context) {
 	today := time.Now()
 	nextNewYear := time.Date(today.Year()+1, 1, 1, 0, 0, 0, 0, time.UTC)
-	daysUntilNewYear := nextNewYear.Sub(today).Hours() / 24
+	daysUntilNewYear := nextNewYear.Sub(today).Hours() / 24 + 1 // Mutation: Adding an extra day to the calculation
 	c.JSON(http.StatusOK, gin.H{"days_until_new_year": int(daysUntilNewYear)})
 }
 
 func echoHandler(c *gin.Context) {
-	message := c.DefaultQuery("message", "default") // Mutation: Changed to use DefaultQuery instead of Param
+	message := c.Param("message")
 	c.JSON(http.StatusOK, gin.H{"message": message})
 }
-
 
 func reverse(s string) string {
 	runes := []rune(s)

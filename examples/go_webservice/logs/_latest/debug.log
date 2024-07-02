@@ -1,14 +1,19 @@
-2024-06-29 23:00:21,955 INFO: Command line input: /Users/taikorind/.pyenv/versions/mutahunter/bin/mutahunter run --test-command go test --test-file-path app_test.go --code-coverage-report-path coverage.xml --only-mutate-file-paths app.go
-2024-06-29 23:00:21,956 INFO: Starting Coverage Analysis...
-2024-06-29 23:00:22,480 INFO: 🦠 Generating Mutations... 🦠
-2024-06-29 23:00:26,074 INFO: Mutant 1 killed by app_test.go
-2024-06-29 23:00:28,496 INFO: Mutant 2 killed by app_test.go
-2024-06-29 23:00:31,019 INFO: Mutant 3 killed by app_test.go
-2024-06-29 23:00:40,677 INFO: Mutant 4 killed by app_test.go
-2024-06-29 23:00:44,847 INFO: Mutant 5 survived by app_test.go
-2024-06-29 23:00:48,751 INFO: 🎯 Generating Mutation Report... 🎯
-2024-06-29 23:00:48,752 INFO: 🦠 Total Mutants: 5 🦠
-2024-06-29 23:00:48,752 INFO: 🛡️ Survived Mutants: 1 🛡️
-2024-06-29 23:00:48,752 INFO: 🗡️ Killed Mutants: 4 🗡️
-2024-06-29 23:00:48,752 INFO: 🎯 Mutation Coverage: 80.0% 🎯
-2024-06-29 23:00:52,555 INFO: Mutation Testing Ended. Took 31s
+2024-07-02 00:00:10,208 INFO: Command line input: /Users/taikorind/.pyenv/versions/mutahunter/bin/mutahunter run --test-command go test --test-file-path app_test.go --code-coverage-report-path coverage.xml --only-mutate-file-paths app.go
+2024-07-02 00:00:10,211 INFO: Starting Coverage Analysis...
+2024-07-02 00:00:11,205 INFO: 🦠 Generating Mutations... 🦠
+2024-07-02 00:00:16,135 INFO: Mutant 1 killed by app_test.go
+2024-07-02 00:00:24,707 INFO: Mutant 2 killed by app_test.go
+2024-07-02 00:00:27,406 INFO: Mutant 3 killed by app_test.go
+2024-07-02 00:00:30,427 INFO: Mutant 4 killed by app_test.go
+2024-07-02 00:00:32,674 INFO: Mutant 5 killed by app_test.go
+2024-07-02 00:00:35,087 INFO: Mutant 6 survived by app_test.go
+2024-07-02 00:00:37,514 INFO: Mutant 7 survived by app_test.go
+2024-07-02 00:00:40,325 INFO: Mutant 8 survived by app_test.go
+2024-07-02 00:00:42,976 INFO: Mutant 9 killed by app_test.go
+2024-07-02 00:00:46,984 INFO: Mutant 10 survived by app_test.go
+2024-07-02 00:00:46,985 INFO: 🎯 Generating Mutation Report... 🎯
+2024-07-02 00:00:46,987 INFO: 🦠 Total Mutants: 10 🦠
+2024-07-02 00:00:46,987 INFO: 🛡️ Survived Mutants: 4 🛡️
+2024-07-02 00:00:46,987 INFO: 🗡️ Killed Mutants: 6 🗡️
+2024-07-02 00:00:46,987 INFO: 🎯 Mutation Coverage: 60.0% 🎯
+2024-07-02 00:00:46,987 INFO: Mutation Testing Ended. Took 37s

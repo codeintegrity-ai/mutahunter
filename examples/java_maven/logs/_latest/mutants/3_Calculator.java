@@ -14,7 +14,7 @@ public class Calculator {
 
     // Method to multiply two numbers
     public double multiply(double a, double b) {
-        return a + b; // Mutation: Changed multiplication to addition using AOR (Arithmetic Operator Replacement)
+        return a / b; // Mutation: Changed multiplication to division using AOR (Arithmetic Operator Replacement)
     }
 
     // Method to divide one number by another

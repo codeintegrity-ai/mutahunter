@@ -35,6 +35,7 @@ Mutation testing is used by big tech companies like [Google](https://research.go
 
 Examples:
 
+- [React Example](/examples/vite-react-testing-ts/)
 - [Go Example](/examples/go_webservice/)
 - [Java Example](/examples/java_maven/)
 - [JavaScript Example](/examples/js_vanilla/)

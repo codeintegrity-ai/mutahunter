@@ -1,13 +1,13 @@
-2024-06-29 22:24:02,062 INFO: Command line input: /Users/taikorind/.pyenv/versions/mutahunter/bin/mutahunter run --test-command mvn test -DtestSourceDirectory=src/test/java/CalculatorTest.java --test-file-path src/test/java/CalculatorTest.java --code-coverage-report-path jacoco.xml --only-mutate-file-paths src/main/java/com/example/Calculator.java --coverage-type jacoco
-2024-06-29 22:24:02,065 INFO: Starting Coverage Analysis...
-2024-06-29 22:24:04,948 INFO: 🦠 Generating Mutations... 🦠
-2024-06-29 22:24:09,917 INFO: Mutant 1 killed by src/test/java/CalculatorTest.java
-2024-06-29 22:24:13,807 INFO: Mutant 2 killed by src/test/java/CalculatorTest.java
-2024-06-29 22:24:17,676 INFO: Mutant 3 killed by src/test/java/CalculatorTest.java
-2024-06-29 22:24:21,921 INFO: Mutant 4 killed by src/test/java/CalculatorTest.java
-2024-06-29 22:24:21,923 INFO: 🎯 Generating Mutation Report... 🎯
-2024-06-29 22:24:21,924 INFO: 🦠 Total Mutants: 4 🦠
-2024-06-29 22:24:21,924 INFO: 🛡️ Survived Mutants: 0 🛡️
-2024-06-29 22:24:21,924 INFO: 🗡️ Killed Mutants: 4 🗡️
-2024-06-29 22:24:21,924 INFO: 🎯 Mutation Coverage: 100.0% 🎯
-2024-06-29 22:24:30,787 INFO: Mutation Testing Ended. Took 29s
+2024-07-01 23:59:02,265 INFO: Command line input: /Users/taikorind/.pyenv/versions/mutahunter/bin/mutahunter run --test-command mvn test -DtestSourceDirectory=src/test/java/CalculatorTest.java --test-file-path src/test/java/CalculatorTest.java --code-coverage-report-path target/site/jacoco/jacoco.xml --only-mutate-file-paths src/main/java/com/example/Calculator.java --coverage-type jacoco
+2024-07-01 23:59:02,268 INFO: Starting Coverage Analysis...
+2024-07-01 23:59:04,937 INFO: 🦠 Generating Mutations... 🦠
+2024-07-01 23:59:09,779 INFO: Mutant 1 killed by src/test/java/CalculatorTest.java
+2024-07-01 23:59:13,841 INFO: Mutant 2 killed by src/test/java/CalculatorTest.java
+2024-07-01 23:59:18,176 INFO: Mutant 3 killed by src/test/java/CalculatorTest.java
+2024-07-01 23:59:23,229 INFO: Mutant 4 killed by src/test/java/CalculatorTest.java
+2024-07-01 23:59:23,231 INFO: 🎯 Generating Mutation Report... 🎯
+2024-07-01 23:59:23,231 INFO: 🦠 Total Mutants: 4 🦠
+2024-07-01 23:59:23,231 INFO: 🛡️ Survived Mutants: 0 🛡️
+2024-07-01 23:59:23,232 INFO: 🗡️ Killed Mutants: 4 🗡️
+2024-07-01 23:59:23,232 INFO: 🎯 Mutation Coverage: 100.0% 🎯
+2024-07-01 23:59:23,232 INFO: Mutation Testing Ended. Took 21s

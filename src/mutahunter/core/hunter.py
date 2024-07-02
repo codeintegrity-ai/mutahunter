@@ -61,6 +61,8 @@ class MutantHunter:
             "rb": "ruby",
             "swift": "swift",
             "kt": "kotlin",
+            "tsx": "tsx",
+            "ts": "typescript",
         }
         if ext not in language_mappings:
             raise ValueError(f"Unsupported file extension: {ext}")
@@ -138,7 +140,6 @@ class MutantHunter:
                     filename=filename,
                 )
             )
-
             if not covered_function_blocks:
                 continue
 

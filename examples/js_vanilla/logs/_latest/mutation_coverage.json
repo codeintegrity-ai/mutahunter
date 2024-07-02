@@ -1,7 +1,8 @@
 {
   "ui.js": {
     "killed": 1,
-    "total": 2,
-    "mutation_score": "50.0%"
+    "survived": 0,
+    "total": 1,
+    "mutation_score": "100.0%"
   }
 }

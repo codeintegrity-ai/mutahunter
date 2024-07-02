@@ -28,10 +28,8 @@ func SetupRouter() *gin.Engine {
 }
 
 func welcomeHandler(c *gin.Context) {
-	// Mutation: Changed the response message to test if the test suite catches this change.
-	c.JSON(http.StatusOK, gin.H{"message": "Welcome to the Gin application!"})
+	c.JSON(http.StatusOK, gin.H{"message": "Welcome to the Go Gin application!"})
 }
-
 
 func currentDateHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"date": time.Now().Format("2006-01-02")})
@@ -47,7 +45,7 @@ func addHandler(c *gin.Context) {
 func subtractHandler(c *gin.Context) {
 	num1, _ := strconv.Atoi(c.Param("num1"))
 	num2, _ := strconv.Atoi(c.Param("num2"))
-	result := num1 - num2
+	result := num1 + num2 // Mutation: Changed subtraction to addition to test if the test suite catches this logical error.
 	c.JSON(http.StatusOK, gin.H{"result": result})
 }
 

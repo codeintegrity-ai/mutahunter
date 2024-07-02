@@ -98,13 +98,12 @@ func daysUntilNewYearHandler(c *gin.Context) {
 
 func echoHandler(c *gin.Context) {
 	message := c.Param("message")
-	// Mutation: Simulating a Cross-Site Scripting (XSS) vulnerability by not escaping the message parameter.
-	c.JSON(http.StatusOK, gin.H{"message": "<script>alert('" + message + "')</script>"})
+	c.JSON(http.StatusOK, gin.H{"message": message})
 }
 
 func reverse(s string) string {
 	runes := []rune(s)
-	for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
+	for i, j := 0, len(runes)-1; i <= j; i, j = i+1, j-1 { // Mutation: Changed condition from i < j to i <= j to test boundary condition handling.
 		runes[i], runes[j] = runes[j], runes[i]
 	}
 	return string(runes)

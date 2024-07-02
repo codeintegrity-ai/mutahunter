@@ -1,14 +1,14 @@
-2024-06-29 22:29:33,419 INFO: Command line input: /Users/taikorind/.pyenv/versions/mutahunter/bin/mutahunter run --test-command npm run test --test-file-path ui.test.js --code-coverage-report-path coverage.xml --only-mutate-file-paths ui.js
-2024-06-29 22:29:33,424 INFO: Starting Coverage Analysis...
-2024-06-29 22:29:34,148 INFO: 🦠 Generating Mutations... 🦠
-2024-06-29 22:29:37,828 ERROR: Error generating mutant: Mutant code has syntax errors.
-2024-06-29 22:29:45,080 INFO: Mutant 1 killed by ui.test.js
-2024-06-29 22:29:48,019 ERROR: Error generating mutant: Mutant code has syntax errors.
-2024-06-29 22:29:50,884 INFO: Mutant 2 survived by ui.test.js
-2024-06-29 22:29:52,266 ERROR: Error generating mutant: Mutant code has syntax errors.
-2024-06-29 22:29:52,269 INFO: 🎯 Generating Mutation Report... 🎯
-2024-06-29 22:29:52,270 INFO: 🦠 Total Mutants: 2 🦠
-2024-06-29 22:29:52,270 INFO: 🛡️ Survived Mutants: 1 🛡️
-2024-06-29 22:29:52,270 INFO: 🗡️ Killed Mutants: 1 🗡️
-2024-06-29 22:29:52,270 INFO: 🎯 Mutation Coverage: 50.0% 🎯
-2024-06-29 22:29:57,673 INFO: Mutation Testing Ended. Took 24s
+2024-07-01 23:57:06,919 INFO: Command line input: /Users/taikorind/.pyenv/versions/mutahunter/bin/mutahunter run --test-command npm run test --test-file-path ui.test.js --code-coverage-report-path coverage/coverage.xml --only-mutate-file-paths ui.js
+2024-07-01 23:57:06,923 INFO: Starting Coverage Analysis...
+2024-07-01 23:57:07,672 INFO: 🦠 Generating Mutations... 🦠
+2024-07-01 23:57:10,253 ERROR: Error generating mutant: Mutant code has syntax errors.
+2024-07-01 23:57:18,001 INFO: Mutant 1 killed by ui.test.js
+2024-07-01 23:57:22,330 ERROR: Error generating mutant: Mutant code has syntax errors.
+2024-07-01 23:57:24,553 ERROR: Error generating mutant: Mutant code has syntax errors.
+2024-07-01 23:57:25,954 ERROR: Error generating mutant: Mutant code has syntax errors.
+2024-07-01 23:57:25,956 INFO: 🎯 Generating Mutation Report... 🎯
+2024-07-01 23:57:25,957 INFO: 🦠 Total Mutants: 1 🦠
+2024-07-01 23:57:25,957 INFO: 🛡️ Survived Mutants: 0 🛡️
+2024-07-01 23:57:25,957 INFO: 🗡️ Killed Mutants: 1 🗡️
+2024-07-01 23:57:25,957 INFO: 🎯 Mutation Coverage: 100.0% 🎯
+2024-07-01 23:57:25,957 INFO: Mutation Testing Ended. Took 19s

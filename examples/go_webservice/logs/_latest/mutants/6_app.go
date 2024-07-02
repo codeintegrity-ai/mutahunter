@@ -75,11 +75,11 @@ func squareHandler(c *gin.Context) {
 
 func sqrtHandler(c *gin.Context) {
 	number, _ := strconv.ParseFloat(c.Param("number"), 64)
-	if number < 0 {
+	if number <= 0 { // Mutation: Changed condition to include zero as an invalid input.
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot take square root of a negative number"})
 		return
 	}
-	result := number * number // Mutation: Replaced square root calculation with squaring the number.
+	result := math.Sqrt(number)
 	c.JSON(http.StatusOK, gin.H{"result": result})
 }
 

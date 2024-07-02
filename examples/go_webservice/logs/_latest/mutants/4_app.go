@@ -59,7 +59,7 @@ func multiplyHandler(c *gin.Context) {
 func divideHandler(c *gin.Context) {
 	num1, _ := strconv.Atoi(c.Param("num1"))
 	num2, _ := strconv.Atoi(c.Param("num2"))
-	if num2 == 1 { // Mutation: Changed condition to check for division by 1 instead of 0
+	if num2 == 1 { // Mutation: Changed condition to check if num2 is 1 instead of 0
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot divide by zero"})
 		return
 	}

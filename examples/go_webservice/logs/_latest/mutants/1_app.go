@@ -18,10 +18,13 @@ func SetupRouter() *gin.Engine {
 	router.GET("/subtract/:num1/:num2", subtractHandler)
 	router.GET("/multiply/:num1/:num2", multiplyHandler)
 	router.GET("/divide/:num1/:num2", divideHandler)
-	router.GET("/square/:number", sqrtHandler) // Mutation: Changed handler for square endpoint to sqrtHandler
+	router.GET("/square/:number", squareHandler)
 	router.GET("/sqrt/:number", sqrtHandler)
 	router.GET("/is-palindrome/:text", isPalindromeHandler)
-	router.GET("/days-until-new-year", daysUntilNewYearHandler)
+	router.GET("/days-until-new-year", func(c *gin.Context) {
+		// Mutation: Simulating an error by returning a 500 status code instead of calling the actual handler.
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+	})
 	router.GET("/echo/:message", echoHandler)
 
 	return router

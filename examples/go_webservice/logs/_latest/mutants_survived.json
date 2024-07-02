@@ -1,11 +1,40 @@
-[
-  {
-    "id": "5",
-    "source_path": "app.go",
-    "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/5_app.go",
-    "status": "SURVIVED",
-    "error_msg": "",
-    "test_file_path": "app_test.go",
-    "diff": "-\tif number < 0 {\n+\tif number <= 0 { // Mutation: Changed condition to include zero as an invalid input.\n"
-  }
-]
+{
+  "app_test.go": [
+    {
+      "id": "6",
+      "source_path": "app.go",
+      "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/6_app.go",
+      "status": "SURVIVED",
+      "error_msg": "",
+      "test_file_path": "app_test.go",
+      "diff": "-\tif number < 0 {\n+\tif number <= 0 { // Mutation: Changed condition to include zero as an invalid input.\n"
+    },
+    {
+      "id": "7",
+      "source_path": "app.go",
+      "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/7_app.go",
+      "status": "SURVIVED",
+      "error_msg": "",
+      "test_file_path": "app_test.go",
+      "diff": "-\tisPalindrome := text == reverse(text)\n+\tisPalindrome := len(text) > 0 && text == reverse(text) // Mutation: Added check to ensure text is not empty before comparing with its reverse.\n"
+    },
+    {
+      "id": "8",
+      "source_path": "app.go",
+      "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/8_app.go",
+      "status": "SURVIVED",
+      "error_msg": "",
+      "test_file_path": "app_test.go",
+      "diff": "-\tdaysUntilNewYear := nextNewYear.Sub(today).Hours() / 24\n+\tdaysUntilNewYear := nextNewYear.Sub(today).Hours() / 24 + 1 // Mutation: Adding an extra day to the calculation\n"
+    },
+    {
+      "id": "10",
+      "source_path": "app.go",
+      "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/10_app.go",
+      "status": "SURVIVED",
+      "error_msg": "",
+      "test_file_path": "app_test.go",
+      "diff": "-\tfor i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {\n+\tfor i, j := 0, len(runes)-1; i <= j; i, j = i+1, j-1 { // Mutation: Changed condition from i < j to i <= j to test boundary condition handling.\n"
+    }
+  ]
+}

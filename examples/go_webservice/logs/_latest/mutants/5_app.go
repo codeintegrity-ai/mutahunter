@@ -69,13 +69,14 @@ func divideHandler(c *gin.Context) {
 
 func squareHandler(c *gin.Context) {
 	number, _ := strconv.Atoi(c.Param("number"))
-	result := number * number
+	result := number * number * number // Mutation: Changed square to cube to test if the test suite catches this logical error.
 	c.JSON(http.StatusOK, gin.H{"result": result})
 }
 
+
 func sqrtHandler(c *gin.Context) {
 	number, _ := strconv.ParseFloat(c.Param("number"), 64)
-	if number <= 0 { // Mutation: Changed condition to include zero as an invalid input.
+	if number < 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot take square root of a negative number"})
 		return
 	}

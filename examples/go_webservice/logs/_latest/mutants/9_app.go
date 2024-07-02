@@ -86,11 +86,6 @@ func sqrtHandler(c *gin.Context) {
 func isPalindromeHandler(c *gin.Context) {
 	text := c.Param("text")
 	isPalindrome := text == reverse(text)
-	// Mutation: Swallowing potential error by not checking if 'text' is empty, which could lead to unexpected behavior.
-	if text == "" {
-		c.JSON(http.StatusOK, gin.H{"is_palindrome": false})
-		return
-	}
 	c.JSON(http.StatusOK, gin.H{"is_palindrome": isPalindrome})
 }
 
@@ -102,9 +97,10 @@ func daysUntilNewYearHandler(c *gin.Context) {
 }
 
 func echoHandler(c *gin.Context) {
-	message := c.Param("message")
+	message := c.DefaultQuery("message", "default") // Mutation: Changed to use query parameter with a default value instead of path parameter.
 	c.JSON(http.StatusOK, gin.H{"message": message})
 }
+
 
 func reverse(s string) string {
 	runes := []rune(s)
