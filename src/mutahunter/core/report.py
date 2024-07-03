@@ -1,5 +1,8 @@
+"""
+Module for generating mutation testing reports.
+"""
+
 import json
-import os
 from dataclasses import asdict
 from typing import Any, Dict, List
 
@@ -11,6 +14,8 @@ from mutahunter.core.router import LLMRouter
 
 
 class MutantReport:
+    """Class for generating mutation testing reports."""
+
     def __init__(self, config) -> None:
         self.config = config
         self.router = LLMRouter(model=config["model"], api_base=config["api_base"])
@@ -55,8 +60,6 @@ class MutantReport:
         survived_mutants = [
             asdict(mutant) for mutant in mutants if mutant.status == "SURVIVED"
         ]
-
-        # add test file as key to group mutants by test file
         output = {self.config["test_file_path"]: survived_mutants}
         self.save_report("logs/_latest/mutants_survived.json", output)
 
@@ -91,9 +94,7 @@ class MutantReport:
             killed = data["killed"]
             total = data["total"]
             score = round((killed / total * 100) if total > 0 else 0, 2)
-            mutation_coverage_by_source_file[source_path][
-                "mutation_score"
-            ] = f"{score}%"
+            data["mutation_score"] = f"{score}%"
 
         return mutation_coverage_by_source_file
 
@@ -123,10 +124,10 @@ class MutantReport:
             "Mutation Coverage": f"{score}%",
         }
 
-        logger.info(f"🦠 Total Mutants: {total_mutants} 🦠")
-        logger.info(f"🛡️ Survived Mutants: {survived_mutants_cnt} 🛡️")
-        logger.info(f"🗡️ Killed Mutants: {killed_mutants_cnt} 🗡️")
-        logger.info(f"🎯 Mutation Coverage: {score}% 🎯")
+        logger.info("🦠 Total Mutants: %d 🦠", total_mutants)
+        logger.info("🛡️ Survived Mutants: %d 🛡️", survived_mutants_cnt)
+        logger.info("🗡️ Killed Mutants: %d 🗡️", killed_mutants_cnt)
+        logger.info("🎯 Mutation Coverage: %.2f%% 🎯", score)
 
         return report
 
@@ -138,7 +139,7 @@ class MutantReport:
             file_path (str): The path to the file where the report will be saved.
             data (Any): The data to be saved in the report.
         """
-        with open(file_path, "w") as f:
+        with open(file_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
 
     def generate_test_suite_report(self, mutants: List[Mutant]) -> None:
@@ -146,13 +147,12 @@ class MutantReport:
         Generates a report of the test suite.
 
         Args:
-            test_suite_report (Dict[str, Any]): Test suite report data.
+            mutants (List[Mutant]): List of mutants generated during mutation testing.
         """
-
         survived_mutants = [
             asdict(mutant) for mutant in mutants if mutant.status == "SURVIVED"
         ]
-        with open(self.config["test_file_path"], "r") as f:
+        with open(self.config["test_file_path"], "r", encoding="utf-8") as f:
             test_suite = f.read()
 
         system_template = Template(SYSTEM_PROMPT).render()
@@ -168,7 +168,7 @@ class MutantReport:
             prompt=prompt, streaming=False
         )
 
-        with open("logs/_latest/test_suite_report.md", "w") as f:
+        with open("logs/_latest/test_suite_report.md", "w", encoding="utf-8") as f:
             f.write(model_response)
 
 

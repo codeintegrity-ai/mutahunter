@@ -1,3 +1,8 @@
+"""
+This module contains example output templates for different 
+programming languages supported by MutaHunter.
+"""
+
 GO_UDIFF = """
 Example Output:
 ```diff

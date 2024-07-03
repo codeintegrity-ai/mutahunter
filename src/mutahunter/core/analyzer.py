@@ -1,8 +1,7 @@
-import re
 import shlex
 import subprocess
 import xml.etree.ElementTree as ET
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List
 
 from tree_sitter_languages import get_parser
 
@@ -100,7 +99,7 @@ class Analyzer:
                 executed_lines = []
                 for line in sourcefile.findall(".//line"):
                     line_number = int(line.get("nr"))
-                    missed = int(line.get("mi"))
+                    int(line.get("mi"))
                     covered = int(line.get("ci"))
                     if covered > 0:
                         executed_lines.append(line_number)

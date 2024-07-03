@@ -1,10 +1,10 @@
 from jinja2 import Template
 
+from mutahunter.core.logger import logger
 from mutahunter.core.pilot.aider.repomap import RepoMap
 from mutahunter.core.pilot.aider.udiff_coder import UnifiedDiffCoder
 from mutahunter.core.pilot.prompts.factory import PromptFactory
 from mutahunter.core.router import LLMRouter
-from mutahunter.core.logger import logger
 
 
 class MutantGenerator:

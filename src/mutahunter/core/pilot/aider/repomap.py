@@ -88,12 +88,12 @@ class RepoMap:
         if not files_listing:
             return
 
-        num_tokens = self.token_count(files_listing)
+        self.token_count(files_listing)
 
         if chat_files:
-            other = "other "
+            pass
         else:
-            other = ""
+            pass
 
         repo_content = ""
 

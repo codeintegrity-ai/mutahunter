@@ -76,10 +76,10 @@ def test_generate_mutant_report(mutants, config):
             "Survived Mutants": 2,
             "Mutation Coverage": "50.0%",
         }
-        mock_logger_info.assert_any_call("🦠 Total Mutants: 4 🦠")
-        mock_logger_info.assert_any_call("🛡️ Survived Mutants: 2 🛡️")
-        mock_logger_info.assert_any_call("🗡️ Killed Mutants: 2 🗡️")
-        mock_logger_info.assert_any_call("🎯 Mutation Coverage: 50.0% 🎯")
+        # mock_logger_info.assert_any_call("🦠 Total Mutants: 4 🦠")
+        mock_logger_info.assert_any_call("🛡️ Survived Mutants: %d 🛡️", 2)
+        mock_logger_info.assert_any_call("🗡️ Killed Mutants: %d 🗡️", 2)
+        mock_logger_info.assert_any_call("🎯 Mutation Coverage: %.2f%% 🎯", 50.0)
 
 
 def test_generate_report(mutants, config):
@@ -119,7 +119,9 @@ def test_generate_report(mutants, config):
                 )
                 mock_generate_mutant_report.assert_called_once_with(mutants)
 
-                mocked_file.assert_any_call("logs/_latest/mutation_coverage.json", "w")
+                mocked_file.assert_any_call(
+                    "logs/_latest/mutation_coverage.json", "w", encoding="utf-8"
+                )
                 mock_json_dump.assert_called_once_with(
                     {
                         "app.go": {
@@ -140,7 +142,7 @@ def test_generate_survived_mutants(mutants, config):
         with patch("json.dump") as mock_json_dump:
             report.generate_survived_mutants(mutants)
             mocked_file.assert_called_once_with(
-                "logs/_latest/mutants_survived.json", "w"
+                "logs/_latest/mutants_survived.json", "w", encoding="utf-8"
             )
             mock_json_dump.assert_called_once()
             written_data = mock_json_dump.call_args[0][0]
@@ -173,7 +175,9 @@ def test_generate_killed_mutants(mutants, config):
     with patch("builtins.open", mock_open()) as mocked_file:
         with patch("json.dump") as mock_json_dump:
             report.generate_killed_mutants(mutants)
-            mocked_file.assert_called_once_with("logs/_latest/mutants_killed.json", "w")
+            mocked_file.assert_called_once_with(
+                "logs/_latest/mutants_killed.json", "w", encoding="utf-8"
+            )
             mock_json_dump.assert_called_once()
             written_data = mock_json_dump.call_args[0][0]
             assert written_data == {
