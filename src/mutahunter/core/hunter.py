@@ -140,6 +140,9 @@ class MutantHunter:
                     filename=filename,
                 )
             )
+            logger.info(
+                f"Total function blocks to mutate: {len(covered_function_blocks)}"
+            )
             if not covered_function_blocks:
                 continue
 

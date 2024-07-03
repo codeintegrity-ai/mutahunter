@@ -1,9 +1,10 @@
 import shlex
 import subprocess
 import xml.etree.ElementTree as ET
+from importlib import resources
 from typing import Any, Dict, List
 
-from tree_sitter_languages import get_parser
+from tree_sitter_languages import get_language, get_parser
 
 
 class Analyzer:
@@ -189,26 +190,6 @@ class Analyzer:
         root_node = tree.root_node
         return not root_node.has_error
 
-    def traverse_ast(self, node: Any, callback: Any) -> bool:
-        """
-        Recursively traverses an AST starting from the given node.
-
-        Args:
-            node (Any): The starting AST node for traversal.
-            callback (Any): A function that will be called for each node.
-                            The callback can return True to stop the traversal.
-
-        Returns:
-            bool: True if traversal is stopped by the callback, False otherwise.
-        """
-        stop = callback(node)
-        if stop:
-            return True
-        for child in node.children:
-            if self.traverse_ast(child, callback):
-                return True
-        return False
-
     def find_function_blocks_nodes(self, source_code: bytes) -> List[Any]:
         """
         Finds function block nodes in the provided source code.
@@ -221,16 +202,29 @@ class Analyzer:
         """
         tree = self.tree_sitter_parser.parse(source_code)
         function_blocks = []
+        lang = self.config["language"]
+        language = get_language(lang)
+        # Load the tags queries
+        try:
+            scm_fname = resources.files(__package__).joinpath(
+                "pilot", "aider", "queries", f"tree-sitter-{lang}-tags.scm"
+            )
+        except KeyError:
+            return
+        query_scm = scm_fname
+        if not query_scm.exists():
+            return
+        query_scm = query_scm.read_text()
+        query = language.query(query_scm)
+        captures = query.captures(tree.root_node)
 
-        def callback(node: Any) -> bool:
-            if (
-                node.type == "function_definition"
-                or node.type == "method_definition"
-                or node.type == "function_declaration"  #
-                or node.type == "method_declaration"  # java
-            ):
+        captures = list(captures)
+        for node, tag in captures:
+            if tag == "definition.function" or tag == "definition.method":
                 function_blocks.append(node)
-            return False
+                # start_byte = node.start_byte
+                # end_byte = node.end_byte
+                # func_code = source_code[start_byte:end_byte].decode("utf-8")
+                # print(f"Function block code: {func_code}")
 
-        self.traverse_ast(tree.root_node, callback)
         return function_blocks

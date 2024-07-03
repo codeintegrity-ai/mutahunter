@@ -125,17 +125,6 @@ def test_parse_coverage_report_cobertura(config):
         assert result == {"test_file.py": [1, 3]}
 
 
-def test_traverse_ast_stop(analyzer):
-    node_mock = Mock()
-    node_mock.children = []
-
-    def callback(node):
-        return True
-
-    result = analyzer.traverse_ast(node_mock, callback)
-    assert result is True
-
-
 def test_parse_coverage_report_jacoco(config):
     xml_content = """<?xml version="1.0" ?>
     <report>
@@ -205,16 +194,3 @@ def test_get_function_blocks_large_file(analyzer):
     with patch("builtins.open", mock_open(read_data=large_source_code)):
         function_blocks = analyzer.get_function_blocks("test_file.py")
         assert len(function_blocks) == 50
-
-
-def test_traverse_ast_stop_callback(analyzer):
-    node_mock = Mock()
-    child_node_mock = Mock()
-    node_mock.children = [child_node_mock]
-    child_node_mock.children = []
-
-    def callback(node):
-        return node == child_node_mock
-
-    result = analyzer.traverse_ast(node_mock, callback)
-    assert result is True
