@@ -15,6 +15,7 @@
 
 <div align="center">
   <video src="https://github.com/codeintegrity-ai/mutahunter/assets/37044660/cca8a41b-b97e-4ce1-806d-e53d475d4226"></video>
+  <p>Demo video of running mutation testing on a Go web project</p>
 </div>
 
 ## Table of Contents
@@ -25,13 +26,11 @@
 
 ## Overview
 
-If you don't know what mutation testing is, you must be living under a rock! 🪨
+Mutation testing is used by big tech companies like [Google](https://research.google/pubs/state-of-mutation-testing-at-google/) to ensure the robustness of their test suites. With Mutahunter, we aim to empower other companies and developers to use this powerful tool to enhance their test suites and improve software quality.
 
-Mutation testing is a way to verify how good your test cases are. It involves creating small changes, or "mutants," in the code and checking if the test cases can catch these changes. Line coverage only tells you how much of the code has been executed, not how well it's been tested. We all know line coverage is limited.
+To put it simply, mutation testing is a way to verify how good your test cases are. It involves creating small changes, or “mutants,” in the code and checking if the test cases can catch these changes. Line coverage only tells you how much of the code has been executed, not how well it’s been tested.
 
-Mutahunter leverages LLM models to inject context-aware faults into your codebase. As the first AI-based mutation testing tool, it surpasses traditional “dumb” AST-based methods. Mutahunter’s AI-driven approach provides full contextual understanding of the entire codebase, enabling it to identify and inject mutations that closely resemble real vulnerabilities. This ensures comprehensive and effective testing, significantly enhancing software security and quality.
-
-Mutation testing is used by big tech companies like [Google](https://research.google/pubs/state-of-mutation-testing-at-google/) to ensure the robustness of their test suites. With Mutahunter, we want other companies and developers to use this powerful tool to enhance their test suites and improve software quality.
+MutaHunter leverages LLM models to inject context-aware faults into your codebase. Unlike traditional rule-based methods, MutaHunter’s AI-driven approach provides a full contextual understanding of the entire codebase, enabling it to identify and inject mutations that closely resemble real bugs. This ensures comprehensive and effective testing, significantly enhancing software security and quality.
 
 Examples:
 
@@ -45,9 +44,9 @@ Feel free to add more examples! ✨
 
 ## Why you should use Mutahunter?
 
-1. **AI-Driven Mutation Testing:** Mutahunter leverages advanced LLM models to inject context-aware faults into your codebase rather than blindly mutating the code. 🧠 This allows the mutants to closely resemble real vulnerabilities.
-2. **Language Agnostic:** Mutahunter supports various programming languages and can be extended to work with any language that provides a coverage report in **Cobertura** XML format, **Jacoco** XML format, and **lcov** format. 🌐
-3. **Enhanced Mutation Coverage Report:** Mutahunter provides detailed mutation coverage reports, highlighting the effectiveness of your test suite and identifying potential weaknesses. 📊
+1. **AI-Driven Mutation Testing:** Mutahunter leverages advanced LLM models to inject context-aware faults into your codebase rather than blindly mutating the code. This allows the mutants to closely resemble real bugs.
+2. **Language Agnostic:** Mutahunter supports various programming languages and can be extended to work with any language that provides a coverage report in **Cobertura** XML format, **Jacoco** XML format, and **lcov** format.
+3. **Enhanced Mutation Coverage Report (experimental):** Mutahunter provides detailed mutation coverage reports, highlighting the effectiveness of your test suite and identifying potential weaknesses.
 
 **Afraid of sending code to OpenAI or Anthropic? No problem, we support self-hosted versions as well.** 🔒
 
@@ -124,7 +123,7 @@ Options:
       Required: No
       Example: `--only-mutate-file-paths file1.py file2.py`
       
-  --generate-report
+  --generate-report (experimental)
       Description: Generate a detailed report on identified weaknesses in the test suite and potential bugs not caught by the test suite.
       Required: No
       Example: `--generate-report`
@@ -159,7 +158,7 @@ An example survived mutant information would be like so:
 
 Detailed report on identified weaknesses in the test suite and potential bugs not caught by the test suite:
 
-Example report:
+Example report (**experimental*):
 
 ```markdown
 ### Identified Weaknesses in the Test Suite
@@ -179,6 +178,7 @@ Example report:
 - [x] **Fault Injection:** Utilize advanced LLM models to inject context-aware faults into the codebase, ensuring comprehensive mutation testing.
 - [x] **Language Support:** Expand support to include various programming languages.
 - [x] **Support for Other Coverage Report Formats:** Add compatibility for various coverage report formats.
+- [ ] **Mutant Analysis:** Automatically analyze survived mutants to identify potential weaknesses in the test suite. Any suggestions are welcome!
 
 ### Continuous Integration and Deployment
 
