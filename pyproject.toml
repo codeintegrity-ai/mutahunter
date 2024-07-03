@@ -40,4 +40,4 @@ testing = ['pytest']
 mutahunter = "mutahunter.main:run"
 
 [tool.setuptools.package-data]
-mutahunter = ['*.scm']
+mutahunter = ['src/mutahunter/core/pilot/aider/queries/*.scm']
