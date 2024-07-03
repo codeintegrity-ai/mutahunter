@@ -28,45 +28,10 @@ class MutantHunter:
                 - only_mutate_file_paths (List[str]): List of specific files to mutate.
         """
         self.config: Dict[str, Any] = config
-        self.config["language"] = self.determine_language(config["test_file_path"])
         self.mutants: List[Mutant] = []
         self.mutant_report = MutantReport(config=self.config)
         self.analyzer = Analyzer(self.config)
         self.test_runner = TestRunner()
-
-    def determine_language(self, filename: str) -> str:
-        """
-        Determines the programming language based on the file extension. For Tree-Sitter language detection.
-
-        Args:
-            filename (str): The filename to determine the language from.
-
-        Returns:
-            str: The programming language corresponding to the file extension.
-
-        Raises:
-            ValueError: If the file extension is not supported.
-        """
-        ext = filename.split(".")[-1]
-        language_mappings = {
-            "py": "python",
-            "java": "java",
-            "js": "javascript",
-            "ts": "typescript",
-            "c": "c",
-            "cpp": "cpp",
-            "rs": "rust",
-            "go": "go",
-            "php": "php",
-            "rb": "ruby",
-            "swift": "swift",
-            "kt": "kotlin",
-            "tsx": "tsx",
-            "ts": "typescript",
-        }
-        if ext not in language_mappings:
-            raise ValueError(f"Unsupported file extension: {ext}")
-        return language_mappings[ext]
 
     def run(self) -> None:
         """
@@ -109,19 +74,14 @@ class MutantHunter:
                     logger.error(f"File {file_path} does not exist.")
                     raise FileNotFoundError(f"File {file_path} does not exist.")
             # NOTE: Only mutate the files specified in the config.
-            for file_path in self.config["only_mutate_file_paths"]:
-                if file_path == filename:
-                    return False
+            return all(
+                file_path != filename
+                for file_path in self.config["only_mutate_file_paths"]
+            )
+        if filename in self.config["exclude_files"]:
             return True
-        else:
-            if filename in self.config["exclude_files"]:
-                return True
-            if any(
-                keyword in filename
-                for keyword in ["test/", "tests/", "test_", "_test", ".test"]
-            ):
-                return True
-        return False
+        test_keywords = ["test/", "tests/", "test_", "_test", ".test"]
+        return any(keyword in filename for keyword in test_keywords)
 
     def generate_mutations(self) -> Generator[Dict[str, Any], None, None]:
         """
@@ -131,23 +91,20 @@ class MutantHunter:
             Generator[Dict[str, Any], None, None]: Dictionary containing mutation details.
         """
         all_covered_files = self.analyzer.file_lines_executed.keys()
-        for filename in tqdm(all_covered_files):
-            if self.should_skip_file(filename):
+        for covered_file_path in tqdm(all_covered_files):
+            if self.should_skip_file(covered_file_path):
                 continue
             covered_function_blocks, covered_function_block_executed_lines = (
                 self.analyzer.get_covered_function_blocks(
-                    executed_lines=self.analyzer.file_lines_executed[filename],
-                    filename=filename,
+                    executed_lines=self.analyzer.file_lines_executed[covered_file_path],
+                    source_file_path=covered_file_path,
                 )
             )
             logger.info(
-                f"Total function blocks to mutate: {len(covered_function_blocks)}"
+                f"Total function blocks to mutate for {covered_file_path}: {len(covered_function_blocks)}"
             )
             if not covered_function_blocks:
                 continue
-
-            with open(filename, "rb") as f:
-                source_code = f.read()
 
             for function_block, executed_lines in zip(
                 covered_function_blocks,
@@ -155,23 +112,20 @@ class MutantHunter:
             ):
                 start_byte = function_block.start_byte
                 end_byte = function_block.end_byte
-                function_block_source_code = source_code[start_byte:end_byte].decode(
-                    "utf-8"
-                )
 
                 mutant_generator = MutantGenerator(
                     config=self.config,
                     executed_lines=executed_lines,
                     cov_files=list(all_covered_files),
                     test_file_path=self.config["test_file_path"],
-                    filename=filename,
-                    function_block_source_code=function_block_source_code,
-                    language=self.config["language"],
+                    source_file_path=covered_file_path,
+                    start_byte=start_byte,
+                    end_byte=end_byte,
                 )
 
-                for path, hunk, content in mutant_generator.generate():
+                for _, hunk, content in mutant_generator.generate():
                     yield {
-                        "source_path": filename,
+                        "source_path": covered_file_path,
                         "start_byte": start_byte,
                         "end_byte": end_byte,
                         "hunk": hunk,
@@ -188,7 +142,7 @@ class MutantHunter:
                 mutant_id = str(len(self.mutants) + 1)
                 mutant_path = self.prepare_mutant_file(
                     mutant_id=mutant_id,
-                    source_path=mutant_data["source_path"],
+                    source_file_path=mutant_data["source_path"],
                     start_byte=mutant_data["start_byte"],
                     end_byte=mutant_data["end_byte"],
                     mutant_code=mutant_data["mutant_code_snippet"],
@@ -215,7 +169,7 @@ class MutantHunter:
     def prepare_mutant_file(
         self,
         mutant_id: str,
-        source_path: str,
+        source_file_path: str,
         start_byte: int,
         end_byte: int,
         mutant_code: str,
@@ -236,12 +190,12 @@ class MutantHunter:
         Raises:
             Exception: If the mutant code has syntax errors.
         """
-        mutant_file_name = f"{mutant_id}_{os.path.basename(source_path)}"
+        mutant_file_name = f"{mutant_id}_{os.path.basename(source_file_path)}"
         mutant_path = os.path.join(
             os.getcwd(), f"logs/_latest/mutants/{mutant_file_name}"
         )
 
-        with open(source_path, "rb") as f:
+        with open(source_file_path, "rb") as f:
             source_code = f.read()
 
         modified_byte_code = (
@@ -250,12 +204,15 @@ class MutantHunter:
             + source_code[end_byte:]
         )
 
-        if self.analyzer.check_syntax(modified_byte_code.decode("utf-8")):
+        if self.analyzer.check_syntax(
+            source_file_path=source_file_path,
+            source_code=modified_byte_code.decode("utf-8"),
+        ):
             with open(mutant_path, "wb") as f:
                 f.write(modified_byte_code)
             return mutant_path
         else:
-            raise Exception("Mutant code has syntax errors.")
+            raise SyntaxError("Mutant code has syntax errors.")
 
     def run_test(self, params: Dict[str, str]) -> Any:
         """

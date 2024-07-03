@@ -1,3 +1,4 @@
+from grep_ast import filename_to_lang
 from jinja2 import Template
 
 from mutahunter.core.logger import logger
@@ -14,26 +15,35 @@ class MutantGenerator:
         executed_lines,
         cov_files,
         test_file_path,
-        filename,
-        function_block_source_code,
-        language,
+        source_file_path,  # file_path for the source code
+        start_byte,
+        end_byte,
     ):
-
-        self.cov_files = cov_files
+        self.config = config
         self.executed_lines = executed_lines
+        self.cov_files = cov_files
         self.test_file_path = test_file_path
+        self.source_file_path = source_file_path
+        self.start_byte = start_byte
+        self.end_byte = end_byte
 
-        self.filename = filename
-        self.function_block_source_code = function_block_source_code
-
-        self.router = LLMRouter(model=config["model"], api_base=config["api_base"])
-        self.language = language
-
-        self.repo_map = RepoMap(model=config["model"])
+        self.router = LLMRouter(
+            model=self.config["model"], api_base=self.config["api_base"]
+        )
+        self.repo_map = RepoMap(model=self.config["model"])
         self.udiff_coder = UnifiedDiffCoder()
-        self.prompt = PromptFactory.get_prompt(language=language)
+        self.language = filename_to_lang(self.source_file_path)
+        self.prompt = PromptFactory.get_prompt(language=self.language)
+
+        self.function_block_source_code = self.get_function_block_source_code()
+
+    def get_function_block_source_code(self):
+        with open(self.source_file_path, "rb") as f:
+            src_code = f.read()
+        return src_code[self.start_byte : self.end_byte].decode("utf-8")
 
     def generate_mutant(self, repo_map_result):
+
         with open(self.test_file_path, "r") as f:
             test_file_content = f.read()
         system_template = Template(self.prompt.system_prompt).render()
@@ -43,7 +53,7 @@ class MutantGenerator:
             test_file_path=self.test_file_path,
             test_file_content=test_file_content,
             ast=repo_map_result,
-            filename=self.filename,
+            filename=self.source_file_path,
             example_output=self.prompt.example_output,
             function_block=self.function_block_source_code,
         )
@@ -62,7 +72,7 @@ class MutantGenerator:
             other_files=self.cov_files,
         )
         if not repo_map_result:
-            logger.error("No repoitory map found.")
+            logger.error("No repository map found.")
         ai_reply = self.generate_mutant(
             repo_map_result=repo_map_result,
         )

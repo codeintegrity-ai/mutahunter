@@ -1,9 +1,11 @@
-import shlex
+import os
 import subprocess
 import xml.etree.ElementTree as ET
 from importlib import resources
+from shlex import split
 from typing import Any, Dict, List
 
+from grep_ast import filename_to_lang
 from tree_sitter_languages import get_language, get_parser
 
 
@@ -17,7 +19,6 @@ class Analyzer:
         """
         super().__init__()
         self.config = config
-        self.tree_sitter_parser = get_parser(self.config["language"])
 
         if self.config["coverage_type"] == "cobertura":
             self.file_lines_executed = self.parse_coverage_report_cobertura()
@@ -47,9 +48,9 @@ class Analyzer:
                     result[current_file] = []
                 elif line.startswith("DA:") and current_file:
                     parts = line.strip().split(":")[1].split(",")
-                    line_number = int(parts[0])
                     hits = int(parts[1])
                     if hits > 0:
+                        line_number = int(parts[0])
                         result[current_file].append(line_number)
                 elif line.startswith("end_of_record"):
                     current_file = None
@@ -117,28 +118,28 @@ class Analyzer:
             Exception: If any tests fail during the dry run.
         """
         test_command = self.config["test_command"]
-        result = subprocess.run(shlex.split(test_command))
+        result = subprocess.run(split(test_command), cwd=os.getcwd())
         if result.returncode != 0:
             raise Exception(
                 "Tests failed. Please ensure all tests pass before running mutation testing."
             )
 
     def get_covered_function_blocks(
-        self, executed_lines: List[int], filename: str
+        self, executed_lines: List[int], source_file_path: str
     ) -> List[Any]:
         """
-        Retrieves covered function blocks based on executed lines and filename.
+        Retrieves covered function blocks based on executed lines and source_file_path.
 
         Args:
             executed_lines (List[int]): List of executed line numbers.
-            filename (str): The name of the file being analyzed.
+            source_file_path (str): The name of the file being analyzed.
 
         Returns:
             List[Any]: A list of covered function blocks.
         """
         covered_function_blocks = []
         covered_function_block_executed_lines = []
-        function_blocks = self.get_function_blocks(filename=filename)
+        function_blocks = self.get_function_blocks(source_file_path=source_file_path)
         for function_block in function_blocks:
             start_point = function_block.start_point
             end_point = function_block.end_point
@@ -152,16 +153,15 @@ class Analyzer:
             if any(
                 line in executed_lines for line in range(start_line + 1, end_line + 1)
             ):  # start_line + 1 to exclude the function definition line
-                function_executed_lines = []
-                for line in range(start_line, end_line + 1):
-                    function_executed_lines.append(line - start_line + 1)
-
+                function_executed_lines = [
+                    line - start_line + 1 for line in range(start_line, end_line + 1)
+                ]
                 covered_function_blocks.append(function_block)
                 covered_function_block_executed_lines.append(function_executed_lines)
 
         return covered_function_blocks, covered_function_block_executed_lines
 
-    def get_function_blocks(self, filename: str) -> List[Any]:
+    def get_function_blocks(self, source_file_path: str) -> List[Any]:
         """
         Retrieves function blocks from a given file.
 
@@ -171,12 +171,13 @@ class Analyzer:
         Returns:
             List[Any]: A list of function block nodes.
         """
-        with open(filename, "rb") as f:
+        with open(source_file_path, "rb") as f:
             source_code = f.read()
-        function_blocks = self.find_function_blocks_nodes(source_code=source_code)
-        return function_blocks
+        return self.find_function_blocks_nodes(
+            source_file_path=source_file_path, source_code=source_code
+        )
 
-    def check_syntax(self, source_code: str) -> bool:
+    def check_syntax(self, source_file_path: str, source_code: str) -> bool:
         """
         Checks the syntax of the provided source code.
 
@@ -186,11 +187,16 @@ class Analyzer:
         Returns:
             bool: True if the syntax is correct, False otherwise.
         """
-        tree = self.tree_sitter_parser.parse(bytes(source_code, "utf8"))
+
+        lang = filename_to_lang(source_file_path)
+        parser = get_parser(lang)
+        tree = parser.parse(bytes(source_code, "utf8"))
         root_node = tree.root_node
         return not root_node.has_error
 
-    def find_function_blocks_nodes(self, source_code: bytes) -> List[Any]:
+    def find_function_blocks_nodes(
+        self, source_file_path: str, source_code: bytes
+    ) -> List[Any]:
         """
         Finds function block nodes in the provided source code.
 
@@ -200,10 +206,11 @@ class Analyzer:
         Returns:
             List[Any]: A list of function block nodes.
         """
-        tree = self.tree_sitter_parser.parse(source_code)
-        function_blocks = []
-        lang = self.config["language"]
+        lang = filename_to_lang(source_file_path)
+        parser = get_parser(lang)
         language = get_language(lang)
+
+        tree = parser.parse(source_code)
         # Load the tags queries
         try:
             scm_fname = resources.files(__package__).joinpath(
@@ -219,12 +226,8 @@ class Analyzer:
         captures = query.captures(tree.root_node)
 
         captures = list(captures)
-        for node, tag in captures:
-            if tag == "definition.function" or tag == "definition.method":
-                function_blocks.append(node)
-                # start_byte = node.start_byte
-                # end_byte = node.end_byte
-                # func_code = source_code[start_byte:end_byte].decode("utf-8")
-                # print(f"Function block code: {func_code}")
-
-        return function_blocks
+        return [
+            node
+            for node, tag in captures
+            if tag in ["definition.function", "definition.method"]
+        ]

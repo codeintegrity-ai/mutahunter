@@ -9,7 +9,6 @@ from mutahunter.core.analyzer import Analyzer
 @pytest.fixture
 def config():
     return {
-        "language": "python",
         "code_coverage_report_path": "path/to/coverage_report.xml",
         "coverage_type": "cobertura",
         "test_command": "pytest",
@@ -47,12 +46,24 @@ def test_dry_run_failure(analyzer):
 
 def test_check_syntax_valid(analyzer):
     source_code = "def valid_syntax():\n    pass"
-    assert analyzer.check_syntax(source_code) is True
+    source_file_path = "tets_file.py"
+    assert (
+        analyzer.check_syntax(
+            source_file_path=source_file_path, source_code=source_code
+        )
+        is True
+    )
 
 
 def test_check_syntax_invalid(analyzer):
     source_code = "def invalid_syntax(\n    pass"
-    assert analyzer.check_syntax(source_code) is False
+    source_file_path = "tets_file.py"
+    assert (
+        analyzer.check_syntax(
+            source_file_path=source_file_path, source_code=source_code
+        )
+        is False
+    )
 
 
 def test_find_function_blocks_nodes(analyzer):
@@ -63,8 +74,9 @@ def test_find_function_blocks_nodes(analyzer):
     def func2():
         pass
     """
+    source_file_path = "test_file.py"
 
-    function_blocks = analyzer.find_function_blocks_nodes(source_code)
+    function_blocks = analyzer.find_function_blocks_nodes(source_file_path, source_code)
     assert len(function_blocks) == 2
     assert function_blocks[0].type == "function_definition"
     assert function_blocks[1].type == "function_definition"
@@ -147,7 +159,6 @@ def test_parse_coverage_report_jacoco(config):
 
 def test_analyzer_init_invalid_coverage_type():
     config = {
-        "language": "python",
         "code_coverage_report_path": "path/to/coverage_report.xml",
         "coverage_type": "invalid",
         "test_command": "pytest",
@@ -161,7 +172,6 @@ def test_analyzer_init_invalid_coverage_type():
 
 def test_analyzer_init_jacoco():
     config = {
-        "language": "python",
         "code_coverage_report_path": "path/to/coverage_report.xml",
         "coverage_type": "jacoco",
         "test_command": "pytest",
@@ -173,20 +183,6 @@ def test_analyzer_init_jacoco():
     ):
         analyzer = Analyzer(config)
         assert analyzer.file_lines_executed == {"test_file.py": [1, 3]}
-
-
-def test_analyzer_init_invalid_coverage_type():
-    config = {
-        "language": "python",
-        "code_coverage_report_path": "path/to/coverage_report.xml",
-        "coverage_type": "invalid",
-        "test_command": "pytest",
-    }
-    with pytest.raises(
-        ValueError,
-        match="Invalid coverage tool. Please specify either 'cobertura' or 'jacoco'.",
-    ):
-        Analyzer(config)
 
 
 def test_get_function_blocks_large_file(analyzer):
