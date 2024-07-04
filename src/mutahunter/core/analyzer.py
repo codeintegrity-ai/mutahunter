@@ -7,6 +7,7 @@ from typing import Any, Dict, List
 
 from grep_ast import filename_to_lang
 from tree_sitter_languages import get_language, get_parser
+from mutahunter.core.logger import logger
 
 
 class Analyzer:
@@ -207,6 +208,8 @@ class Analyzer:
             List[Any]: A list of function block nodes.
         """
         lang = filename_to_lang(source_file_path)
+        if lang is None:
+            raise ValueError(f"Language not supported for file: {source_file_path}")
         parser = get_parser(lang)
         language = get_language(lang)
 
@@ -226,6 +229,9 @@ class Analyzer:
         captures = query.captures(tree.root_node)
 
         captures = list(captures)
+        if not captures:
+            logger.error("Tree-sitter query failed to find any captures.")
+            return []
         return [
             node
             for node, tag in captures

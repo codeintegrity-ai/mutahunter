@@ -190,3 +190,13 @@ def test_get_function_blocks_large_file(analyzer):
     with patch("builtins.open", mock_open(read_data=large_source_code)):
         function_blocks = analyzer.get_function_blocks("test_file.py")
         assert len(function_blocks) == 50
+
+
+def test_parse_coverage_report_lcov(config):
+    lcov_content = "SF:test_file.py\nDA:1,1\nDA:2,0\nDA:3,1\nend_of_record\n"
+
+    with patch("builtins.open", mock_open(read_data=lcov_content)):
+        config["coverage_type"] = "lcov"
+        analyzer = Analyzer(config)
+        result = analyzer.parse_coverage_report_lcov()
+        assert result == {"test_file.py": [1, 3]}

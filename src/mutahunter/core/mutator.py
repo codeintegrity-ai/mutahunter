@@ -14,7 +14,6 @@ class MutantGenerator:
         config,
         executed_lines,
         cov_files,
-        test_file_path,
         source_file_path,  # file_path for the source code
         start_byte,
         end_byte,
@@ -22,7 +21,6 @@ class MutantGenerator:
         self.config = config
         self.executed_lines = executed_lines
         self.cov_files = cov_files
-        self.test_file_path = test_file_path
         self.source_file_path = source_file_path
         self.start_byte = start_byte
         self.end_byte = end_byte
@@ -43,15 +41,10 @@ class MutantGenerator:
         return src_code[self.start_byte : self.end_byte].decode("utf-8")
 
     def generate_mutant(self, repo_map_result):
-
-        with open(self.test_file_path, "r") as f:
-            test_file_content = f.read()
         system_template = Template(self.prompt.system_prompt).render()
         user_template = Template(self.prompt.user_prompt).render(
             language=self.language,
             covered_lines=self.executed_lines,
-            test_file_path=self.test_file_path,
-            test_file_content=test_file_content,
             ast=repo_map_result,
             filename=self.source_file_path,
             example_output=self.prompt.example_output,
@@ -81,5 +74,8 @@ class MutantGenerator:
         success_edits, failed_edits = self.udiff_coder.apply_edits(
             edits=edits, original_code=self.function_block_source_code
         )
-        # path, hunk, content)
+        if not success_edits:
+            logger.error(
+                f"Failed to apply unified diff for generated mutant {self.source_file_path}"
+            )
         return success_edits

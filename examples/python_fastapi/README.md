@@ -6,11 +6,11 @@ This example is from CodiumAI’s cover-agent [repository](https://github.com/Co
 
 ```bash
 pip install -r requirements.txt
-pytest --cov=app --cov-report=xml --cov-report=term
+pytest --cov=. --cov-report=xml --cov-report=term
 ```
 
 ## Running Mutahunter to analyze the tests
 
 ```bash
-mutahunter run --test-command "pytest test_app.py" --test-file-path "test_app.py" --code-coverage-report-path "coverage.xml" --only-mutate-file-paths "app.py"
+mutahunter run --test-command "pytest" --code-coverage-report-path "coverage.xml" --only-mutate-file-paths "app.py"
 ```

@@ -34,7 +34,6 @@ MutaHunter leverages LLM models to inject context-aware faults into your codebas
 
 Examples:
 
-- [React Example](/examples/vite-react-testing-ts/)
 - [Go Example](/examples/go_webservice/)
 - [Java Example](/examples/java_maven/)
 - [JavaScript Example](/examples/js_vanilla/)
@@ -46,10 +45,10 @@ Feel free to add more examples! ✨
 
 1. **AI-Driven Mutation Testing:** Mutahunter leverages advanced LLM models to inject context-aware faults into your codebase rather than blindly mutating the code. This allows the mutants to closely resemble real bugs.
 2. **Language Agnostic:** Mutahunter supports various programming languages and can be extended to work with any language that provides a coverage report in **Cobertura** XML format, **Jacoco** XML format, and **lcov** format.
-3. **Enhanced Mutation Coverage Report (experimental):** Mutahunter provides detailed mutation coverage reports, highlighting the effectiveness of your test suite and identifying potential weaknesses.
+3. **Diff-Based Mutation Testing:** Mutahunter can run mutation testing specifically on modified files and lines based on the latest commit or pull request changes. This feature optimizes the mutation testing process by focusing on recent changes.
+4. **Enhanced Mutation Coverage Report (WIP):** Mutahunter provides detailed mutation coverage reports, highlighting the effectiveness of your test suite and identifying potential weaknesses.
 
 **Afraid of sending code to OpenAI or Anthropic? No problem, we support self-hosted versions as well.** 🔒
-
 
 ## Installation and Usage
 
@@ -75,12 +74,19 @@ pip install git+https://github.com/codeintegrity-ai/mutahunter.git
 
 ### How to Execute Mutahunter
 
-To use Mutahunter, you first need a **Cobertura XML**, **Jacoco XML**, or **lcov** code coverage report of a specific test file. Currently, mutation testing works per test file level, not the entire test suite. Therefore, you need to get the coverage report per test file.
+To use Mutahunter, you first need a **Cobertura XML**, **Jacoco XML**, or **lcov** code coverage report. **Make sure your test command correlates with the coverage report.**
 
 Example command to run Mutahunter on a Python FastAPI [application](/examples/python_fastapi/):
 
 ```bash
-mutahunter run --test-command "pytest test_app.py" --test-file-path "test_app.py" --code-coverage-report-path "coverage.xml" --only-mutate-file-paths "app.py"
+mutahunter run --test-command "pytest test_app.py" --code-coverage-report-path "coverage.xml" --only-mutate-file-paths "app.py"
+# --only-mutate-file-paths makes it faster by focusing on specific files
+```
+
+To run mutation testing specifically on modified files and lines based on the latest commit:
+
+```bash
+mutahunter run --test-command "pytest test_app.py" --code-coverage-report-path "coverage.xml" --modified-files-only
 ```
 
 The mutahunter run command has the following options:
@@ -108,11 +114,6 @@ Options:
       Required: Yes
       Example: `--coverage-type cobertura`
 
-  --test-file-path <PATH>
-      Description: Path to the test file to run the tests on.
-      Required: Yes
-      Example: `--test-file-path /path/to/test_file.py`
-
   --exclude-files <FILES>
       Description: Files to exclude from analysis.
       Required: No
@@ -122,11 +123,10 @@ Options:
       Description: Specifies which files to mutate. This is useful when you want to focus on specific files and it makes the mutations faster!
       Required: No
       Example: `--only-mutate-file-paths file1.py file2.py`
-      
-  --generate-report (experimental)
-      Description: Generate a detailed report on identified weaknesses in the test suite and potential bugs not caught by the test suite.
+  
+  --modified-files-only
+      Description: Runs mutation testing only on modified files and lines based on the latest commit.
       Required: No
-      Example: `--generate-report`
 ```
 
 #### Mutation Testing Report
@@ -148,27 +148,11 @@ An example survived mutant information would be like so:
     "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/logs/_latest/mutants/4_analyzer.py",
     "status": "SURVIVED",
     "error_msg": "",
-    "test_file_path": "tests/test_analyzer.py",
     "diff": "for line in range(start_line, end_line + 1):
       - function_executed_lines.append(line - start_line + 1)
       + function_executed_lines.append(line - start_line) # Mutation: Change the calculation of executed lines to start from 0 instead of 1.\n"
   },
 ]
-```
-
-Detailed report on identified weaknesses in the test suite and potential bugs not caught by the test suite:
-
-Example report (**experimental*):
-
-```markdown
-### Identified Weaknesses in the Test Suite
-1. **Callback Handling in `callback`**:
-   - **Weakness**: The test suite does not test the `callback` function for different node types, including the newly added `class_definition`.
-   - **Improvement**: Add tests to verify that the `callback` function correctly identifies and handles `class_definition` nodes, in addition to other node types.
-
-### Potential Bugs Not Caught by the Test Suite
-1. **Callback Handling**:
-   - **Bug**: The `callback` function might incorrectly handle or miss `class_definition` nodes, leading to incomplete or incorrect function block identification.
 ```
 
 ## Roadmap

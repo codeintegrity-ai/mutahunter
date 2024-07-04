@@ -54,12 +54,6 @@ def parse_arguments():
         help="The type of code coverage report to parse. Default is 'cobertura'.",
     )
     main_parser.add_argument(
-        "--test-file-path",
-        type=str,
-        required=True,
-        help="The path to the test file to run the tests on. This argument is required.",
-    )
-    main_parser.add_argument(
         "--exclude-files",
         type=str,
         nargs="+",
@@ -76,10 +70,10 @@ def parse_arguments():
         help="A list of specific files to mutate. Optional.",
     )
     main_parser.add_argument(
-        "--generate-report",
+        "--modified-files-only",
         default=False,
         action="store_true",
-        help="Generate a test suite report after running the mutation testing.",
+        help="Run mutation testing only on modified files in the latest commit.",
     )
     return parser.parse_args()
 

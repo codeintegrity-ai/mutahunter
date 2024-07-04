@@ -6,20 +6,17 @@ programming languages supported by MutaHunter.
 GO_UDIFF = """
 Example Output:
 ```diff
---- /Users/taikorind/Documents/personal/codeintegrity/mutahunter/example/go/router.go
-+++ /Users/taikorind/Documents/personal/codeintegrity/mutahunter/example/go/router.go
+--- /Users/taikorind/Documents/personal/codeintegrity/mutahunter/example/go/app.go
++++ /Users/taikorind/Documents/personal/codeintegrity/mutahunter/example/go/app.go
 @@ ... @@
- router.GET("/subtract/:num1/:num2", func(c *gin.Context) {
-     num1, _ := strconv.Atoi(c.Param("num1"))
-     num2, _ := strconv.Atoi(c.Param("num2"))
-     result := num1 - num2
--    if num1 > 1000000 || num2 > 1000000 {
--        c.JSON(http.StatusBadRequest, gin.H{"error": "Input value too large"})
--        return
--    }
-+    // Mutation: Removing validation for large input values to simulate Integer Overflow vulnerability.
-     c.JSON(http.StatusOK, gin.H{"result": result})
- })
+ func reverse(s string) string {
+        runes := []rune(s)
+-       for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
++       for i, j := 0, len(runes)-1; i <= j; i, j = i+1, j-1 { // Mutation: Changed the condition from i < j to i <= j to simulate off-by-one error.
+                runes[i], runes[j] = runes[j], runes[i]
+        }
+        return string(runes)
+}
 ```
 """
 

@@ -6,8 +6,6 @@ import json
 from dataclasses import asdict
 from typing import Any, Dict, List
 
-from jinja2 import Template
-
 from mutahunter.core.entities.mutant import Mutant
 from mutahunter.core.logger import logger
 from mutahunter.core.router import LLMRouter
@@ -29,12 +27,8 @@ class MutantReport:
         """
         self.generate_killed_mutants(mutants)
         self.generate_survived_mutants(mutants)
-        mutation_coverage_by_test_file = self.generate_mutation_coverage_by_source_file(
-            mutants
-        )
-        self.save_report(
-            "logs/_latest/mutation_coverage.json", mutation_coverage_by_test_file
-        )
+        mutation_coverage = self.generate_mutation_coverage_by_source_file(mutants)
+        self.save_report("logs/_latest/mutation_coverage.json", mutation_coverage)
         self.generate_mutant_report(mutants)
 
     def generate_killed_mutants(self, mutants: List[Mutant]) -> None:
@@ -47,8 +41,7 @@ class MutantReport:
         killed_mutants = [
             asdict(mutant) for mutant in mutants if mutant.status == "KILLED"
         ]
-        output = {self.config["test_file_path"]: killed_mutants}
-        self.save_report("logs/_latest/mutants_killed.json", output)
+        self.save_report("logs/_latest/mutants_killed.json", killed_mutants)
 
     def generate_survived_mutants(self, mutants: List[Mutant]) -> None:
         """
@@ -60,8 +53,7 @@ class MutantReport:
         survived_mutants = [
             asdict(mutant) for mutant in mutants if mutant.status == "SURVIVED"
         ]
-        output = {self.config["test_file_path"]: survived_mutants}
-        self.save_report("logs/_latest/mutants_survived.json", output)
+        self.save_report("logs/_latest/mutants_survived.json", survived_mutants)
 
     def generate_mutation_coverage_by_source_file(
         self, mutants: List[Mutant]
@@ -141,53 +133,3 @@ class MutantReport:
         """
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
-
-    def generate_test_suite_report(self, mutants: List[Mutant]) -> None:
-        """
-        Generates a report of the test suite.
-
-        Args:
-            mutants (List[Mutant]): List of mutants generated during mutation testing.
-        """
-        survived_mutants = [
-            asdict(mutant) for mutant in mutants if mutant.status == "SURVIVED"
-        ]
-        with open(self.config["test_file_path"], "r", encoding="utf-8") as f:
-            test_suite = f.read()
-
-        system_template = Template(SYSTEM_PROMPT).render()
-        user_template = Template(USER_PROMPT).render(
-            report=survived_mutants,
-            test_suite=test_suite,
-        )
-        prompt = {
-            "system": system_template,
-            "user": user_template,
-        }
-        model_response, _, _ = self.router.generate_response(
-            prompt=prompt, streaming=False
-        )
-
-        with open("logs/_latest/test_suite_report.md", "w", encoding="utf-8") as f:
-            f.write(model_response)
-
-
-SYSTEM_PROMPT = """
-You are a security expert analyzing the codebase to identify critical weaknesses in the test suite based on survived mutants from mutation testing. Focus on identifying weaknesses without generating specific test cases. Be concise and only include confirmed weaknesses.
-"""
-
-USER_PROMPT = """
-Analyze the following survived mutant report to identify weaknesses in the test suite. Provide a concise list of specific weaknesses for each mutant.
-```json
-{{report}}
-```
-
-Test Suite: 
-```
-{{test_suite}}
-```
-
-Output format:
-1. Clear, concise bullet points describing the weaknesses in the test suite and how they can be improved.
-2. Potential bugs that may not be caught by the test suite, if any.
-"""

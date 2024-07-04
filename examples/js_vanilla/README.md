@@ -12,5 +12,5 @@ npm run test:coverage
 ## Running Mutahunter to analyze the tests
 
 ```bash
-mutahunter run --test-command "npm run test" --test-file-path "ui.test.js" --code-coverage-report-path "coverage/coverage.xml" --only-mutate-file-paths "ui.js"
+mutahunter run --test-command "npm run test" --code-coverage-report-path "coverage/coverage.xml" --only-mutate-file-paths "ui.js"
 ```
