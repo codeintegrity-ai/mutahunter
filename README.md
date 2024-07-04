@@ -38,8 +38,8 @@ MutaHunter leverages LLM models to inject context-aware faults into your codebas
 - **Change-Based:** Runs mutation tests on modified files and lines based on the latest commit or pull request changes.
 - **Multi-Language Support:** Compatible with languages that provide coverage reports in Cobertura XML, Jacoco XML, and lcov formats.
 - **Extensible:** Extensible to additional languages and testing frameworks.
-- **Context-Aware:** Uses a map of your entire git repository to generate contextually relevant mutants.
-- **LLM Support:** Supports self-hosted, Anthropic, OpenAI, and any LLM models using LiteLLM.
+- **Context-Aware:** Uses a map of your entire git repository to generate contextually relevant mutants using [aider](https://aider.chat/docs/repomap.html).
+- **LLM Support:** Supports self-hosted, Anthropic, OpenAI, and any LLM models using [LiteLLM](https://github.com/BerriAI/litellm).
 - **Mutant Report** Provides detailed reports on mutation coverage, killed mutants, and survived mutants.
 
 ## Getting Started
@@ -54,7 +54,8 @@ $ export OPENAI_API_KEY=your-key-goes-here
 # Or, work with Anthropic's models
 $ export ANTHROPIC_API_KEY=your-key-goes-here
 
-# Run Mutahunter on a specific file. **Note:** Make sure coverage report is generated and correspons to the test command.
+# Run Mutahunter on a specific file. 
+# Coverage report should correspond to the test command.
 $ mutahunter run --test-command "pytest tests/unit" --code-coverage-report-path "coverage.xml" --only-mutate-file-paths "app_1.py" "app_2.py"
 
 # Run mutation testing on modified files based on the latest commit
