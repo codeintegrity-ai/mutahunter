@@ -6,7 +6,7 @@ This example is from CodiumAI’s cover-agent [repository](https://github.com/Co
 
 ```bash
 pip install -r requirements.txt
-pytest --cov=app --cov-report=xml --cov-report=term
+pytest --cov=. --cov-report=xml --cov-report=term
 ```
 
 ## Running Mutahunter to analyze the tests

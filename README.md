@@ -34,7 +34,6 @@ MutaHunter leverages LLM models to inject context-aware faults into your codebas
 
 Examples:
 
-- [React Example](/examples/vite-react-testing-ts/)
 - [Go Example](/examples/go_webservice/)
 - [Java Example](/examples/java_maven/)
 - [JavaScript Example](/examples/js_vanilla/)
