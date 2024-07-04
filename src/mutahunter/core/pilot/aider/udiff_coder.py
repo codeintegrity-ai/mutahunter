@@ -8,12 +8,8 @@ from itertools import groupby
 from pathlib import Path
 
 from mutahunter.core.pilot.aider.search_replace import (
-    SearchTextNotUnique,
-    all_preprocs,
-    diff_lines,
-    flexible_search_and_replace,
-    search_and_replace,
-)
+    SearchTextNotUnique, all_preprocs, diff_lines, flexible_search_and_replace,
+    search_and_replace)
 
 no_match_error = """UnifiedDiffNoMatch: hunk failed to apply!
 

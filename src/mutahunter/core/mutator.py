@@ -74,5 +74,8 @@ class MutantGenerator:
         success_edits, failed_edits = self.udiff_coder.apply_edits(
             edits=edits, original_code=self.function_block_source_code
         )
-        # path, hunk, content)
+        if not success_edits:
+            logger.error(
+                f"Failed to apply unified diff for generated mutant {self.source_file_path}"
+            )
         return success_edits

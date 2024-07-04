@@ -1,4 +1,5 @@
 import os
+import subprocess
 import time
 from typing import Any, Dict, Generator, List
 
@@ -10,7 +11,6 @@ from mutahunter.core.logger import logger
 from mutahunter.core.mutator import MutantGenerator
 from mutahunter.core.report import MutantReport
 from mutahunter.core.runner import TestRunner
-import subprocess
 
 
 class MutantHunter:
@@ -195,7 +195,7 @@ class MutantHunter:
                 start_byte=start_byte,
                 end_byte=end_byte,
             )
-
+            # NOTE: May return empty content if the mutation generation fails.
             for _, hunk, content in mutant_generator.generate():
                 yield {
                     "source_path": file_path,
@@ -349,14 +349,29 @@ class MutantHunter:
                     .splitlines()
                 )
             else:
-                # PR stage: Compare the latest commit to the previous head
-                modified_files = (
-                    subprocess.check_output(
-                        ["git", "diff", "--name-only", "HEAD^..HEAD"]
+                try:
+                    # PR stage: Compare the latest commit to the previous head
+                    modified_files = (
+                        subprocess.check_output(
+                            ["git", "diff", "--name-only", "HEAD^..HEAD"]
+                        )
+                        .decode("utf-8")
+                        .splitlines()
                     )
-                    .decode("utf-8")
-                    .splitlines()
-                )
+                except subprocess.CalledProcessError as e:
+                    if "ambiguous argument 'HEAD^'" in e.stderr.decode("utf-8"):
+                        logger.warning(
+                            "No previous commit found. Using initial commit for diff."
+                        )
+                        modified_files = (
+                            subprocess.check_output(
+                                ["git", "diff", "--name-only", "HEAD"]
+                            )
+                            .decode("utf-8")
+                            .splitlines()
+                        )
+                    else:
+                        raise
             # Get the list of covered files
             covered_files = list(self.analyzer.file_lines_executed.keys())
             # Filter out files not in the line coverage report
@@ -376,18 +391,48 @@ class MutantHunter:
         Args:
             file_path (str): The path to the file.
 
-        Returns:
-            List[int]: A list of modified line numbers.
+            Returns:
+                List[int]: A list of modified line numbers.
         """
         try:
-            # Get the diff for the specific file in the latest commit
-            diff_output = (
-                subprocess.check_output(
-                    ["git", "diff", "-U0", file_path]  # "HEAD^..HEAD",
-                )
+            # Detect if there are any unstaged changes
+            unstaged_changes = (
+                subprocess.check_output(["git", "diff", "--name-only"])
                 .decode("utf-8")
                 .splitlines()
             )
+
+            if unstaged_changes:
+                # Local development: Compare unstaged changes to the current commit
+                diff_output = (
+                    subprocess.check_output(["git", "diff", "-U0", file_path])
+                    .decode("utf-8")
+                    .splitlines()
+                )
+            else:
+                try:
+                    # PR stage: Compare the latest commit to the previous head
+                    diff_output = (
+                        subprocess.check_output(
+                            ["git", "diff", "-U0", "HEAD^..HEAD", file_path]
+                        )
+                        .decode("utf-8")
+                        .splitlines()
+                    )
+                except subprocess.CalledProcessError as e:
+                    if "ambiguous argument 'HEAD^'" in e.stderr.decode("utf-8"):
+                        logger.warning(
+                            "No previous commit found. Using initial commit for diff."
+                        )
+                        diff_output = (
+                            subprocess.check_output(
+                                ["git", "diff", "-U0", "HEAD", file_path]
+                            )
+                            .decode("utf-8")
+                            .splitlines()
+                        )
+                    else:
+                        raise
 
             modified_lines = []
             for line in diff_output:

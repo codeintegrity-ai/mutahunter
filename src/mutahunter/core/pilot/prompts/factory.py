@@ -2,12 +2,9 @@
 Module for generating prompts based on the programming language.
 """
 
-from mutahunter.core.pilot.prompts.examples import (
-    GO_UDIFF,
-    JAVA_UDIFF,
-    JAVASCRIPT_UDIFF,
-    PYTHON_UDIFF,
-)
+from mutahunter.core.pilot.prompts.examples import (GO_UDIFF, JAVA_UDIFF,
+                                                    JAVASCRIPT_UDIFF,
+                                                    PYTHON_UDIFF)
 from mutahunter.core.pilot.prompts.system import SYSTEM_PROMPT
 from mutahunter.core.pilot.prompts.user import USER_PROMPT
 
