@@ -10,5 +10,5 @@ npm run test:coverage
 ## Run mutahunter
 
 ```bash
-mutahunter run --test-command "npm run test" --test-file-path "src/App.test.tsx" --code-coverage-report-path "coverage/coverage.xml"
+mutahunter run --test-command "npm run test" --code-coverage-report-path "coverage/coverage.xml"
 ```

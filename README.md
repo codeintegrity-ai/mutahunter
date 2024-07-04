@@ -75,12 +75,13 @@ pip install git+https://github.com/codeintegrity-ai/mutahunter.git
 
 ### How to Execute Mutahunter
 
-To use Mutahunter, you first need a **Cobertura XML**, **Jacoco XML**, or **lcov** code coverage report of a specific test file. Currently, mutation testing works per test file level, not the entire test suite. Therefore, you need to get the coverage report per test file.
+To use Mutahunter, you first need a **Cobertura XML**, **Jacoco XML**, or **lcov** code coverage report. Make sure your test command correlates with the coverage report.
 
 Example command to run Mutahunter on a Python FastAPI [application](/examples/python_fastapi/):
 
 ```bash
-mutahunter run --test-command "pytest test_app.py" --test-file-path "test_app.py" --code-coverage-report-path "coverage.xml" --only-mutate-file-paths "app.py"
+mutahunter run --test-command "pytest test_app.py" --code-coverage-report-path "coverage.xml" --only-mutate-file-paths "app.py"
+# --only-mutate-file-paths makes is faster by focusing on specific files
 ```
 
 The mutahunter run command has the following options:
@@ -108,11 +109,6 @@ Options:
       Required: Yes
       Example: `--coverage-type cobertura`
 
-  --test-file-path <PATH>
-      Description: Path to the test file to run the tests on.
-      Required: Yes
-      Example: `--test-file-path /path/to/test_file.py`
-
   --exclude-files <FILES>
       Description: Files to exclude from analysis.
       Required: No
@@ -122,11 +118,6 @@ Options:
       Description: Specifies which files to mutate. This is useful when you want to focus on specific files and it makes the mutations faster!
       Required: No
       Example: `--only-mutate-file-paths file1.py file2.py`
-      
-  --generate-report (experimental)
-      Description: Generate a detailed report on identified weaknesses in the test suite and potential bugs not caught by the test suite.
-      Required: No
-      Example: `--generate-report`
 ```
 
 #### Mutation Testing Report
@@ -148,7 +139,6 @@ An example survived mutant information would be like so:
     "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/logs/_latest/mutants/4_analyzer.py",
     "status": "SURVIVED",
     "error_msg": "",
-    "test_file_path": "tests/test_analyzer.py",
     "diff": "for line in range(start_line, end_line + 1):
       - function_executed_lines.append(line - start_line + 1)
       + function_executed_lines.append(line - start_line) # Mutation: Change the calculation of executed lines to start from 0 instead of 1.\n"

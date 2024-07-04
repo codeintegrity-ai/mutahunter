@@ -1,11 +1,5 @@
 USER_PROMPT = """
-You will be provided with the {{language}} test file as well as the Abstract Syntax Tree (AST) of the source code for contextual understanding. This AST will help you understand the entire source code. Make sure to read the AST before proceeding with the mutation:
-
-The test file path is {{test_file_path}}.
-The test file content is:
-```{{language}}
-{{test_file_content}}
-```
+You will be provided with the {{language}} Abstract Syntax Tree (AST) of the source code for contextual understanding. This AST will help you understand the entire source code. Make sure to read the AST before proceeding with the mutation:
 
 ```ast
 {{ast}}

@@ -15,7 +15,6 @@ def config():
         "code_coverage_report_path": "path/to/coverage_report.xml",
         "only_mutate_file_paths": [],
         "exclude_files": [],
-        "test_file_path": "tests/test_file.py",
         "model": "test_model",  # Adding the missing 'model' key
         "api_base": "http://localhost:8000",  # Adding the missing 'api_base' key
     }
@@ -117,7 +116,6 @@ def test_run_mutation_testing_mutant_killed(mutant_hunter):
         "end_byte": 10,
         "hunk": "hunk",
         "mutant_code_snippet": "mutant code",
-        "test_file_path": "tests/test_file.py",
     }
 
     mutant_hunter.generate_mutations = MagicMock(return_value=[mutant])
@@ -142,7 +140,6 @@ def test_run_mutation_testing_mutant_survives(mutant_hunter):
         "end_byte": 10,
         "hunk": "hunk",
         "mutant_code_snippet": "mutant code",
-        "test_file_path": "tests/test_file.py",
     }
 
     mutant_hunter.generate_mutations = MagicMock(return_value=[mutant])
@@ -164,7 +161,6 @@ def test_run_mutation_testing_handles_exceptions_during_preparation(mutant_hunte
         "end_byte": 10,
         "hunk": "hunk",
         "mutant_code_snippet": "mutant code",
-        "test_file_path": "tests/test_file.py",
     }
     mutant_hunter.generate_mutations = MagicMock(return_value=[mutant])
     mutant_hunter.prepare_mutant_file = MagicMock(

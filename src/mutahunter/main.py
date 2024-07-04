@@ -54,12 +54,6 @@ def parse_arguments():
         help="The type of code coverage report to parse. Default is 'cobertura'.",
     )
     main_parser.add_argument(
-        "--test-file-path",
-        type=str,
-        required=True,
-        help="The path to the test file to run the tests on. This argument is required.",
-    )
-    main_parser.add_argument(
         "--exclude-files",
         type=str,
         nargs="+",

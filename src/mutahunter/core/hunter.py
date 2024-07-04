@@ -23,7 +23,6 @@ class MutantHunter:
                 - api_base (str): Base URL for self-hosted LLM models.
                 - test_command (str): Command to run the tests.
                 - code_coverage_report_path (Optional[str]): Path to the code coverage report file.
-                - test_file_path (str): Path to the test file.
                 - exclude_files (List[str]): List of files to exclude from analysis.
                 - only_mutate_file_paths (List[str]): List of specific files to mutate.
         """
@@ -45,9 +44,6 @@ class MutantHunter:
             self.run_mutation_testing()
             logger.info("🎯 Generating Mutation Report... 🎯")
             self.mutant_report.generate_report(self.mutants)
-            if self.config["generate_report"]:
-                logger.info("📊 Analyzing Survived Mutants... 📊")
-                self.mutant_report.generate_test_suite_report(self.mutants)
             logger.info(f"Mutation Testing Ended. Took {round(time.time() - start)}s")
         except Exception as e:
             import traceback
@@ -117,7 +113,6 @@ class MutantHunter:
                     config=self.config,
                     executed_lines=executed_lines,
                     cov_files=list(all_covered_files),
-                    test_file_path=self.config["test_file_path"],
                     source_file_path=covered_file_path,
                     start_byte=start_byte,
                     end_byte=end_byte,
@@ -130,7 +125,6 @@ class MutantHunter:
                         "end_byte": end_byte,
                         "hunk": hunk,
                         "mutant_code_snippet": content,
-                        "test_file_path": self.config["test_file_path"],
                     }
 
     def run_mutation_testing(self) -> None:
@@ -153,7 +147,6 @@ class MutantHunter:
                     diff=unified_diff,
                     source_path=mutant_data["source_path"],
                     mutant_path=mutant_path,
-                    test_file_path=mutant_data["test_file_path"],
                 )
                 result = self.run_test(
                     {
@@ -235,13 +228,43 @@ class MutantHunter:
             mutant (Mutant): The mutant being tested.
         """
         if result.returncode == 0:
-            logger.info(f"Mutant {mutant.id} survived by {mutant.test_file_path}")
+            logger.info(f"🛡️ Mutant {mutant.id} survived 🛡️\n")
             mutant.status = "SURVIVED"
         elif result.returncode == 1:
-            logger.info(f"Mutant {mutant.id} killed by {mutant.test_file_path}")
-            mutant.status = "KILLED"
+            logger.info(f"🗡️ Mutant {mutant.id} killed 🗡️\n")
             mutant.error_msg = result.stderr + result.stdout
+            mutant.status = "KILLED"
         else:
             logger.error(f"Mutant {mutant.id} failed to run tests.")
             return
         self.mutants.append(mutant)
+
+    # def _parse_stderr(self, log: str) -> None:
+    #     """
+    #     Parses the stderr output to extract the error message.
+
+    #     Args:
+    #         stderr (str): The stderr output.
+    #     """
+    #     import re
+
+    #     # Define keywords for different programming languages
+    #     keywords = [
+    #         # Java JUnit
+    #         "[ERROR] Tests run:",
+    #         # Python pytest
+    #         "FAILURES",
+    #         # Go testing
+    #         "--- FAIL:",
+    #         # Rust testing
+    #         "---- stdout ----",
+    #     ]
+    #     matches = []
+
+    #     lines = log.split("\n")
+    #     for i, line in enumerate(lines):
+    #         for keyword in keywords:
+    #             if keyword in line:
+    #                 matches.extend(lines[i:])
+    #                 return " ".join(matches)
+    #     return log

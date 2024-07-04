@@ -12,7 +12,6 @@ def config():
     return {
         "model": "test_model",
         "api_base": "http://localhost:8000",
-        "test_file_path": "app_test.go",
     }
 
 
@@ -25,7 +24,6 @@ def mutants():
             mutant_path="mutant1.py",
             status="KILLED",
             error_msg="",
-            test_file_path="app_test.go",
             diff="",
         ),
         Mutant(
@@ -34,7 +32,6 @@ def mutants():
             mutant_path="mutant2.py",
             status="SURVIVED",
             error_msg="",
-            test_file_path="app_test.go",
             diff="",
         ),
         Mutant(
@@ -43,7 +40,6 @@ def mutants():
             mutant_path="mutant3.py",
             status="KILLED",
             error_msg="",
-            test_file_path="app_test.go",
             diff="",
         ),
         Mutant(
@@ -52,7 +48,6 @@ def mutants():
             mutant_path="mutant4.py",
             status="SURVIVED",
             error_msg="",
-            test_file_path="app_test.go",
             diff="",
         ),
     ]
@@ -146,28 +141,24 @@ def test_generate_survived_mutants(mutants, config):
             )
             mock_json_dump.assert_called_once()
             written_data = mock_json_dump.call_args[0][0]
-            assert written_data == {
-                "app_test.go": [
-                    {
-                        "id": "2",
-                        "source_path": "app.go",
-                        "mutant_path": "mutant2.py",
-                        "status": "SURVIVED",
-                        "error_msg": "",
-                        "test_file_path": "app_test.go",
-                        "diff": "",
-                    },
-                    {
-                        "id": "4",
-                        "source_path": "app.go",
-                        "mutant_path": "mutant4.py",
-                        "status": "SURVIVED",
-                        "error_msg": "",
-                        "test_file_path": "app_test.go",
-                        "diff": "",
-                    },
-                ]
-            }
+            assert written_data == [
+                {
+                    "id": "2",
+                    "source_path": "app.go",
+                    "mutant_path": "mutant2.py",
+                    "status": "SURVIVED",
+                    "error_msg": "",
+                    "diff": "",
+                },
+                {
+                    "id": "4",
+                    "source_path": "app.go",
+                    "mutant_path": "mutant4.py",
+                    "status": "SURVIVED",
+                    "error_msg": "",
+                    "diff": "",
+                },
+            ]
 
 
 def test_generate_killed_mutants(mutants, config):
@@ -180,25 +171,21 @@ def test_generate_killed_mutants(mutants, config):
             )
             mock_json_dump.assert_called_once()
             written_data = mock_json_dump.call_args[0][0]
-            assert written_data == {
-                "app_test.go": [
-                    {
-                        "id": "1",
-                        "source_path": "app.go",
-                        "mutant_path": "mutant1.py",
-                        "status": "KILLED",
-                        "error_msg": "",
-                        "test_file_path": "app_test.go",
-                        "diff": "",
-                    },
-                    {
-                        "id": "3",
-                        "source_path": "app.go",
-                        "mutant_path": "mutant3.py",
-                        "status": "KILLED",
-                        "error_msg": "",
-                        "test_file_path": "app_test.go",
-                        "diff": "",
-                    },
-                ]
-            }
+            assert written_data == [
+                {
+                    "id": "1",
+                    "source_path": "app.go",
+                    "mutant_path": "mutant1.py",
+                    "status": "KILLED",
+                    "error_msg": "",
+                    "diff": "",
+                },
+                {
+                    "id": "3",
+                    "source_path": "app.go",
+                    "mutant_path": "mutant3.py",
+                    "status": "KILLED",
+                    "error_msg": "",
+                    "diff": "",
+                },
+            ]

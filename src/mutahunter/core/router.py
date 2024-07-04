@@ -85,7 +85,7 @@ class LLMRouter:
         Stream the response from the LLM model.
         """
         response_chunks = []
-        print("Streaming results from LLM model...")
+        print("\nStreaming results from LLM model...")
         response = litellm.completion(**completion_params)
         for chunk in response:
             print(chunk.choices[0].delta.content or "", end="", flush=True)
