@@ -29,9 +29,9 @@
 
 Mutation testing is used by big tech companies like [Google](https://research.google/pubs/state-of-mutation-testing-at-google/) to ensure the robustness of their test suites. With Mutahunter, we aim to empower other companies and developers to use this powerful tool to enhance their test suites and improve software quality.
 
-To put it simply, mutation testing is a way to verify how good your test cases are. It involves creating small changes, or “mutants,” in the code and checking if the test cases can catch these changes. Line coverage only tells you how much of the code has been executed, not how well it’s been tested.
+Mutation testing verifies the effectiveness of your test cases by creating small changes, or “mutants,” in the code and checking if the test cases can catch these changes. Unlike line coverage, which only shows code execution, mutation testing reveals how well the code is tested.
 
-MutaHunter leverages LLM models to inject context-aware faults into your codebase. Unlike traditional rule-based methods, MutaHunter’s AI-driven approach provides a full contextual understanding of the entire codebase, enabling it to identify and inject mutations that closely resemble real bugs. This ensures comprehensive and effective testing, significantly enhancing software security and quality.
+Mutahunter uses LLM models to inject context-aware faults into your codebase. This AI-driven approach produces fewer equivalent mutants, mutants with higher fault detection potential, and those with higher coupling and semantic similarity to real faults, ensuring comprehensive and effective testing.
 
 ## Features
 
@@ -59,7 +59,7 @@ $ export ANTHROPIC_API_KEY=your-key-goes-here
 $ mutahunter run --test-command "pytest tests/unit" --code-coverage-report-path "coverage.xml" --only-mutate-file-paths "app_1.py" "app_2.py"
 
 # Run mutation testing on modified files based on the latest commit
-$ mutahunter run --test-command "pytest test/unit" --code-coverage-report-path "coverage.xml" --modified-files-only
+$ mutahunter run --test-command "pytest tests/unit" --code-coverage-report-path "coverage.xml" --modified-files-only
 ```
 
 ### Examples
