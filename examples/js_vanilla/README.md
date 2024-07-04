@@ -12,5 +12,6 @@ npm run test:coverage
 ## Running Mutahunter to analyze the tests
 
 ```bash
-mutahunter run --test-command "npm run test" --code-coverage-report-path "coverage/coverage.xml" --only-mutate-file-paths "ui.js"
+export OPENAI_API_KEY=your-key-goes-here
+mutahunter run --test-command "npm run test" --code-coverage-report-path "coverage/coverage.xml" --only-mutate-file-paths "ui.js" --model "gpt-3.5-turbo"
 ```

@@ -3,71 +3,82 @@ This module contains example output templates for different
 programming languages supported by MutaHunter.
 """
 
-GO_UDIFF = """
-Example Output:
-```diff
---- /Users/taikorind/Documents/personal/codeintegrity/mutahunter/example/go/app.go
-+++ /Users/taikorind/Documents/personal/codeintegrity/mutahunter/example/go/app.go
-@@ ... @@
- func reverse(s string) string {
-        runes := []rune(s)
--       for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
-+       for i, j := 0, len(runes)-1; i <= j; i, j = i+1, j-1 { // Mutation: Changed the condition from i < j to i <= j to simulate off-by-one error.
-                runes[i], runes[j] = runes[j], runes[i]
+GO_EXAMPLE_OUTPUT = """
+Output Format:
+```json
+{
+    "changes": [
+        {
+            "type": "Off-by-One Error",
+            "description": "Changed the condition from i < j to i <= j to simulate off-by-one error.",
+            "context_before": "        runes := []rune(s)",
+            "original_line": "       for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {",
+            "mutated_line": "       for i, j := 0, len(runes)-1; i <= j; i, j = i+1, j-1 { // Mutation: Changed the condition from i < j to i <= j to simulate off-by-one error.",
+            "context_after": "}",
         }
-        return string(runes)
+    ]
 }
 ```
 """
 
-JAVASCRIPT_UDIFF = """
-Example Output:
-```diff
---- /Users/taikorind/Documents/personal/codeintegrity/mutahunter/example/javascript/showAlert.js
-+++ /Users/taikorind/Documents/personal/codeintegrity/mutahunter/example/javascript/showAlert.js
-@@ ... @@
- showAlert(message, className) {
-     this.clearAlert();
-     const div = document.createElement('div');
-     div.className = className;
--    div.appendChild(document.createTextNode(message));
-+    div.innerHTML = message;  // Mutation: Using innerHTML instead of createTextNode to simulate XSS vulnerability.
-     const container = document.querySelector('.searchContainer');
-     const search = document.querySelector('.search');
-     container.insertBefore(div, search);
-
-     setTimeout(() => {
-       this.clearAlert();
-     }, 2000);
- }
-```
-"""
-
-PYTHON_UDIFF = """
-Example Output:
-```diff
---- /Users/taikorind/Documents/personal/codeintegrity/mutahunter/example/calculator/simple_calculator.py
-+++ /Users/taikorind/Documents/personal/codeintegrity/mutahunter/example/calculator/simple_calculator.py
-@@ ... @@
- def add(self, a, b):
-         \"\"\"Return the sum of a and b.\"\"\"
--        return a + b
-+        return float(a) + float(b) # Mutation: Convert inputs to floats to simulate floating-point precision error.
-```
-"""
-
-JAVA_UDIFF = """
-Example Output:
-```diff
---- /Users/taikorind/Documents/personal/codeintegrity/mutahunter/example/calculator/simple_calculator.py
-+++ /Users/taikorind/Documents/personal/codeintegrity/mutahunter/example/calculator/simple_calculator.py
-@@ ... @@
-    public double divide(double a, double b) {
-        if (b == 0) {
-            throw new IllegalArgumentException("Division by zero is not allowed.");
+JAVASCRIPT_EXAMPLE_OUTPUT = """
+Output Format:
+```json
+{
+    "changes": [
+        {
+            "type": "Boundary Condition",
+            "description": "Simulate missing user data by setting default values if user properties are undefined.",
+            "context_before": "                        <div class="col-md-9">,
+            'original_line': "                        <span class=\"badge badge-primary\"> Public Repos: ${user.public_repos}</span>",
+            "mutated_line": "                        <span class=\"badge badge-primary\"> Public Repos: ${user.public_repos || 'N/A'}</span>  // Mutation: Set default value if user.public_repos is undefined.",
+            "context_after": "                        <span class=\"badge badge-secondary\"> Public Gists: ${user.public_gists}</span>"
         }
--        return a / b;        
-+        return a * b; // Mutation: Changed division to multiplication using AOR (Arithmetic Operator Replacement)
-    }
+    ]
+}
+```
+"""
+
+PYTHON_EXAMPLE_OUTPUT = """
+Output Format:
+```json
+{
+    "changes": [
+        {
+            "type": "Floating-Point Precision Error",
+            "description": "Convert inputs to floats to simulate floating-point precision error.",
+            "context_before": "         \"\"\"Return the sum of a and b.\"\"\"",
+            "original_line": "        return a + b",
+            "mutated_line": "        return float(a) + float(b) # Mutation: Convert inputs to floats to simulate floating-point precision error.",
+            "context_after": ""
+        }
+    ]
+}
+```
+"""
+
+JAVA_EXAMPLE_OUTPUT = """
+Output Format:
+```json
+{
+    "changes": [
+        {
+            "type": "Boundary Condition",
+            "description": "Added division by zero check.",
+            "context_before": "    public double divide(double a, double b) {",
+            "original_line": "        return a / b;",
+            "mutated_line": "        if (b == 0) { throw new ArithmeticException(\"Division by zero\"); } return a / b; // Mutation: Added division by zero check",
+            "context_after": "    }"
+        },
+        {
+            "type": "Arithmetic Operator Replacement",
+            "description": "Changed division to multiplication using AOR (Arithmetic Operator Replacement)",
+            "context_before": "    public double divide(double a, double b) {",
+            "original_line": "        return a / b;",
+            "mutated_line": "        return a * b; // Mutation: Changed division to multiplication using AOR (Arithmetic Operator Replacement)",
+            "context_after": "    }"
+        }
+    ]
+}
 ```
 """

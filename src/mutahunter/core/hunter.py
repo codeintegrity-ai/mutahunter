@@ -106,44 +106,21 @@ class MutantHunter:
         Runs mutation testing on the entire codebase.
         """
         logger.info("Running mutation testing on the entire codebase.")
-        for mutant_data in self.generate_mutations():
-            self.process_mutant(mutant_data)
-
-    def run_mutation_testing_on_modified_files(self) -> None:
-        """
-        Runs mutation testing on modified files.
-        """
-        logger.info("Running mutation testing on modified files.")
-        for mutant_data in self.generate_mutations_for_modified_files():
-            self.process_mutant(mutant_data)
-
-    def generate_mutations(self) -> Generator[Dict[str, Any], None, None]:
-        """
-        Generates mutations for all covered files.
-
-        Yields:
-            Generator[Dict[str, Any], None, None]: Dictionary containing mutation details.
-        """
         all_covered_files = self.analyzer.file_lines_executed.keys()
         logger.info(f"Generating mutations for {len(all_covered_files)} covered files.")
 
         for covered_file_path in tqdm(all_covered_files):
             if self.should_skip_file(covered_file_path):
                 continue
-
-            yield from self.generate_mutations_for_file(
+            self.generate_mutations(
                 covered_file_path, self.analyzer.file_lines_executed[covered_file_path]
             )
 
-    def generate_mutations_for_modified_files(
-        self,
-    ) -> Generator[Dict[str, Any], None, None]:
+    def run_mutation_testing_on_modified_files(self) -> None:
         """
-        Generates mutations for modified files and lines based on the latest commit.
-
-        Yields:
-            Generator[Dict[str, Any], None, None]: Dictionary containing mutation details.
+        Runs mutation testing on modified files.
         """
+        logger.info("Running mutation testing on modified files.")
         modified_files = self.get_modified_files()
         logger.info(
             f"Generating mutations for {len(modified_files)} modified files - {','.join(modified_files)}"
@@ -159,9 +136,9 @@ class MutantHunter:
                 logger.debug(f"No modified lines found in file: {file_path}")
                 continue
 
-            yield from self.generate_mutations_for_file(file_path, modified_lines)
+            self.generate_mutations(file_path, modified_lines)
 
-    def generate_mutations_for_file(
+    def generate_mutations(
         self, file_path: str, executed_lines: List[int]
     ) -> Generator[Dict[str, Any], None, None]:
         """
@@ -186,49 +163,48 @@ class MutantHunter:
         ):
             start_byte = function_block.start_byte
             end_byte = function_block.end_byte
-
+            function_name = function_block.child_by_field_name("name").text.decode(
+                "utf8"
+            )
             mutant_generator = MutantGenerator(
                 config=self.config,
                 executed_lines=executed_lines,
                 cov_files=list(self.analyzer.file_lines_executed.keys()),
                 source_file_path=file_path,
+                function_name=function_name,
                 start_byte=start_byte,
                 end_byte=end_byte,
             )
-            # NOTE: May return empty content if the mutation generation fails.
-            for _, hunk, content in mutant_generator.generate():
-                yield {
-                    "source_path": file_path,
-                    "start_byte": start_byte,
-                    "end_byte": end_byte,
-                    "hunk": hunk,
-                    "mutant_code_snippet": content,
-                }
+            for mutant_data in mutant_generator.generate():
+                self.process_mutant(mutant_data, file_path, start_byte, end_byte)
 
-    def process_mutant(self, mutant_data: Dict[str, Any]) -> None:
+    def process_mutant(
+        self, mutant_data: Dict[str, Any], source_file_path, start_byte, end_byte
+    ) -> None:
         """
         Processes a single mutant data dictionary.
         """
         try:
-            logger.info(f"Processing mutant for file: {mutant_data['source_path']}")
+            logger.info(f"Processing mutant for file: {source_file_path}")
             mutant_id = str(len(self.mutants) + 1)
             mutant_path = self.prepare_mutant_file(
                 mutant_id=mutant_id,
-                source_file_path=mutant_data["source_path"],
-                start_byte=mutant_data["start_byte"],
-                end_byte=mutant_data["end_byte"],
-                mutant_code=mutant_data["mutant_code_snippet"],
+                source_file_path=source_file_path,
+                start_byte=start_byte,
+                end_byte=end_byte,
+                mutant_code=mutant_data["mutant_code"],
             )
-            unified_diff = "".join(mutant_data["hunk"])
             mutant = Mutant(
                 id=mutant_id,
-                diff=unified_diff,
-                source_path=mutant_data["source_path"],
+                source_path=source_file_path,
                 mutant_path=mutant_path,
+                mutant_code=mutant_data["mutant_code"],
+                type=mutant_data["type"],
+                description=mutant_data["description"],
             )
             result = self.run_test(
                 {
-                    "module_path": mutant_data["source_path"],
+                    "module_path": source_file_path,
                     "replacement_module_path": mutant_path,
                     "test_command": self.config["test_command"],
                 }
@@ -236,7 +212,7 @@ class MutantHunter:
             self.process_test_result(result, mutant)
         except Exception as e:
             logger.error(
-                f"Error processing mutant for file: {mutant_data['source_path']}",
+                f"Error processing mutant for file: {source_file_path}",
                 exc_info=True,
             )
 

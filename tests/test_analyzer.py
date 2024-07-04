@@ -200,3 +200,33 @@ def test_parse_coverage_report_lcov(config):
         analyzer = Analyzer(config)
         result = analyzer.parse_coverage_report_lcov()
         assert result == {"test_file.py": [1, 3]}
+
+
+def test_find_function_blocks_nodes_query_file_not_exist(analyzer):
+    source_code = b"def func():\n    pass\n"
+    source_file_path = "test_file.py"
+
+    with patch("importlib.resources.files") as mock_files:
+        mock_files.return_value.joinpath.return_value.exists.return_value = False
+        result = analyzer.find_function_blocks_nodes(source_file_path, source_code)
+        assert result is None
+
+
+def test_find_function_blocks_nodes_unsupported_language(analyzer):
+    source_code = b"def func():\n    pass\n"
+    source_file_path = "unsupported_file.xyz"
+
+    with pytest.raises(
+        ValueError, match="Language not supported for file: unsupported_file.xyz"
+    ):
+        analyzer.find_function_blocks_nodes(source_file_path, source_code)
+
+
+def test_find_function_blocks_nodes_no_blocks(analyzer):
+    source_code = b"""
+    # This file has no function definitions
+    """
+    source_file_path = "test_file_no_functions.py"
+
+    function_blocks = analyzer.find_function_blocks_nodes(source_file_path, source_code)
+    assert function_blocks == []

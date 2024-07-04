@@ -24,7 +24,9 @@ def mutants():
             mutant_path="mutant1.py",
             status="KILLED",
             error_msg="",
-            diff="",
+            mutant_code="",
+            type="",
+            description="",
         ),
         Mutant(
             id="2",
@@ -32,7 +34,9 @@ def mutants():
             mutant_path="mutant2.py",
             status="SURVIVED",
             error_msg="",
-            diff="",
+            mutant_code="",
+            type="",
+            description="",
         ),
         Mutant(
             id="3",
@@ -40,7 +44,9 @@ def mutants():
             mutant_path="mutant3.py",
             status="KILLED",
             error_msg="",
-            diff="",
+            mutant_code="",
+            type="",
+            description="",
         ),
         Mutant(
             id="4",
@@ -48,7 +54,9 @@ def mutants():
             mutant_path="mutant4.py",
             status="SURVIVED",
             error_msg="",
-            diff="",
+            mutant_code="",
+            type="",
+            description="",
         ),
     ]
 
@@ -148,7 +156,9 @@ def test_generate_survived_mutants(mutants, config):
                     "mutant_path": "mutant2.py",
                     "status": "SURVIVED",
                     "error_msg": "",
-                    "diff": "",
+                    "mutant_code": "",
+                    "type": "",
+                    "description": "",
                 },
                 {
                     "id": "4",
@@ -156,7 +166,9 @@ def test_generate_survived_mutants(mutants, config):
                     "mutant_path": "mutant4.py",
                     "status": "SURVIVED",
                     "error_msg": "",
-                    "diff": "",
+                    "mutant_code": "",
+                    "type": "",
+                    "description": "",
                 },
             ]
 
@@ -178,7 +190,9 @@ def test_generate_killed_mutants(mutants, config):
                     "mutant_path": "mutant1.py",
                     "status": "KILLED",
                     "error_msg": "",
-                    "diff": "",
+                    "mutant_code": "",
+                    "type": "",
+                    "description": "",
                 },
                 {
                     "id": "3",
@@ -186,6 +200,8 @@ def test_generate_killed_mutants(mutants, config):
                     "mutant_path": "mutant3.py",
                     "status": "KILLED",
                     "error_msg": "",
-                    "diff": "",
+                    "mutant_code": "",
+                    "type": "",
+                    "description": "",
                 },
             ]

@@ -7,6 +7,7 @@ from typing import Any, Dict, List
 
 from grep_ast import filename_to_lang
 from tree_sitter_languages import get_language, get_parser
+
 from mutahunter.core.logger import logger
 
 

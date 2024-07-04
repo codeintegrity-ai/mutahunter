@@ -1,6 +1,6 @@
 import os
 import subprocess
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 import pytest
 
@@ -86,62 +86,16 @@ def test_run_generates_mutation_report(
     mock_logger.info.assert_any_call("🎯 Generating Mutation Report... 🎯")
 
 
-def test_generate_mutations_skips_test_directories(mutant_hunter, config):
-    mutant_hunter.analyzer.file_lines_executed = {"tests/test_file.py": [1, 2, 3]}
-    mutations = list(mutant_hunter.generate_mutations())
-    assert len(mutations) == 0
-
-
-def test_generate_mutations_skips_files_in_exclude_files(mutant_hunter, config):
-    config["exclude_files"] = ["file1.py"]
-    mutant_hunter.analyzer.file_lines_executed = {"file1.py": [1, 2, 3]}
-    mutations = list(mutant_hunter.generate_mutations())
-    assert len(mutations) == 0
-
-
-def test_get_modified_files(mutant_hunter):
-    with patch(
-        "subprocess.check_output",
-        side_effect=[
-            b"file1.py\nfile2.py\n",
-            b"file1.py\nfile2.py\n",
-            b"file1.py\nfile2.py\n",
-        ],
-    ):
-        modified_files = mutant_hunter.get_modified_files()
-
-    assert modified_files == ["file1.py"]
-
-
-def test_process_test_result_killed(mutant_hunter):
-    result = MagicMock()
-    result.returncode = 1
-    result.stderr = "stderr"
-    result.stdout = "stdout"
-    mutant = Mutant(
-        id="1", diff="diff", source_path="source.py", mutant_path="mutant.py"
+@patch("subprocess.check_output", side_effect=subprocess.CalledProcessError(1, "git"))
+@patch("mutahunter.core.hunter.logger")
+def test_get_modified_files_handles_called_process_error(
+    mock_logger, mock_check_output, mutant_hunter
+):
+    modified_files = mutant_hunter.get_modified_files()
+    assert modified_files == []
+    mock_logger.error.assert_called_with(
+        "Error identifying modified files: Command 'git' returned non-zero exit status 1."
     )
-
-    mutant_hunter.process_test_result(result, mutant)
-
-    assert mutant.status == "KILLED"
-    assert mutant.error_msg == "stderrstdout"
-    assert len(mutant_hunter.mutants) == 1
-    assert mutant_hunter.mutants[0].status == "KILLED"
-
-
-def test_process_test_result_survived(mutant_hunter):
-    result = MagicMock()
-    result.returncode = 0
-    mutant = Mutant(
-        id="1", diff="diff", source_path="source.py", mutant_path="mutant.py"
-    )
-
-    mutant_hunter.process_test_result(result, mutant)
-
-    assert mutant.status == "SURVIVED"
-    assert len(mutant_hunter.mutants) == 1
-    assert mutant_hunter.mutants[0].status == "SURVIVED"
 
 
 @patch.object(
@@ -151,75 +105,91 @@ def test_process_test_result_survived(mutant_hunter):
 def test_process_mutant_handles_exceptions(
     mock_logger, mock_prepare_mutant_file, mutant_hunter
 ):
-    mutant_data = {
-        "source_path": "source.py",
-        "start_byte": 0,
-        "end_byte": 10,
-        "mutant_code_snippet": "mutant code",
-        "hunk": ["hunk data"],
-    }
-    mutant_hunter.process_mutant(mutant_data)
+    mutant_data = {"mutant_code": "code", "type": "type", "description": "description"}
+    mutant_hunter.process_mutant(mutant_data, "source_file.py", 0, 10)
     mock_logger.error.assert_called_with(
-        "Error processing mutant for file: source.py",
-        exc_info=True,
+        "Error processing mutant for file: source_file.py", exc_info=True
     )
 
 
-@patch.object(MutantHunter, "get_modified_files", return_value=["file1.py", "file2.py"])
-@patch.object(MutantHunter, "should_skip_file", side_effect=[True, False])
-@patch.object(MutantHunter, "get_modified_lines", return_value=[1, 2, 3])
+def test_process_test_result_updates_status(mutant_hunter):
+    mutant = Mutant(
+        id="1",
+        source_path="source.py",
+        mutant_path="mutant.py",
+        mutant_code="code",
+        type="type",
+        description="description",
+    )
+    result = MagicMock(returncode=1, stderr="error", stdout="output")
+    mutant_hunter.process_test_result(result, mutant)
+    assert mutant.status == "KILLED"
+    assert mutant.error_msg == "erroroutput"
+    result.returncode = 0
+    mutant_hunter.process_test_result(result, mutant)
+    assert mutant.status == "SURVIVED"
+
+
+@patch.object(MutantHunter, "prepare_mutant_file", return_value="mutant_path")
 @patch.object(
-    MutantHunter, "generate_mutations_for_file", return_value=[{"mutation": "data"}]
+    MutantHunter,
+    "run_test",
+    return_value=MagicMock(returncode=1, stderr="error", stdout="output"),
 )
-def test_generate_mutations_for_modified_files_skips_files(
-    mock_generate_mutations_for_file,
+def test_process_mutant_updates_status(
+    mock_run_test, mock_prepare_mutant_file, mutant_hunter
+):
+    mutant_data = {"mutant_code": "code", "type": "type", "description": "description"}
+    mutant_hunter.process_mutant(mutant_data, "source_file.py", 0, 10)
+    assert len(mutant_hunter.mutants) == 1
+    assert mutant_hunter.mutants[0].status == "KILLED"
+    assert mutant_hunter.mutants[0].error_msg == "erroroutput"
+
+
+@patch.object(
+    MutantHunter, "get_modified_files", return_value=["file1.py", "test_file.py"]
+)
+@patch.object(MutantHunter, "get_modified_lines", return_value=[1, 2, 3])
+@patch.object(MutantHunter, "generate_mutations")
+def test_run_mutation_testing_on_modified_files_generates_mutations(
+    mock_generate_mutations,
     mock_get_modified_lines,
-    mock_should_skip_file,
     mock_get_modified_files,
     mutant_hunter,
 ):
-    mutations = list(mutant_hunter.generate_mutations_for_modified_files())
-    assert len(mutations) == 1
-
-
-@patch.object(
-    MutantHunter,
-    "generate_mutations_for_modified_files",
-    return_value=[{"mutation": "data1"}, {"mutation": "data2"}],
-)
-@patch.object(MutantHunter, "process_mutant")
-def test_run_mutation_testing_on_modified_files_processes_all_mutants(
-    mock_process_mutant, mock_generate_mutations_for_modified_files, mutant_hunter
-):
     mutant_hunter.run_mutation_testing_on_modified_files()
-    assert mock_process_mutant.call_count == 2
+    mock_generate_mutations.assert_called_once_with("file1.py", [1, 2, 3])
 
 
-@patch.object(
-    MutantHunter,
-    "generate_mutations",
-    return_value=[{"mutation": "data1"}, {"mutation": "data2"}],
-)
-@patch.object(MutantHunter, "process_mutant")
-def test_run_mutation_testing_processes_all_mutants(
-    mock_process_mutant, mock_generate_mutations, mutant_hunter
+@patch.object(MutantHunter, "generate_mutations")
+def test_run_mutation_testing_generates_mutations(
+    mock_generate_mutations, mutant_hunter
 ):
+    mutant_hunter.analyzer.file_lines_executed = {
+        "file1.py": [1, 2, 3],
+        "test_file.py": [1, 2, 3],
+    }
     mutant_hunter.run_mutation_testing()
-    assert mock_process_mutant.call_count == 2
+    mock_generate_mutations.assert_called_once_with("file1.py", [1, 2, 3])
 
 
-def test_generate_mutations_yields_mutations(mutant_hunter):
-    mutant_hunter.analyzer.file_lines_executed = {"file1.py": [1, 2, 3]}
-    with patch.object(
-        mutant_hunter,
-        "generate_mutations_for_file",
-        return_value=[{"mutation": "data"}],
-    ):
-        mutations = list(mutant_hunter.generate_mutations())
-    assert len(mutations) > 0
+def test_should_skip_file_identifies_test_files(mutant_hunter):
+    test_files = [
+        "test_file.py",
+        "file_test.py",
+        "file.test.py",
+        "file.spec.py",
+        "file.tests.py",
+        "file.Test.py",
+        "Test_file.py",
+    ]
+    for test_file in test_files:
+        assert mutant_hunter.should_skip_file(test_file) is True
+    non_test_file = "regular_file.py"
+    assert mutant_hunter.should_skip_file(non_test_file) is False
 
 
-def test_should_skip_file_raises_file_not_found_error(mutant_hunter):
+def test_should_skip_file_raises_file_not_found(mutant_hunter):
     mutant_hunter.config["only_mutate_file_paths"] = ["non_existent_file.py"]
     with pytest.raises(
         FileNotFoundError, match="File non_existent_file.py does not exist."
@@ -228,9 +198,9 @@ def test_should_skip_file_raises_file_not_found_error(mutant_hunter):
 
 
 @patch("mutahunter.core.hunter.logger")
-def test_run_handles_exceptions(mock_logger, mutant_hunter):
+def test_run_handles_exception(mock_logger, mutant_hunter):
     with patch.object(
-        mutant_hunter.analyzer, "dry_run", side_effect=Exception("Test Exception")
+        mutant_hunter, "run_mutation_testing", side_effect=Exception("Test Exception")
     ):
         mutant_hunter.run()
     mock_logger.error.assert_called_with(
@@ -240,107 +210,191 @@ def test_run_handles_exceptions(mock_logger, mutant_hunter):
 
 
 @patch.object(MutantHunter, "run_mutation_testing_on_modified_files")
-def test_run_mutation_testing_on_modified_files(
-    mock_run_mutation_testing_on_modified_files, mutant_hunter
+@patch("mutahunter.core.hunter.logger")
+def test_run_modified_files_only(
+    mock_logger, mock_run_mutation_testing_on_modified_files, mutant_hunter
 ):
     mutant_hunter.config["modified_files_only"] = True
+    mock_run_mutation_testing_on_modified_files.return_value = None
     mutant_hunter.run()
-    mock_run_mutation_testing_on_modified_files.assert_called_once()
+    mock_logger.info.assert_any_call(
+        "🦠 Running mutation testing on modified files... 🦠"
+    )
 
 
-def test_get_modified_lines_no_changes(mutant_hunter):
-    file_path = "file1.py"
-    diff_output = []
-    with patch(
-        "subprocess.check_output", return_value="\n".join(diff_output).encode("utf-8")
-    ):
-        modified_lines = mutant_hunter.get_modified_lines(file_path)
-    assert modified_lines == []
+def test_run_test_execution(mutant_hunter):
+    params = {
+        "module_path": "test_module.py",
+        "replacement_module_path": "mutant_module.py",
+        "test_command": "pytest",
+    }
+    with patch.object(mutant_hunter.test_runner, "run_test") as mock_run_test:
+        mock_run_test.return_value = MagicMock(returncode=0)
+        result = mutant_hunter.run_test(params)
+        mock_run_test.assert_called_once_with(params)
+        assert result.returncode == 0
 
 
-def test_generate_mutations_for_file_no_covered_blocks(mutant_hunter):
-    file_path = "file1.py"
-    executed_lines = [1, 2, 3]
-    with patch.object(
-        mutant_hunter.analyzer, "get_covered_function_blocks", return_value=([], [])
-    ):
-        mutations = list(
-            mutant_hunter.generate_mutations_for_file(file_path, executed_lines)
-        )
-    assert len(mutations) == 0
+def test_should_skip_file_with_only_mutate_file_paths(mutant_hunter):
+    mutant_hunter.config["only_mutate_file_paths"] = ["file1.py", "file2.py"]
+    with patch("os.path.exists", return_value=True):
+        assert mutant_hunter.should_skip_file("file1.py") is False
+        assert mutant_hunter.should_skip_file("file2.py") is False
+        assert mutant_hunter.should_skip_file("file3.py") is True
 
 
-def test_get_modified_files_handles_subprocess_error(mutant_hunter):
+def test_get_modified_lines_handles_subprocess_error(mutant_hunter):
+    file_path = "test_file.py"
     with patch(
         "subprocess.check_output", side_effect=subprocess.CalledProcessError(1, "git")
     ):
-        modified_files = mutant_hunter.get_modified_files()
-    assert modified_files == []
+        with patch("mutahunter.core.hunter.logger") as mock_logger:
+            modified_lines = mutant_hunter.get_modified_lines(file_path)
+
+            assert modified_lines == []
+            mock_logger.error.assert_called_once_with(
+                f"Error identifying modified lines in {file_path}: Command 'git' returned non-zero exit status 1."
+            )
 
 
-def test_process_test_result_unknown_return_code(mutant_hunter):
-    result = MagicMock()
-    result.returncode = 2
-    mutant = Mutant(
-        id="1", diff="diff", source_path="source.py", mutant_path="mutant.py"
+def test_generate_mutations_processes_all_function_blocks(mutant_hunter):
+    file_path = "test_file.py"
+    executed_lines = [1, 2, 3, 4, 5]
+
+    mock_function_block = MagicMock()
+    mock_function_block.start_byte = 0
+    mock_function_block.end_byte = 100
+    mock_function_block.child_by_field_name.return_value.text.decode.return_value = (
+        "test_function"
     )
-    mutant_hunter.process_test_result(result, mutant)
-    assert len(mutant_hunter.mutants) == 0
-
-
-def test_generate_mutations_for_file_file_not_found(mutant_hunter):
-    file_path = "file1.py"
-    executed_lines = [1, 2, 3]
-    covered_function_blocks = [MagicMock(start_byte=0, end_byte=10)]
-    covered_function_block_executed_lines = [[1, 2, 3]]
 
     with patch.object(
         mutant_hunter.analyzer,
         "get_covered_function_blocks",
-        return_value=(covered_function_blocks, covered_function_block_executed_lines),
+        return_value=([mock_function_block], [[1, 2, 3]]),
     ):
-        with patch(
-            "mutahunter.core.hunter.MutantGenerator.generate",
-            return_value=[(None, "hunk", "content")],
-        ):
-            with pytest.raises(FileNotFoundError):
-                list(
-                    mutant_hunter.generate_mutations_for_file(file_path, executed_lines)
-                )
+        with patch("mutahunter.core.hunter.MutantGenerator") as mock_mutant_generator:
+            mock_mutant_generator.return_value.generate.return_value = [
+                {"mutant_code": "test", "type": "test", "description": "test"}
+            ]
+            with patch.object(mutant_hunter, "process_mutant") as mock_process_mutant:
+                mutant_hunter.generate_mutations(file_path, executed_lines)
+
+                mock_mutant_generator.assert_called_once()
+                mock_process_mutant.assert_called_once()
 
 
-def test_get_modified_lines_identifies_modified_lines(mutant_hunter):
-    file_path = "file1.py"
-    diff_output = ["@@ -1,2 +1,2 @@", "+modified line 1", "+modified line 2"]
+def test_get_modified_files_no_previous_commit(mutant_hunter):
+    with patch("subprocess.check_output") as mock_check_output:
+        mock_check_output.side_effect = [
+            b"",  # no unstaged changes
+            subprocess.CalledProcessError(
+                128, "git", stderr=b"ambiguous argument 'HEAD^'"
+            ),
+            b"file1.py\nfile2.py\n",  # modified files
+        ]
+        mutant_hunter.analyzer.file_lines_executed = {
+            "file1.py": [1, 2],
+            "file2.py": [1, 2],
+        }
+        modified_files = mutant_hunter.get_modified_files()
+        assert modified_files == ["file1.py", "file2.py"]
+        mock_check_output.assert_has_calls(
+            [
+                call(["git", "diff", "--name-only"]),
+                call(["git", "diff", "--name-only", "HEAD^..HEAD"]),
+                call(["git", "diff", "--name-only", "HEAD"]),
+            ]
+        )
 
-    with patch(
-        "subprocess.check_output", return_value="\n".join(diff_output).encode("utf-8")
-    ):
-        modified_lines = mutant_hunter.get_modified_lines(file_path)
 
-    assert modified_lines == [1, 2]
+def test_process_test_result_unexpected_return_code(mutant_hunter):
+    mutant = Mutant(
+        id="1",
+        source_path="source.py",
+        mutant_path="mutant.py",
+        mutant_code="code",
+        type="type",
+        description="description",
+    )
+    result = MagicMock(returncode=2, stderr="error", stdout="output")
+    with patch("mutahunter.core.hunter.logger") as mock_logger:
+        mutant_hunter.process_test_result(result, mutant)
+        mock_logger.error.assert_called_once_with("Mutant 1 failed to run tests.")
+    assert mutant not in mutant_hunter.mutants
 
 
-def test_run_test_calls_test_runner(mutant_hunter):
-    params = {
-        "module_path": "source.py",
-        "replacement_module_path": "mutant.py",
-        "test_command": "pytest",
-    }
-
+def test_run_mutation_testing_on_modified_files_skips_no_modified_lines(mutant_hunter):
     with patch.object(
-        mutant_hunter.test_runner, "run_test", return_value="test_result"
-    ) as mock_run_test:
-        result = mutant_hunter.run_test(params)
-
-    mock_run_test.assert_called_once_with(params)
-    assert result == "test_result"
-
-
-def test_get_modified_lines_handles_subprocess_error(mutant_hunter):
-    file_path = "file1.py"
-    with patch(
-        "subprocess.check_output", side_effect=subprocess.CalledProcessError(1, "git")
+        mutant_hunter, "get_modified_files", return_value=["file1.py", "file2.py"]
     ):
-        modified_lines = mutant_hunter.get_modified_lines(file_path)
-    assert modified_lines == []
+        with patch.object(mutant_hunter, "should_skip_file", return_value=False):
+            with patch.object(
+                mutant_hunter, "get_modified_lines", side_effect=[[], [1, 2, 3]]
+            ):
+                with patch.object(
+                    mutant_hunter, "generate_mutations"
+                ) as mock_generate_mutations:
+                    mutant_hunter.run_mutation_testing_on_modified_files()
+                    mock_generate_mutations.assert_called_once_with(
+                        "file2.py", [1, 2, 3]
+                    )
+
+
+def test_get_modified_lines_no_previous_commit(mutant_hunter):
+    file_path = "test_file.py"
+    with patch("subprocess.check_output") as mock_check_output:
+        mock_check_output.side_effect = [
+            b"",  # no unstaged changes
+            subprocess.CalledProcessError(
+                128, "git", stderr=b"ambiguous argument 'HEAD^'"
+            ),
+            b"@@ -1,3 +1,4 @@\n+new line\n",  # diff output
+        ]
+        with patch("mutahunter.core.hunter.logger") as mock_logger:
+            modified_lines = mutant_hunter.get_modified_lines(file_path)
+            assert modified_lines == [1, 2, 3, 4]
+            mock_logger.warning.assert_called_once_with(
+                "No previous commit found. Using initial commit for diff."
+            )
+            mock_check_output.assert_has_calls(
+                [
+                    call(["git", "diff", "--name-only"]),
+                    call(["git", "diff", "-U0", "HEAD^..HEAD", file_path]),
+                    call(["git", "diff", "-U0", "HEAD", file_path]),
+                ]
+            )
+
+
+def test_get_modified_files_with_unstaged_changes(mutant_hunter):
+    with patch("subprocess.check_output") as mock_check_output:
+        mock_check_output.side_effect = [
+            b"file1.py\nfile2.py\n",  # unstaged changes
+            b"file1.py\nfile3.py\n",  # modified files
+        ]
+        mutant_hunter.analyzer.file_lines_executed = {
+            "file1.py": [1, 2],
+            "file3.py": [1, 2],
+        }
+        modified_files = mutant_hunter.get_modified_files()
+        assert modified_files == ["file1.py", "file3.py"]
+        mock_check_output.assert_has_calls(
+            [
+                call(["git", "diff", "--name-only"]),
+                call(["git", "diff", "--name-only", "HEAD"]),
+            ]
+        )
+
+
+def test_generate_mutations_no_covered_function_blocks(mutant_hunter):
+    file_path = "test_file.py"
+    executed_lines = [1, 2, 3]
+    with patch.object(
+        mutant_hunter.analyzer, "get_covered_function_blocks", return_value=([], [])
+    ):
+        mutant_hunter.generate_mutations(file_path, executed_lines)
+
+
+def test_should_skip_file_exclude_files(mutant_hunter):
+    mutant_hunter.config["exclude_files"] = ["excluded_file.py"]
+    assert mutant_hunter.should_skip_file("excluded_file.py") is True

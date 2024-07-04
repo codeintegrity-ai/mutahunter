@@ -163,3 +163,7 @@ logs
 vendor
 *.lcov
 dist*
+
+*.html
+*.json
+*.log

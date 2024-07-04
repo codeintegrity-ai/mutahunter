@@ -12,5 +12,6 @@ pytest --cov=. --cov-report=xml --cov-report=term
 ## Running Mutahunter to analyze the tests
 
 ```bash
+export OPENAI_API_KEY
 mutahunter run --test-command "pytest" --code-coverage-report-path "coverage.xml" --only-mutate-file-paths "app.py"
 ```

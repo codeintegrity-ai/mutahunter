@@ -2,9 +2,12 @@
 Module for generating prompts based on the programming language.
 """
 
-from mutahunter.core.pilot.prompts.examples import (GO_UDIFF, JAVA_UDIFF,
-                                                    JAVASCRIPT_UDIFF,
-                                                    PYTHON_UDIFF)
+from mutahunter.core.pilot.prompts.examples import (
+    GO_EXAMPLE_OUTPUT,
+    JAVA_EXAMPLE_OUTPUT,
+    JAVASCRIPT_EXAMPLE_OUTPUT,
+    PYTHON_EXAMPLE_OUTPUT,
+)
 from mutahunter.core.pilot.prompts.system import SYSTEM_PROMPT
 from mutahunter.core.pilot.prompts.user import USER_PROMPT
 
@@ -59,7 +62,7 @@ class PythonPrompt(BasePrompt):
 
     def __init__(self):
         super().__init__()
-        self.example_output = PYTHON_UDIFF
+        self.example_output = PYTHON_EXAMPLE_OUTPUT
 
 
 class JavaScriptPrompt(BasePrompt):
@@ -67,7 +70,7 @@ class JavaScriptPrompt(BasePrompt):
 
     def __init__(self):
         super().__init__()
-        self.example_output = JAVASCRIPT_UDIFF
+        self.example_output = JAVASCRIPT_EXAMPLE_OUTPUT
 
 
 class GoPrompt(BasePrompt):
@@ -75,7 +78,7 @@ class GoPrompt(BasePrompt):
 
     def __init__(self):
         super().__init__()
-        self.example_output = GO_UDIFF
+        self.example_output = GO_EXAMPLE_OUTPUT
 
 
 class JavaPrompt(BasePrompt):
@@ -83,4 +86,4 @@ class JavaPrompt(BasePrompt):
 
     def __init__(self):
         super().__init__()
-        self.example_output = JAVA_UDIFF
+        self.example_output = JAVA_EXAMPLE_OUTPUT

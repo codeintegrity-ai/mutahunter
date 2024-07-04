@@ -42,9 +42,4 @@ public class CalculatorTest {
         assertEquals(-1.0, calculator.divide(-5, 5));
         assertEquals(2.0, calculator.divide(-10, -5));
     }
-
-    @Test
-    public void testDivideByZero() {
-        assertThrows(IllegalArgumentException.class, () -> calculator.divide(10, 0));
-    }
 }

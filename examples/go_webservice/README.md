@@ -17,5 +17,6 @@ gocov convert coverage.out | gocov-xml > coverage.xml
 ## Running Mutahunter to analyze the tests
 
 ```bash
-mutahunter run --test-command "go test" --code-coverage-report-path "coverage.xml" --only-mutate-file-paths "app.go" --model "claude-3-5-sonnet-20240620"
+export OPENAI_API_KEY=your-key-goes-here
+mutahunter run --test-command "go test" --code-coverage-report-path "coverage.xml" --only-mutate-file-paths "app.go" --model "gpt-4o"
 ```

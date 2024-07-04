@@ -6,6 +6,7 @@
   Maintained by [CodeIntegrity](https://www.codeintegrity.ai). Anyone is welcome to contribute. 🌟
 
   [![GitHub license](https://img.shields.io/badge/License-AGPL_3.0-blue.svg)](https://github.com/yourcompany/mutahunter/blob/main/LICENSE)
+  [![Discord](https://badgen.net/badge/icon/discord?icon=discord&label&color=purple)](https://discord.gg/S5u3RDMq)
   [![Twitter](https://img.shields.io/twitter/follow/CodeIntegrity)](https://twitter.com/CodeIntegrity)
   [![Unit Tests](https://github.com/codeintegrity-ai/mutahunter/actions/workflows/test.yaml/badge.svg)](https://github.com/codeintegrity-ai/mutahunter/actions/workflows/test.yaml)
   <a href="https://github.com/codeintegrity-ai/mutahunter/commits/main">
@@ -84,6 +85,12 @@ Options:
       Default: `gpt-4o`
       Required: Yes
       Example: `--model gpt-4o`
+  
+  --api-base <URL>
+      Description: Base URL for the API endpoint.
+      Default: `https://api.openai.com`
+      Required: No
+      Example: `--api-base https://api.openai.com`
 
   --test-command <COMMAND>
       Description: The command used to execute the tests. Specify a single test file to run the tests on.
