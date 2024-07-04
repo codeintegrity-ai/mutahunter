@@ -21,7 +21,8 @@
 ## Table of Contents
 
 - [Overview](#overview)
-- [Installation and Usage](#installation-and-usage)
+- [Features](#features)
+- [Getting Started](#getting-started)
 - [Roadmap](#roadmap)
 
 ## Overview
@@ -32,7 +33,37 @@ To put it simply, mutation testing is a way to verify how good your test cases a
 
 MutaHunter leverages LLM models to inject context-aware faults into your codebase. Unlike traditional rule-based methods, MutaHunter’s AI-driven approach provides a full contextual understanding of the entire codebase, enabling it to identify and inject mutations that closely resemble real bugs. This ensures comprehensive and effective testing, significantly enhancing software security and quality.
 
-Examples:
+## Features
+
+- **Change-Based:** Runs mutation tests on modified files and lines based on the latest commit or pull request changes.
+- **Multi-Language Support:** Compatible with languages that provide coverage reports in Cobertura XML, Jacoco XML, and lcov formats.
+- **Extensible:** Extensible to additional languages and testing frameworks.
+- **Context-Aware:** Uses a map of your entire git repository to generate contextually relevant mutants.
+- **LLM Support:** Supports self-hosted, Anthropic, OpenAI, and any LLM models using LiteLLM.
+- **Mutant Report** Provides detailed reports on mutation coverage, killed mutants, and survived mutants.
+
+## Getting Started
+
+```bash
+# Install Mutahunter package via GitHub. Python 3.11+ is required.
+$ pip install git+https://github.com/codeintegrity-ai/mutahunter.git
+
+# Work with GPT-4o on your repo
+$ export OPENAI_API_KEY=your-key-goes-here
+
+# Or, work with Anthropic's models
+$ export ANTHROPIC_API_KEY=your-key-goes-here
+
+# Run Mutahunter on a specific file. **Note:** Make sure coverage report is generated and correspons to the test command.
+$ mutahunter run --test-command "pytest tests/unit" --code-coverage-report-path "coverage.xml" --only-mutate-file-paths "app_1.py" "app_2.py"
+
+# Run mutation testing on modified files based on the latest commit
+$ mutahunter run --test-command "pytest test/unit" --code-coverage-report-path "coverage.xml" --modified-files-only
+```
+
+### Examples
+
+Go to the examples directory to see how to run Mutahunter on different programming languages:
 
 - [Go Example](/examples/go_webservice/)
 - [Java Example](/examples/java_maven/)
@@ -41,53 +72,7 @@ Examples:
 
 Feel free to add more examples! ✨
 
-## Why you should use Mutahunter?
-
-1. **AI-Driven Mutation Testing:** Mutahunter leverages advanced LLM models to inject context-aware faults into your codebase rather than blindly mutating the code. This allows the mutants to closely resemble real bugs.
-2. **Language Agnostic:** Mutahunter supports various programming languages and can be extended to work with any language that provides a coverage report in **Cobertura** XML format, **Jacoco** XML format, and **lcov** format.
-3. **Diff-Based Mutation Testing:** Mutahunter can run mutation testing specifically on modified files and lines based on the latest commit or pull request changes. This feature optimizes the mutation testing process by focusing on recent changes.
-4. **Enhanced Mutation Coverage Report (WIP):** Mutahunter provides detailed mutation coverage reports, highlighting the effectiveness of your test suite and identifying potential weaknesses.
-
-**Afraid of sending code to OpenAI or Anthropic? No problem, we support self-hosted versions as well.** 🔒
-
-## Installation and Usage
-
-### Requirements
-
-- LLM API Key (OpenAI, Anthropic, self-hosted, etc): Follow [liteLLM](https://litellm.vercel.app/docs/) instructions to set up your environment.
-- **Cobertura XML**, **Jacoco XML**, or **lcov** code coverage report for a specific test file.
-- Python to install the Mutahunter package. **Version 3.11+** are supported.
-
-#### Python Pip
-
-To install the Python Pip package directly via GitHub:
-
-```bash
-# Work with GPT-4o on your repo. See litellm for other models.
-export OPENAI_API_KEY=your-key-goes-here
-
-# Or, work with Anthropic's models. See litellm for other models.
-export ANTHROPIC_API_KEY=your-key-goes-here
-
-pip install git+https://github.com/codeintegrity-ai/mutahunter.git
-```
-
-### How to Execute Mutahunter
-
-To use Mutahunter, you first need a **Cobertura XML**, **Jacoco XML**, or **lcov** code coverage report. **Make sure your test command correlates with the coverage report.**
-
-Example command to run Mutahunter on a Python FastAPI [application](/examples/python_fastapi/):
-
-```bash
-mutahunter run --test-command "pytest test_app.py" --code-coverage-report-path "coverage.xml" --only-mutate-file-paths "app.py"
-# --only-mutate-file-paths makes it faster by focusing on specific files
-```
-
-To run mutation testing specifically on modified files and lines based on the latest commit:
-
-```bash
-mutahunter run --test-command "pytest test_app.py" --code-coverage-report-path "coverage.xml" --modified-files-only
-```
+### Command Options
 
 The mutahunter run command has the following options:
 
@@ -129,16 +114,13 @@ Options:
       Required: No
 ```
 
-#### Mutation Testing Report
+## Mutant Report
 
 Check the logs directory to view the report:
 
 - `mutants_killed.json` - Contains the list of mutants that were killed by the test suite.
 - `mutants_survived.json` - Contains the list of mutants that survived the test suite.
 - `mutation_coverage.json` - Contains the mutation coverage report.
-- `test_suite_report.md` **(experimental)** - Contains a detailed report of identified weaknesses in the test suite and potential bugs not caught by the test suite.
-
-An example survived mutant information would be like so:
 
 ```json
 [
