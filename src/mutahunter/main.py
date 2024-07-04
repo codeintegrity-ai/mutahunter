@@ -70,10 +70,10 @@ def parse_arguments():
         help="A list of specific files to mutate. Optional.",
     )
     main_parser.add_argument(
-        "--generate-report",
+        "--modified-files-only",
         default=False,
         action="store_true",
-        help="Generate a test suite report after running the mutation testing.",
+        help="Run mutation testing only on modified files in the latest commit.",
     )
     return parser.parse_args()
 
