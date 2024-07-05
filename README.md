@@ -25,6 +25,7 @@
 - [Features](#features)
 - [Getting Started](#getting-started)
 - [Roadmap](#roadmap)
+- [Cash Bounty Program](#cash-bounty-program)
 
 ## Overview
 
@@ -144,6 +145,10 @@ Check the logs directory to view the report:
   },
 ]
 ```
+
+## Cash Bounty Program
+
+Help us improve Mutahunter and get rewarded! We have a cash bounty program to incentivize contributions to the project. Check out the [bounty board](https://docs.google.com/spreadsheets/d/1cT2_O55m5txrUgZV81g1gtqE_ZDu9LlzgbpNa_HIisc/edit?gid=0#gid=0) to see the available bounties and claim one today!
 
 ## Roadmap
 
