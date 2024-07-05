@@ -62,6 +62,20 @@ $ mutahunter run --test-command "pytest tests/unit" --code-coverage-report-path 
 
 # Run mutation testing on modified files based on the latest commit
 $ mutahunter run --test-command "pytest tests/unit" --code-coverage-report-path "coverage.xml" --modified-files-only
+
+.  . . . .-. .-. . . . . . . .-. .-. .-. 
+|\/| | |  |  |-| |-| | | |\|  |  |-  |(  
+'  ` `-'  '  ` ' ' ` `-' ' `  '  `-' ' ' 
+
+2024-07-05 00:26:13,420 INFO: 🦠 Total Mutants: 13 🦠
+2024-07-05 00:26:13,420 INFO: 🛡️ Survived Mutants: 5 🛡️
+2024-07-05 00:26:13,420 INFO: 🗡️ Killed Mutants: 8 🗡️
+2024-07-05 00:26:13,421 INFO: 🕒 Timeout Mutants: 0 🕒
+2024-07-05 00:26:13,421 INFO: 🔥 Compile Error Mutants: 0 🔥
+2024-07-05 00:26:13,421 INFO: 🎯 Mutation Coverage: 61.54% 🎯
+2024-07-05 00:26:13,421 INFO: Report saved to logs/_latest/mutation_coverage.json
+2024-07-05 00:26:13,421 INFO: Report saved to logs/_latest/mutation_coverage_detail.json
+2024-07-05 00:26:13,421 INFO: Mutation Testing Ended. Took 43s
 ```
 
 ### Examples
@@ -127,24 +141,9 @@ Options:
 
 Check the logs directory to view the report:
 
-- `mutants_killed.json` - Contains the list of mutants that were killed by the test suite.
-- `mutants_survived.json` - Contains the list of mutants that survived the test suite.
-- `mutation_coverage.json` - Contains the mutation coverage report.
-
-```json
-[
-  {
-    "id": "4",
-    "source_path": "src/mutahunter/core/analyzer.py",
-    "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/logs/_latest/mutants/4_analyzer.py",
-    "status": "SURVIVED",
-    "error_msg": "",
-    "diff": "for line in range(start_line, end_line + 1):
-      - function_executed_lines.append(line - start_line + 1)
-      + function_executed_lines.append(line - start_line) # Mutation: Change the calculation of executed lines to start from 0 instead of 1.\n"
-  },
-]
-```
+- `mutants.json` - Contains the list of mutants generated.
+- `mutation_coverage.json` - Contains the mutation coverage percentage.
+- `mutation_coverage_detail.json` - Contains detailed information per source file.
 
 ## Cash Bounty Program
 

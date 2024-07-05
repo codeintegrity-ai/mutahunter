@@ -30,50 +30,6 @@ def mutant_hunter(config):
         yield MutantHunter(config)
 
 
-@patch("mutahunter.core.hunter.os.path.exists", return_value=False)
-@patch("mutahunter.core.hunter.os.rename")
-@patch("mutahunter.core.hunter.os.symlink")
-@patch("mutahunter.core.hunter.os.remove")
-@patch("mutahunter.core.hunter.open", new_callable=MagicMock)
-@patch("mutahunter.core.hunter.logger")
-def test_prepare_mutant_file(
-    mock_logger,
-    mock_open,
-    mock_os_remove,
-    mock_os_symlink,
-    mock_os_rename,
-    mock_os_path_exists,
-    mutant_hunter,
-):
-    source_path = "source.py"
-    mutant_code = "mutant code"
-    start_byte = 0
-    end_byte = 10
-
-    mock_open.side_effect = [MagicMock(), MagicMock()]
-    mock_open.return_value.read.return_value = b"source code"
-
-    with patch.object(mutant_hunter.analyzer, "check_syntax", return_value=True):
-        mutant_path = mutant_hunter.prepare_mutant_file(
-            "1", source_path, start_byte, end_byte, mutant_code
-        )
-
-    assert mutant_path == f"{os.getcwd()}/logs/_latest/mutants/1_source.py"
-
-
-def test_prepare_mutant_file_syntax_error(mutant_hunter):
-    source_path = "source.py"
-    mutant_code = "mutant code"
-    start_byte = 0
-    end_byte = 10
-    with patch.object(mutant_hunter.analyzer, "check_syntax", return_value=False):
-        with patch("builtins.open", new_callable=MagicMock):
-            with pytest.raises(Exception, match="Mutant code has syntax errors."):
-                mutant_hunter.prepare_mutant_file(
-                    "1", source_path, start_byte, end_byte, mutant_code
-                )
-
-
 @patch("mutahunter.core.hunter.logger")
 @patch.object(MutantHunter, "run_mutation_testing")
 def test_run_generates_mutation_report(
@@ -95,20 +51,6 @@ def test_get_modified_files_handles_called_process_error(
     assert modified_files == []
     mock_logger.error.assert_called_with(
         "Error identifying modified files: Command 'git' returned non-zero exit status 1."
-    )
-
-
-@patch.object(
-    MutantHunter, "prepare_mutant_file", side_effect=Exception("Test Exception")
-)
-@patch("mutahunter.core.hunter.logger")
-def test_process_mutant_handles_exceptions(
-    mock_logger, mock_prepare_mutant_file, mutant_hunter
-):
-    mutant_data = {"mutant_code": "code", "type": "type", "description": "description"}
-    mutant_hunter.process_mutant(mutant_data, "source_file.py", 0, 10)
-    mock_logger.error.assert_called_with(
-        "Error processing mutant for file: source_file.py", exc_info=True
     )
 
 
@@ -308,22 +250,6 @@ def test_get_modified_files_no_previous_commit(mutant_hunter):
         )
 
 
-def test_process_test_result_unexpected_return_code(mutant_hunter):
-    mutant = Mutant(
-        id="1",
-        source_path="source.py",
-        mutant_path="mutant.py",
-        mutant_code="code",
-        type="type",
-        description="description",
-    )
-    result = MagicMock(returncode=2, stderr="error", stdout="output")
-    with patch("mutahunter.core.hunter.logger") as mock_logger:
-        mutant_hunter.process_test_result(result, mutant)
-        mock_logger.error.assert_called_once_with("Mutant 1 failed to run tests.")
-    assert mutant not in mutant_hunter.mutants
-
-
 def test_run_mutation_testing_on_modified_files_skips_no_modified_lines(mutant_hunter):
     with patch.object(
         mutant_hunter, "get_modified_files", return_value=["file1.py", "file2.py"]
@@ -398,3 +324,41 @@ def test_generate_mutations_no_covered_function_blocks(mutant_hunter):
 def test_should_skip_file_exclude_files(mutant_hunter):
     mutant_hunter.config["exclude_files"] = ["excluded_file.py"]
     assert mutant_hunter.should_skip_file("excluded_file.py") is True
+
+
+
+def test_process_test_result_compile_error(mutant_hunter):
+    mutant = Mutant(
+        id="1",
+        source_path="source.py",
+        mutant_path="mutant.py",
+        mutant_code="code",
+        type="type",
+        description="description",
+    )
+    result = MagicMock(returncode=3, stderr="compile error", stdout="output")
+    mutant_hunter.process_test_result(result, mutant)
+    assert mutant.status == "COMPILE_ERROR"
+    assert mutant.error_msg == "compile erroroutput"
+
+
+def test_process_test_result_timeout(mutant_hunter):
+    mutant = Mutant(
+        id="1",
+        source_path="source.py",
+        mutant_path="mutant.py",
+        mutant_code="code",
+        type="type",
+        description="description",
+    )
+    result = MagicMock(returncode=2, stderr="timeout error", stdout="output")
+    mutant_hunter.process_test_result(result, mutant)
+    assert mutant.status == "TIMEOUT"
+    assert mutant.error_msg == "timeout error"
+
+@patch.object(MutantHunter, "prepare_mutant_file", return_value="")
+def test_process_mutant_compile_error(mock_prepare_mutant_file, mutant_hunter):
+    mutant_data = {"mutant_code": "code", "type": "type", "description": "description"}
+    mutant_hunter.process_mutant(mutant_data, "source_file.py", 0, 10)
+    assert len(mutant_hunter.mutants) == 1
+    assert mutant_hunter.mutants[0].status == "COMPILE_ERROR"

@@ -4,11 +4,16 @@ Module for generating mutation testing reports.
 
 import json
 from dataclasses import asdict
-from typing import Any, Dict, List
+from typing import Any, List
 
 from mutahunter.core.entities.mutant import Mutant
 from mutahunter.core.logger import logger
-from mutahunter.core.router import LLMRouter
+
+MUTAHUNTER_ASCII = r"""
+.  . . . .-. .-. . . . . . . .-. .-. .-. 
+|\/| | |  |  |-| |-| | | |\|  |  |-  |(  
+'  ` `-'  '  ` ' ' ` `-' ' `  '  `-' ' ' 
+"""
 
 
 class MutantReport:
@@ -16,7 +21,6 @@ class MutantReport:
 
     def __init__(self, config) -> None:
         self.config = config
-        self.router = LLMRouter(model=config["model"], api_base=config["api_base"])
 
     def generate_report(self, mutants: List[Mutant]) -> None:
         """
@@ -25,111 +29,102 @@ class MutantReport:
         Args:
             mutants (List[Mutant]): List of mutants generated during mutation testing.
         """
-        self.generate_killed_mutants(mutants)
-        self.generate_survived_mutants(mutants)
-        mutation_coverage = self.generate_mutation_coverage_by_source_file(mutants)
-        self.save_report("logs/_latest/mutation_coverage.json", mutation_coverage)
+        mutants = [asdict(mutant) for mutant in mutants]
+        self.save_report("logs/_latest/mutants.json", mutants)
+        print(MUTAHUNTER_ASCII)
         self.generate_mutant_report(mutants)
+        self.generate_mutant_report_detail(mutants)
 
-    def generate_killed_mutants(self, mutants: List[Mutant]) -> None:
-        """
-        Generates a report of killed mutants.
-
-        Args:
-            mutants (List[Mutant]): List of mutants generated during mutation testing.
-        """
-        killed_mutants = [
-            asdict(mutant) for mutant in mutants if mutant.status == "KILLED"
-        ]
-        self.save_report("logs/_latest/mutants_killed.json", killed_mutants)
-
-    def generate_survived_mutants(self, mutants: List[Mutant]) -> None:
-        """
-        Generates a report of survived mutants.
-
-        Args:
-            mutants (List[Mutant]): List of mutants generated during mutation testing.
-        """
+    def generate_mutant_report(self, mutants: List[Mutant]) -> None:
+        killed_mutants = [mutant for mutant in mutants if mutant["status"] == "KILLED"]
         survived_mutants = [
-            asdict(mutant) for mutant in mutants if mutant.status == "SURVIVED"
+            mutant for mutant in mutants if mutant["status"] == "SURVIVED"
         ]
-        self.save_report("logs/_latest/mutants_survived.json", survived_mutants)
+        timeout_mutants = [
+            mutant for mutant in mutants if mutant["status"] == "TIMEOUT"
+        ]
+        compile_error_mutants = [
+            mutant for mutant in mutants if mutant["status"] == "COMPILE_ERROR"
+        ]
+        valid_mutants = [
+            m for m in mutants if m["status"] not in ["COMPILE_ERROR", "TIMEOUT"]
+        ]
 
-    def generate_mutation_coverage_by_source_file(
-        self, mutants: List[Mutant]
-    ) -> Dict[str, Any]:
-        """
-        Calculates the mutation coverage for each source file.
-
-        Args:
-            mutants (List[Mutant]): List of mutants generated during mutation testing.
-
-        Returns:
-            Dict[str, Any]: Mutation coverage data for each source file.
-        """
-        mutation_coverage_by_source_file = {}
-        for mutant in mutants:
-            source_path = mutant.source_path
-            if source_path not in mutation_coverage_by_source_file:
-                mutation_coverage_by_source_file[source_path] = {
-                    "killed": 0,
-                    "survived": 0,
-                    "total": 0,
-                }
-            if mutant.status == "KILLED":
-                mutation_coverage_by_source_file[source_path]["killed"] += 1
-            if mutant.status == "SURVIVED":
-                mutation_coverage_by_source_file[source_path]["survived"] += 1
-            mutation_coverage_by_source_file[source_path]["total"] += 1
-
-        for source_path, data in mutation_coverage_by_source_file.items():
-            killed = data["killed"]
-            total = data["total"]
-            score = round((killed / total * 100) if total > 0 else 0, 2)
-            data["mutation_score"] = f"{score}%"
-
-        return mutation_coverage_by_source_file
-
-    def generate_mutant_report(self, mutants: List[Mutant]) -> Dict[str, Any]:
-        """
-        Generates a summary report of the mutation testing.
-
-        Args:
-            mutants (List[Mutant]): List of mutants generated during mutation testing.
-
-        Returns:
-            Dict[str, Any]: Summary report data.
-        """
-        killed_mutants_cnt = sum(1 for mutant in mutants if mutant.status == "KILLED")
-        survived_mutants_cnt = sum(
-            1 for mutant in mutants if mutant.status == "SURVIVED"
-        )
-        total_mutants = len(mutants)
-        score = round(
-            (killed_mutants_cnt / total_mutants * 100) if total_mutants > 0 else 0, 2
+        total_mutation_coverage = (
+            f"{len(killed_mutants) / len(valid_mutants) * 100:.2f}%"
+            if valid_mutants
+            else "0.00%"
         )
 
-        report = {
-            "Total Mutants": total_mutants,
-            "Killed Mutants": killed_mutants_cnt,
-            "Survived Mutants": survived_mutants_cnt,
-            "Mutation Coverage": f"{score}%",
+        logger.info("🦠 Total Mutants: %d 🦠", len(mutants))
+        logger.info("🛡️ Survived Mutants: %d 🛡️", len(survived_mutants))
+        logger.info("🗡️ Killed Mutants: %d 🗡️", len(killed_mutants))
+        logger.info("🕒 Timeout Mutants: %d 🕒", len(timeout_mutants))
+        logger.info("🔥 Compile Error Mutants: %d 🔥", len(compile_error_mutants))
+        logger.info("🎯 Mutation Coverage: %s 🎯", total_mutation_coverage)
+
+        mutation_coverage = {
+            "total_mutants": len(mutants),
+            "killed_mutants": len(killed_mutants),
+            "survived_mutants": len(survived_mutants),
+            "timeout_mutants": len(timeout_mutants),
+            "compile_error_mutants": len(compile_error_mutants),
+            "mutation_coverage": total_mutation_coverage,
         }
 
-        logger.info("🦠 Total Mutants: %d 🦠", total_mutants)
-        logger.info("🛡️ Survived Mutants: %d 🛡️", survived_mutants_cnt)
-        logger.info("🗡️ Killed Mutants: %d 🗡️", killed_mutants_cnt)
-        logger.info("🎯 Mutation Coverage: %.2f%% 🎯", score)
+        self.save_report("logs/_latest/mutation_coverage.json", mutation_coverage)
 
-        return report
-
-    def save_report(self, file_path: str, data: Any) -> None:
+    def generate_mutant_report_detail(self, mutants: List[Mutant]) -> None:
         """
-        Saves the report data to a file.
+        Generates a detailed mutation testing report per source file.
 
         Args:
-            file_path (str): The path to the file where the report will be saved.
-            data (Any): The data to be saved in the report.
+            mutants (List[Mutant]): List of mutants generated during mutation testing.
         """
-        with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
+        report_detail = {}
+        for mutant in mutants:
+            source_path = mutant["source_path"]
+            if source_path not in report_detail:
+                report_detail[source_path] = {
+                    "total_mutants": 0,
+                    "killed_mutants": 0,
+                    "survived_mutants": 0,
+                    "timeout_mutants": 0,
+                    "compile_error_mutants": 0,
+                }
+            report_detail[source_path]["total_mutants"] += 1
+            if mutant["status"] == "KILLED":
+                report_detail[source_path]["killed_mutants"] += 1
+            elif mutant["status"] == "SURVIVED":
+                report_detail[source_path]["survived_mutants"] += 1
+            elif mutant["status"] == "TIMEOUT":
+                report_detail[source_path]["timeout_mutants"] += 1
+            elif mutant["status"] == "COMPILE_ERROR":
+                report_detail[source_path]["compile_error_mutants"] += 1
+
+        for source_path, detail in report_detail.items():
+            valid_mutants = (
+                detail["total_mutants"]
+                - detail["compile_error_mutants"]
+                - detail["timeout_mutants"]
+            )
+            mutation_coverage = (
+                f"{detail['killed_mutants'] / valid_mutants * 100:.2f}%"
+                if valid_mutants
+                else "0.00%"
+            )
+            detail["mutation_coverage"] = mutation_coverage
+
+        self.save_report("logs/_latest/mutation_coverage_detail.json", report_detail)
+
+    def save_report(self, filepath: str, data: Any) -> None:
+        """
+        Saves the report data to a JSON file.
+
+        Args:
+            filepath (str): The path to the file where the data should be saved.
+            data (Any): The data to be saved.
+        """
+        with open(filepath, "w") as f:
+            json.dump(data, f, indent=4)
+        logger.info(f"Report saved to {filepath}")

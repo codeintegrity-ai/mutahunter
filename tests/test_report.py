@@ -2,9 +2,11 @@ import json
 from unittest.mock import mock_open, patch
 
 import pytest
-
+from dataclasses import asdict
 from mutahunter.core.entities.mutant import Mutant
 from mutahunter.core.report import MutantReport
+
+from unittest.mock import patch
 
 
 @pytest.fixture
@@ -61,147 +63,112 @@ def mutants():
     ]
 
 
-def test_generate_mutation_coverage_by_source_file(mutants, config):
+def test_generate_mutant_report_detail_all_statuses(config):
+    mutants = [
+        Mutant(
+            id="1",
+            source_path="app.go",
+            mutant_path="mutant1.py",
+            status="KILLED",
+            error_msg="",
+            mutant_code="",
+            type="",
+            description="",
+        ),
+        Mutant(
+            id="2",
+            source_path="app.go",
+            mutant_path="mutant2.py",
+            status="SURVIVED",
+            error_msg="",
+            mutant_code="",
+            type="",
+            description="",
+        ),
+        Mutant(
+            id="3",
+            source_path="app.go",
+            mutant_path="mutant3.py",
+            status="TIMEOUT",
+            error_msg="",
+            mutant_code="",
+            type="",
+            description="",
+        ),
+        Mutant(
+            id="4",
+            source_path="app.go",
+            mutant_path="mutant4.py",
+            status="COMPILE_ERROR",
+            error_msg="",
+            mutant_code="",
+            type="",
+            description="",
+        ),
+    ]
     report = MutantReport(config)
-    mutation_coverage = report.generate_mutation_coverage_by_source_file(mutants)
-    assert mutation_coverage == {
-        "app.go": {"killed": 2, "survived": 2, "total": 4, "mutation_score": "50.0%"}
-    }
+    mutants = [asdict(mutant) for mutant in mutants]
+
+    with patch.object(report, "save_report") as mock_save_report:
+        report.generate_mutant_report_detail(mutants)
+
+        mock_save_report.assert_called_once_with(
+            "logs/_latest/mutation_coverage_detail.json",
+            {
+                "app.go": {
+                    "total_mutants": 4,
+                    "killed_mutants": 1,
+                    "survived_mutants": 1,
+                    "timeout_mutants": 1,
+                    "compile_error_mutants": 1,
+                    "mutation_coverage": "50.00%",
+                }
+            },
+        )
 
 
 def test_generate_mutant_report(mutants, config):
     report = MutantReport(config)
-    with patch("mutahunter.core.logger.logger.info") as mock_logger_info:
-        report_summary = report.generate_mutant_report(mutants)
-        assert report_summary == {
-            "Total Mutants": 4,
-            "Killed Mutants": 2,
-            "Survived Mutants": 2,
-            "Mutation Coverage": "50.0%",
-        }
-        # mock_logger_info.assert_any_call("🦠 Total Mutants: 4 🦠")
+    mutants = [asdict(mutant) for mutant in mutants]
+
+    with (
+        patch.object(report, "save_report") as mock_save_report,
+        patch("mutahunter.core.logger.logger.info") as mock_logger_info,
+    ):
+        report.generate_mutant_report(mutants)
+
+        mock_logger_info.assert_any_call("🦠 Total Mutants: %d 🦠", len(mutants))
         mock_logger_info.assert_any_call("🛡️ Survived Mutants: %d 🛡️", 2)
         mock_logger_info.assert_any_call("🗡️ Killed Mutants: %d 🗡️", 2)
-        mock_logger_info.assert_any_call("🎯 Mutation Coverage: %.2f%% 🎯", 50.0)
+        mock_logger_info.assert_any_call("🕒 Timeout Mutants: %d 🕒", 0)
+        mock_logger_info.assert_any_call("🔥 Compile Error Mutants: %d 🔥", 0)
+        mock_logger_info.assert_any_call("🎯 Mutation Coverage: %s 🎯", "50.00%")
+
+        mock_save_report.assert_called_once_with(
+            "logs/_latest/mutation_coverage.json",
+            {
+                "total_mutants": 4,
+                "killed_mutants": 2,
+                "survived_mutants": 2,
+                "timeout_mutants": 0,
+                "compile_error_mutants": 0,
+                "mutation_coverage": "50.00%",
+            },
+        )
 
 
-def test_generate_report(mutants, config):
+def test_save_report(config):
     report = MutantReport(config)
-    with patch("builtins.open", mock_open()) as mocked_file:
-        with patch("json.dump") as mock_json_dump:
-            with (
-                patch.object(
-                    report, "generate_killed_mutants"
-                ) as mock_generate_killed_mutants,
-                patch.object(
-                    report, "generate_survived_mutants"
-                ) as mock_generate_survived_mutants,
-                patch.object(
-                    report,
-                    "generate_mutation_coverage_by_source_file",
-                    return_value={
-                        "app.go": {
-                            "killed": 2,
-                            "survived": 2,
-                            "total": 4,
-                            "mutation_score": "50.0%",
-                        }
-                    },
-                ) as mock_generate_mutation_coverage_by_source_file,
-                patch.object(
-                    report, "generate_mutant_report"
-                ) as mock_generate_mutant_report,
-            ):
+    data = {"key": "value"}
+    filepath = "test.json"
 
-                report.generate_report(mutants)
+    with (
+        patch("builtins.open", mock_open()) as mock_file,
+        patch("json.dump") as mock_json_dump,
+        patch("mutahunter.core.logger.logger.info") as mock_logger_info,
+    ):
+        report.save_report(filepath, data)
 
-                mock_generate_killed_mutants.assert_called_once_with(mutants)
-                mock_generate_survived_mutants.assert_called_once_with(mutants)
-                mock_generate_mutation_coverage_by_source_file.assert_called_once_with(
-                    mutants
-                )
-                mock_generate_mutant_report.assert_called_once_with(mutants)
-
-                mocked_file.assert_any_call(
-                    "logs/_latest/mutation_coverage.json", "w", encoding="utf-8"
-                )
-                mock_json_dump.assert_called_once_with(
-                    {
-                        "app.go": {
-                            "killed": 2,
-                            "survived": 2,
-                            "total": 4,
-                            "mutation_score": "50.0%",
-                        }
-                    },
-                    mocked_file(),
-                    indent=2,
-                )
-
-
-def test_generate_survived_mutants(mutants, config):
-    report = MutantReport(config)
-    with patch("builtins.open", mock_open()) as mocked_file:
-        with patch("json.dump") as mock_json_dump:
-            report.generate_survived_mutants(mutants)
-            mocked_file.assert_called_once_with(
-                "logs/_latest/mutants_survived.json", "w", encoding="utf-8"
-            )
-            mock_json_dump.assert_called_once()
-            written_data = mock_json_dump.call_args[0][0]
-            assert written_data == [
-                {
-                    "id": "2",
-                    "source_path": "app.go",
-                    "mutant_path": "mutant2.py",
-                    "status": "SURVIVED",
-                    "error_msg": "",
-                    "mutant_code": "",
-                    "type": "",
-                    "description": "",
-                },
-                {
-                    "id": "4",
-                    "source_path": "app.go",
-                    "mutant_path": "mutant4.py",
-                    "status": "SURVIVED",
-                    "error_msg": "",
-                    "mutant_code": "",
-                    "type": "",
-                    "description": "",
-                },
-            ]
-
-
-def test_generate_killed_mutants(mutants, config):
-    report = MutantReport(config)
-    with patch("builtins.open", mock_open()) as mocked_file:
-        with patch("json.dump") as mock_json_dump:
-            report.generate_killed_mutants(mutants)
-            mocked_file.assert_called_once_with(
-                "logs/_latest/mutants_killed.json", "w", encoding="utf-8"
-            )
-            mock_json_dump.assert_called_once()
-            written_data = mock_json_dump.call_args[0][0]
-            assert written_data == [
-                {
-                    "id": "1",
-                    "source_path": "app.go",
-                    "mutant_path": "mutant1.py",
-                    "status": "KILLED",
-                    "error_msg": "",
-                    "mutant_code": "",
-                    "type": "",
-                    "description": "",
-                },
-                {
-                    "id": "3",
-                    "source_path": "app.go",
-                    "mutant_path": "mutant3.py",
-                    "status": "KILLED",
-                    "error_msg": "",
-                    "mutant_code": "",
-                    "type": "",
-                    "description": "",
-                },
-            ]
+        mock_file.assert_called_once_with(filepath, "w")
+        mock_json_dump.assert_called_once_with(data, mock_file(), indent=4)
+        mock_logger_info.assert_called_once_with(f"Report saved to {filepath}")

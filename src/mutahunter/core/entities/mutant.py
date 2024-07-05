@@ -15,7 +15,7 @@ class Mutant:
         id (str): The unique identifier of the mutant.
         source_path (str): The path to the original source file.
         mutant_path (str): The path to the file containing the mutant.
-        status (Union[None, str]): The status of the mutant (e.g., "SURVIVED", "KILLED").
+        status (Union[None, str]): The status of the mutant (e.g., "SURVIVED", "KILLED", "COMPILE_ERROR").
         error_msg (str): The error message associated with the mutant, if any.
         mutant_code (str): The code of the mutant.
         type (str): The type of mutation applied to the code.
@@ -24,7 +24,7 @@ class Mutant:
 
     id: str
     source_path: str
-    mutant_path: str
+    mutant_path: Union[None, str] = None
     status: Union[None, str] = None
     error_msg: str = ""
     mutant_code: str = ""

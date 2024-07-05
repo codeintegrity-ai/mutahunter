@@ -25,7 +25,7 @@ class TestRunner:
         except subprocess.TimeoutExpired:
             # Mutant Killed
             result = subprocess.CompletedProcess(
-                test_command, 1, stdout="", stderr="TimeoutExpired"
+                test_command, 2, stdout="", stderr="TimeoutExpired"
             )
         finally:
             self.revert_file(module_path, backup_path)
