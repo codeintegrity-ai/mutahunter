@@ -44,7 +44,11 @@ class MutantHunter:
                 logger.info("🦠 Running mutation testing on entire codebase... 🦠")
                 self.run_mutation_testing()
             logger.info("🎯 Generating Mutation Report... 🎯")
-            self.mutant_report.generate_report(self.mutants, self.router.total_cost)
+            self.mutant_report.generate_report(
+                mutants=self.mutants,
+                total_cost=self.router.total_cost,
+                line_rate=self.analyzer.line_rate,
+            )
             logger.info(f"Mutation Testing Ended. Took {round(time.time() - start)}s")
         except Exception as e:
             logger.error(
@@ -158,6 +162,8 @@ class MutantHunter:
                 router=self.router,
             )
             for mutant_data in mutant_generator.generate():
+                if "mutant_code" not in mutant_data:
+                    continue
                 self.process_mutant(mutant_data, file_path, start_byte, end_byte)
 
     def process_mutant(

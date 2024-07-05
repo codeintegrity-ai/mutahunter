@@ -74,12 +74,13 @@ $ mutahunter run --test-command "pytest tests/unit" --code-coverage-report-path 
 |\/| | |  |  |-| |-| | | |\|  |  |-  |(  
 '  ` `-'  '  ` ' ' ` `-' ' `  '  `-' ' ' 
 
+2024-07-05 00:26:13,420 INFO: 📊 Line Coverage: 100% 📊
+2024-07-05 00:26:13,420 INFO: 🎯 Mutation Coverage: 61.54% 🎯
 2024-07-05 00:26:13,420 INFO: 🦠 Total Mutants: 13 🦠
 2024-07-05 00:26:13,420 INFO: 🛡️ Survived Mutants: 5 🛡️
 2024-07-05 00:26:13,420 INFO: 🗡️ Killed Mutants: 8 🗡️
 2024-07-05 00:26:13,421 INFO: 🕒 Timeout Mutants: 0 🕒
 2024-07-05 00:26:13,421 INFO: 🔥 Compile Error Mutants: 0 🔥
-2024-07-05 00:26:13,421 INFO: 🎯 Mutation Coverage: 61.54% 🎯
 2024-07-05 00:26:13,421 INFO: 💰 Total Cost: $0.00583 USD 💰
 2024-07-05 00:26:13,421 INFO: Report saved to logs/_latest/mutation_coverage.json
 2024-07-05 00:26:13,421 INFO: Report saved to logs/_latest/mutation_coverage_detail.json

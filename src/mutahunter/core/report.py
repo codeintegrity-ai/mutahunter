@@ -22,7 +22,12 @@ class MutantReport:
     def __init__(self, config) -> None:
         self.config = config
 
-    def generate_report(self, mutants: List[Mutant], total_cost) -> None:
+    def generate_report(
+        self,
+        mutants: List[Mutant],
+        total_cost: float,
+        line_rate: float,
+    ) -> None:
         """
         Generates a comprehensive mutation testing report.
 
@@ -32,10 +37,15 @@ class MutantReport:
         mutants = [asdict(mutant) for mutant in mutants]
         self.save_report("logs/_latest/mutants.json", mutants)
         print(MUTAHUNTER_ASCII)
-        self.generate_mutant_report(mutants, total_cost)
+        self.generate_mutant_report(mutants, total_cost, line_rate)
         self.generate_mutant_report_detail(mutants)
 
-    def generate_mutant_report(self, mutants: List[Mutant], total_cost) -> None:
+    def generate_mutant_report(
+        self,
+        mutants: List[Mutant],
+        total_cost: float,
+        line_rate: float,
+    ) -> None:
         killed_mutants = [mutant for mutant in mutants if mutant["status"] == "KILLED"]
         survived_mutants = [
             mutant for mutant in mutants if mutant["status"] == "SURVIVED"
@@ -55,13 +65,15 @@ class MutantReport:
             if valid_mutants
             else "0.00%"
         )
+        line_coverage = f"{line_rate * 100:.2f}%"
 
+        logger.info("📊 Line Coverage: %.2f%% 📊", line_rate * 100)
+        logger.info("🎯 Mutation Coverage: %s 🎯", total_mutation_coverage)
         logger.info("🦠 Total Mutants: %d 🦠", len(mutants))
         logger.info("🛡️ Survived Mutants: %d 🛡️", len(survived_mutants))
         logger.info("🗡️ Killed Mutants: %d 🗡️", len(killed_mutants))
         logger.info("🕒 Timeout Mutants: %d 🕒", len(timeout_mutants))
         logger.info("🔥 Compile Error Mutants: %d 🔥", len(compile_error_mutants))
-        logger.info("🎯 Mutation Coverage: %s 🎯", total_mutation_coverage)
         logger.info("💰 Expected Cost: $%.5f USD 💰", total_cost)
 
         mutation_coverage = {
@@ -71,6 +83,7 @@ class MutantReport:
             "timeout_mutants": len(timeout_mutants),
             "compile_error_mutants": len(compile_error_mutants),
             "mutation_coverage": total_mutation_coverage,
+            "line_coverage": line_coverage,
             "expected_cost": total_cost,
         }
 

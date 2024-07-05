@@ -134,7 +134,7 @@ def test_generate_mutant_report(mutants, config):
         patch.object(report, "save_report") as mock_save_report,
         patch("mutahunter.core.logger.logger.info") as mock_logger_info,
     ):
-        report.generate_mutant_report(mutants, 0.0)
+        report.generate_mutant_report(mutants, 0.0, 0.0)
 
         mock_logger_info.assert_any_call("🦠 Total Mutants: %d 🦠", len(mutants))
         mock_logger_info.assert_any_call("🛡️ Survived Mutants: %d 🛡️", 2)

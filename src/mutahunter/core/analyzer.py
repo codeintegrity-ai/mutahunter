@@ -21,6 +21,7 @@ class Analyzer:
         """
         super().__init__()
         self.config = config
+        self.line_rate = None
 
         if self.config["coverage_type"] == "cobertura":
             self.file_lines_executed = self.parse_coverage_report_cobertura()
@@ -35,13 +36,16 @@ class Analyzer:
 
     def parse_coverage_report_lcov(self) -> Dict[str, List[int]]:
         """
-        Parses an LCOV code coverage report to extract covered line numbers for each file.
+        Parses an LCOV code coverage report to extract covered line numbers for each file and calculate overall line coverage.
 
         Returns:
-            Dict[str, List[int]]: A dictionary where keys are filenames and values are lists of covered line numbers.
+            Dict[str, Any]: A dictionary where keys are filenames and values are lists of covered line numbers.
+                            Additionally, it includes the overall line coverage percentage.
         """
         result = {}
         current_file = None
+        total_lines_found = 0
+        total_lines_hit = 0
 
         with open(self.config["code_coverage_report_path"], "r") as file:
             for line in file:
@@ -54,9 +58,15 @@ class Analyzer:
                     if hits > 0:
                         line_number = int(parts[0])
                         result[current_file].append(line_number)
+                elif line.startswith("LF:") and current_file:
+                    total_lines_found += int(line.strip().split(":")[1])
+                elif line.startswith("LH:") and current_file:
+                    total_lines_hit += int(line.strip().split(":")[1])
                 elif line.startswith("end_of_record"):
                     current_file = None
-
+        self.line_rate = (
+            (total_lines_hit / total_lines_found) if total_lines_found else 0.0
+        )
         return result
 
     def parse_coverage_report_cobertura(self) -> Dict[str, List[int]]:
@@ -69,6 +79,7 @@ class Analyzer:
         tree = ET.parse(self.config["code_coverage_report_path"])
         root = tree.getroot()
         result = {}
+        self.line_rate = float(root.get("line-rate", 0))
         for cls in root.findall(".//class"):
             name_attr = cls.get("filename")
             executed_lines = []
@@ -81,16 +92,20 @@ class Analyzer:
                 result[name_attr] = executed_lines
         return result
 
-    def parse_coverage_report_jacoco(self) -> Dict[str, List[int]]:
+    def parse_coverage_report_jacoco(self) -> Dict[str, Any]:
         """
-        Parses a JaCoCo XML code coverage report to extract covered line numbers for each file.
+        Parses a JaCoCo XML code coverage report to extract covered line numbers for each file and calculate overall line coverage.
 
         Returns:
-            Dict[str, List[int]]: A dictionary where keys are file paths and values are lists of covered line numbers.
+            Dict[str, Any]: A dictionary where keys are file paths and values are lists of covered line numbers.
+                            Additionally, it includes the overall line coverage percentage.
         """
         tree = ET.parse(self.config["code_coverage_report_path"])
         root = tree.getroot()
         result = {}
+
+        total_lines_missed = 0
+        total_lines_covered = 0
 
         for package in root.findall(".//package"):
             package_name = package.get("name").replace("/", ".")
@@ -103,13 +118,20 @@ class Analyzer:
                 executed_lines = []
                 for line in sourcefile.findall(".//line"):
                     line_number = int(line.get("nr"))
-                    int(line.get("mi"))
+                    missed = int(line.get("mi"))
                     covered = int(line.get("ci"))
                     if covered > 0:
                         executed_lines.append(line_number)
+                    total_lines_missed += missed
+                    total_lines_covered += covered
                 if executed_lines:
                     result[full_filename] = executed_lines
 
+        self.line_rate = (
+            (total_lines_covered / (total_lines_covered + total_lines_missed))
+            if (total_lines_covered + total_lines_missed) > 0
+            else 0.0
+        )
         return result
 
     def dry_run(self) -> None:
