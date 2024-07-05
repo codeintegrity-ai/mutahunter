@@ -46,7 +46,12 @@ Mutahunter uses LLM models to inject context-aware faults into your codebase. Th
 
 ## Getting Started
 
-⚠️ We highly suggest using `--modified-files-only` flag to run mutation testing on only on modified files and `--only-mutate-file-paths` flag to focus on specific files. This will make the mutation testing **faster** and **cost effective.** ⚠️
+⚠️ We highly suggest:
+
+- Using `--modified-files-only` flag to run mutation testing on only on modified files.
+- Using `--only-mutate-file-paths` flag to focus on specific files. T
+
+The above flags will make the mutation testing significantly **faster** and **cost effective.** ⚠️
 
 ```bash
 # Install Mutahunter package via GitHub. Python 3.11+ is required.
