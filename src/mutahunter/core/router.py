@@ -1,6 +1,6 @@
 import time
 
-import litellm
+from litellm import completion, completion_cost, litellm, success_callback
 
 
 class LLMRouter:
@@ -10,6 +10,24 @@ class LLMRouter:
         """
         self.model = model
         self.api_base = api_base
+        self.total_cost = 0
+        litellm.success_callback = [self.track_cost_callback]
+
+        # track_cost_callback
+
+    def track_cost_callback(
+        self,
+        kwargs,  # kwargs to completion
+        completion_response,  # response from completion
+        start_time,
+        end_time,  # start/end time
+    ):
+        try:
+            response_cost = kwargs.get("response_cost", 0)
+            self.total_cost += response_cost
+            print("streaming response_cost", response_cost)
+        except:
+            pass
 
     def generate_response(
         self, prompt: dict, max_tokens: int = 4096, streaming: bool = False
@@ -25,6 +43,7 @@ class LLMRouter:
         Returns:
             tuple: Generated response, prompt tokens used, and completion tokens used.
         """
+        streaming = False
         self._validate_prompt(prompt)
         messages = self._build_messages(prompt)
         completion_params = self._build_completion_params(
@@ -86,7 +105,7 @@ class LLMRouter:
         """
         response_chunks = []
         print("\nStreaming results from LLM model...")
-        response = litellm.completion(**completion_params)
+        response = completion(**completion_params)
         for chunk in response:
             print(chunk.choices[0].delta.content or "", end="", flush=True)
             response_chunks.append(chunk)
@@ -100,7 +119,7 @@ class LLMRouter:
         """
         Get the non-streamed response from the LLM model.
         """
-        response = litellm.completion(**completion_params)
+        response = completion(**completion_params)
         content = response["choices"][0]["message"]["content"]
         prompt_tokens = int(response["usage"]["prompt_tokens"])
         completion_tokens = int(response["usage"]["completion_tokens"])

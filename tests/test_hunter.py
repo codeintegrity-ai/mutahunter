@@ -326,7 +326,6 @@ def test_should_skip_file_exclude_files(mutant_hunter):
     assert mutant_hunter.should_skip_file("excluded_file.py") is True
 
 
-
 def test_process_test_result_compile_error(mutant_hunter):
     mutant = Mutant(
         id="1",
@@ -355,6 +354,7 @@ def test_process_test_result_timeout(mutant_hunter):
     mutant_hunter.process_test_result(result, mutant)
     assert mutant.status == "TIMEOUT"
     assert mutant.error_msg == "timeout error"
+
 
 @patch.object(MutantHunter, "prepare_mutant_file", return_value="")
 def test_process_mutant_compile_error(mock_prepare_mutant_file, mutant_hunter):

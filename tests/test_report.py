@@ -1,12 +1,11 @@
 import json
+from dataclasses import asdict
 from unittest.mock import mock_open, patch
 
 import pytest
-from dataclasses import asdict
+
 from mutahunter.core.entities.mutant import Mutant
 from mutahunter.core.report import MutantReport
-
-from unittest.mock import patch
 
 
 @pytest.fixture
@@ -135,7 +134,7 @@ def test_generate_mutant_report(mutants, config):
         patch.object(report, "save_report") as mock_save_report,
         patch("mutahunter.core.logger.logger.info") as mock_logger_info,
     ):
-        report.generate_mutant_report(mutants)
+        report.generate_mutant_report(mutants, 0.0)
 
         mock_logger_info.assert_any_call("🦠 Total Mutants: %d 🦠", len(mutants))
         mock_logger_info.assert_any_call("🛡️ Survived Mutants: %d 🛡️", 2)
@@ -143,6 +142,7 @@ def test_generate_mutant_report(mutants, config):
         mock_logger_info.assert_any_call("🕒 Timeout Mutants: %d 🕒", 0)
         mock_logger_info.assert_any_call("🔥 Compile Error Mutants: %d 🔥", 0)
         mock_logger_info.assert_any_call("🎯 Mutation Coverage: %s 🎯", "50.00%")
+        mock_logger_info.assert_any_call("💰 Expected Cost: $%.5f USD 💰", 0.0)
 
         mock_save_report.assert_called_once_with(
             "logs/_latest/mutation_coverage.json",
@@ -153,6 +153,7 @@ def test_generate_mutant_report(mutants, config):
                 "timeout_mutants": 0,
                 "compile_error_mutants": 0,
                 "mutation_coverage": "50.00%",
+                "expected_cost": 0.0,
             },
         )
 

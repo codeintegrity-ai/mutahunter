@@ -22,7 +22,7 @@ class MutantReport:
     def __init__(self, config) -> None:
         self.config = config
 
-    def generate_report(self, mutants: List[Mutant]) -> None:
+    def generate_report(self, mutants: List[Mutant], total_cost) -> None:
         """
         Generates a comprehensive mutation testing report.
 
@@ -32,10 +32,10 @@ class MutantReport:
         mutants = [asdict(mutant) for mutant in mutants]
         self.save_report("logs/_latest/mutants.json", mutants)
         print(MUTAHUNTER_ASCII)
-        self.generate_mutant_report(mutants)
+        self.generate_mutant_report(mutants, total_cost)
         self.generate_mutant_report_detail(mutants)
 
-    def generate_mutant_report(self, mutants: List[Mutant]) -> None:
+    def generate_mutant_report(self, mutants: List[Mutant], total_cost) -> None:
         killed_mutants = [mutant for mutant in mutants if mutant["status"] == "KILLED"]
         survived_mutants = [
             mutant for mutant in mutants if mutant["status"] == "SURVIVED"
@@ -62,6 +62,7 @@ class MutantReport:
         logger.info("🕒 Timeout Mutants: %d 🕒", len(timeout_mutants))
         logger.info("🔥 Compile Error Mutants: %d 🔥", len(compile_error_mutants))
         logger.info("🎯 Mutation Coverage: %s 🎯", total_mutation_coverage)
+        logger.info("💰 Expected Cost: $%.5f USD 💰", total_cost)
 
         mutation_coverage = {
             "total_mutants": len(mutants),
@@ -70,6 +71,7 @@ class MutantReport:
             "timeout_mutants": len(timeout_mutants),
             "compile_error_mutants": len(compile_error_mutants),
             "mutation_coverage": total_mutation_coverage,
+            "expected_cost": total_cost,
         }
 
         self.save_report("logs/_latest/mutation_coverage.json", mutation_coverage)

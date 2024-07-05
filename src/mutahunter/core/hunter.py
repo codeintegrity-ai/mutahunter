@@ -10,6 +10,7 @@ from mutahunter.core.entities.mutant import Mutant
 from mutahunter.core.logger import logger
 from mutahunter.core.mutator import MutantGenerator
 from mutahunter.core.report import MutantReport
+from mutahunter.core.router import LLMRouter
 from mutahunter.core.runner import TestRunner
 
 
@@ -23,6 +24,9 @@ class MutantHunter:
         self.mutant_report = MutantReport(config=self.config)
         self.analyzer = Analyzer(self.config)
         self.test_runner = TestRunner()
+        self.router = LLMRouter(
+            model=self.config["model"], api_base=self.config["api_base"]
+        )
 
     def run(self) -> None:
         """
@@ -40,7 +44,7 @@ class MutantHunter:
                 logger.info("🦠 Running mutation testing on entire codebase... 🦠")
                 self.run_mutation_testing()
             logger.info("🎯 Generating Mutation Report... 🎯")
-            self.mutant_report.generate_report(self.mutants)
+            self.mutant_report.generate_report(self.mutants, self.router.total_cost)
             logger.info(f"Mutation Testing Ended. Took {round(time.time() - start)}s")
         except Exception as e:
             logger.error(
@@ -151,6 +155,7 @@ class MutantHunter:
                 function_name=function_name,
                 start_byte=start_byte,
                 end_byte=end_byte,
+                router=self.router,
             )
             for mutant_data in mutant_generator.generate():
                 self.process_mutant(mutant_data, file_path, start_byte, end_byte)

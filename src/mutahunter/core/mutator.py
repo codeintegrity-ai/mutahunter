@@ -6,7 +6,6 @@ from jinja2 import Template
 from mutahunter.core.logger import logger
 from mutahunter.core.pilot.aider.repomap import RepoMap
 from mutahunter.core.pilot.prompts.factory import PromptFactory
-from mutahunter.core.router import LLMRouter
 
 
 class MutantGenerator:
@@ -19,6 +18,7 @@ class MutantGenerator:
         function_name,
         start_byte,
         end_byte,
+        router,
     ):
         self.config = config
         self.executed_lines = executed_lines
@@ -27,10 +27,7 @@ class MutantGenerator:
         self.function_name = function_name
         self.start_byte = start_byte
         self.end_byte = end_byte
-
-        self.router = LLMRouter(
-            model=self.config["model"], api_base=self.config["api_base"]
-        )
+        self.router = router
         self.repo_map = RepoMap(model=self.config["model"])
         self.language = filename_to_lang(self.source_file_path)
         self.prompt = PromptFactory.get_prompt(language=self.language)

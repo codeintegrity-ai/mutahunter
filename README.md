@@ -46,6 +46,8 @@ Mutahunter uses LLM models to inject context-aware faults into your codebase. Th
 
 ## Getting Started
 
+⚠️ We highly suggest using `--modified-files-only` flag to run mutation testing on only on modified files and `--only-mutate-file-paths` flag to focus on specific files. This will make the mutation testing **faster** and **cost effective.** ⚠️
+
 ```bash
 # Install Mutahunter package via GitHub. Python 3.11+ is required.
 $ pip install git+https://github.com/codeintegrity-ai/mutahunter.git
@@ -73,6 +75,7 @@ $ mutahunter run --test-command "pytest tests/unit" --code-coverage-report-path 
 2024-07-05 00:26:13,421 INFO: 🕒 Timeout Mutants: 0 🕒
 2024-07-05 00:26:13,421 INFO: 🔥 Compile Error Mutants: 0 🔥
 2024-07-05 00:26:13,421 INFO: 🎯 Mutation Coverage: 61.54% 🎯
+2024-07-05 00:26:13,421 INFO: 💰 Total Cost: $0.00583 USD 💰
 2024-07-05 00:26:13,421 INFO: Report saved to logs/_latest/mutation_coverage.json
 2024-07-05 00:26:13,421 INFO: Report saved to logs/_latest/mutation_coverage_detail.json
 2024-07-05 00:26:13,421 INFO: Mutation Testing Ended. Took 43s
