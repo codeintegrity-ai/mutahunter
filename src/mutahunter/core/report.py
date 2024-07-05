@@ -67,7 +67,7 @@ class MutantReport:
         )
         line_coverage = f"{line_rate * 100:.2f}%"
 
-        logger.info("📊 Line Coverage: %.2f%% 📊", line_rate * 100)
+        logger.info("📊 Line Coverage: %s 📊", line_coverage)
         logger.info("🎯 Mutation Coverage: %s 🎯", total_mutation_coverage)
         logger.info("🦠 Total Mutants: %d 🦠", len(mutants))
         logger.info("🛡️ Survived Mutants: %d 🛡️", len(survived_mutants))
