@@ -1,4 +1,6 @@
 import json
+import time
+from typing import Any, Dict, List
 
 from grep_ast import filename_to_lang
 from jinja2 import Template
@@ -6,6 +8,85 @@ from jinja2 import Template
 from mutahunter.core.logger import logger
 from mutahunter.core.pilot.aider.repomap import RepoMap
 from mutahunter.core.pilot.prompts.factory import PromptFactory
+
+
+class MutationStrategy:
+    def generate_mutations(
+        self, hunter: "MutantHunter", file_path: str, executed_lines: List[int]
+    ):
+        raise NotImplementedError("Must implement generate_mutations method")
+
+
+class LLMBasedMutation(MutationStrategy):
+    def generate_mutations(
+        self, hunter: "MutantHunter", file_path: str, executed_lines: List[int]
+    ):
+        """
+        Generates mutations for a single file based on the executed lines.
+        """
+        covered_function_blocks, covered_function_block_executed_lines = (
+            hunter.analyzer.get_covered_function_blocks(
+                executed_lines=executed_lines,
+                source_file_path=file_path,
+            )
+        )
+
+        hunter.logger.info(
+            f"Total function blocks to mutate for {file_path}: {len(covered_function_blocks)}"
+        )
+        if not covered_function_blocks:
+            return
+
+        for function_block, executed_lines in zip(
+            covered_function_blocks, covered_function_block_executed_lines
+        ):
+            start_byte = function_block.start_byte
+            end_byte = function_block.end_byte
+            function_name = function_block.child_by_field_name("name").text.decode(
+                "utf8"
+            )
+            mutant_generator = MutantGenerator(
+                config=hunter.config,
+                executed_lines=executed_lines,
+                cov_files=list(hunter.analyzer.file_lines_executed.keys()),
+                source_file_path=file_path,
+                function_name=function_name,
+                start_byte=start_byte,
+                end_byte=end_byte,
+                router=hunter.router,
+            )
+            for mutant_data in mutant_generator.generate():
+                if "mutant_code" not in mutant_data:
+                    continue
+                hunter.process_mutant(mutant_data, file_path, start_byte, end_byte)
+
+
+class ExtremeMutation(MutationStrategy):
+    def generate_mutations(self, hunter, file_path: str, executed_lines: List[int]):
+        hunter.logger.info(f"Generating extreme mutations for file: {file_path}")
+        covered_method_blocks, covered_method_lines = (
+            hunter.analyzer.get_covered_method_blocks(
+                executed_lines=executed_lines,
+                source_file_path=file_path,
+            )
+        )
+
+        if not covered_method_blocks:
+            return
+
+        with open(file_path, "rb") as f:
+            src_code = f.read()
+
+        for method_block in covered_method_blocks:
+            start_byte = method_block.start_byte
+            end_byte = method_block.end_byte
+            removed_code = src_code[start_byte:end_byte].decode("utf-8")
+            mutant_data = {
+                "mutant_code": "",
+                "type": "extreme",
+                "description": removed_code,
+            }
+            hunter.process_mutant(mutant_data, file_path, start_byte, end_byte)
 
 
 class MutantGenerator:
@@ -28,7 +109,7 @@ class MutantGenerator:
         self.start_byte = start_byte
         self.end_byte = end_byte
         self.router = router
-        self.repo_map = RepoMap(model=self.config["model"])
+        self.repo_map = RepoMap(model=self.config.model)
         self.language = filename_to_lang(self.source_file_path)
         self.prompt = PromptFactory.get_prompt(language=self.language)
 

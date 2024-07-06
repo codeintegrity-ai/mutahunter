@@ -14,11 +14,6 @@
   </a>
 </div>
 
-<div align="center">
-  <video src="https://github.com/codeintegrity-ai/mutahunter/assets/37044660/cca8a41b-b97e-4ce1-806d-e53d475d4226"></video>
-  <p>Demo video of running mutation testing on a Go web project</p>
-</div>
-
 ## Table of Contents
 
 - [Overview](#overview)
@@ -37,21 +32,23 @@ Mutahunter uses LLM models to inject context-aware faults into your codebase. Th
 
 ## Features
 
-- **Change-Based:** Runs mutation tests on modified files and lines based on the latest commit or pull request changes.
-- **Multi-Language Support:** Compatible with languages that provide coverage reports in Cobertura XML, Jacoco XML, and lcov formats.
-- **Extensible:** Extensible to additional languages and testing frameworks.
-- **Context-Aware:** Uses a map of your entire git repository to generate contextually relevant mutants using [aider](https://aider.chat/docs/repomap.html).
-- **LLM Support:** Supports self-hosted, Anthropic, OpenAI, and any LLM models using [LiteLLM](https://github.com/BerriAI/litellm).
-- **Mutant Report** Provides detailed reports on mutation coverage, killed mutants, and survived mutants.
+- **Extreme Mutation Testing:** Leverages language agnostic [TreeSitter](https://tree-sitter.github.io/) parser to apply extreme mutations to the codebase without using LLMs. [Research](https://arxiv.org/abs/2103.08480) shows that this approach is effective at detecting pseudo-tested methods with significantly lower computational cost. Currently supports Python, Java, JavaScript, and Go. Check the [scheme files](/src/mutahunter/core/pilot/aider/queries/) to see the supported operators. We welcome contributions to add more operators and languages.
+- **LLM Context-aware Mutations:** Utilizes LLM models to generate context-aware mutants. [Research](https://arxiv.org/abs/2406.09843) indicates that LLM-generated mutants have higher fault detection potential, fewer equivalent mutants, and higher coupling and semantic similarity to real faults. It uses a map of your entire git repository to generate contextually relevant mutants using [aider's repomap](https://aider.chat/docs/repomap.html). Supports self-hosted LLMs, Anthropic, OpenAI, and any LLM models via [LiteLLM](https://github.com/BerriAI/litellm).
+- **Change-Based Testing:** Runs mutation tests on modified files and lines based on the latest commit or pull request changes, ensuring that only relevant parts of the code are tested.
+- **Language Agnostic:** Compatible with languages that provide coverage reports in Cobertura XML, Jacoco XML, and lcov formats. Extensible to additional languages and testing frameworks.
+- **Detailed Mutant Reports:** Provides comprehensive reports on mutation coverage, killed mutants, and survived mutants.
+
+## Recommended Mutation Testing Process
+
+![Workflow](/images/diagram.svg)
+
+1. **Achieve High Line Coverage:** Ensure your test suite has high line coverage, preferably 100%.
+
+2. **Strict Mutation Testing:** Use strict mutation testing to improve mutation coverage without additional cost. Utilize the `--only-mutate-file-paths` flag for targeted testing on critical files.
+
+3. **LLM-Based Mutation Testing on Changed Files:** Inject context-aware mutants using LLMs on changed files during pull requests as the final line of defense. Use the `--modified-files-only` flag to focus on recent changes. In this way it will make the mutation testing significantly **faster** and **cost effective.**
 
 ## Getting Started
-
-⚠️ We highly suggest:
-
-- Using `--modified-files-only` flag to run mutation testing on only on modified files.
-- Using `--only-mutate-file-paths` flag to focus on specific files. T
-
-The above flags will make the mutation testing significantly **faster** and **cost effective.**
 
 ```bash
 # Install Mutahunter package via GitHub. Python 3.11+ is required.
@@ -91,60 +88,14 @@ $ mutahunter run --test-command "pytest tests/unit" --code-coverage-report-path 
 
 Go to the examples directory to see how to run Mutahunter on different programming languages:
 
-- [Go Example](/examples/go_webservice/)
+Check [Java Example](/examples/java_maven/) to see some interesting LLM-based mutation testing examples.
+
 - [Java Example](/examples/java_maven/)
+- [Go Example](/examples/go_webservice/)
 - [JavaScript Example](/examples/js_vanilla/)
 - [Python FastAPI Example](/examples/python_fastapi/)
 
 Feel free to add more examples! ✨
-
-### Command Options
-
-The mutahunter run command has the following options:
-
-```plaintext
-Options:
-  --model <MODEL>
-      Description: LLM model to use for mutation testing. We use LiteLLM to call the model.
-      Default: `gpt-4o`
-      Required: Yes
-      Example: `--model gpt-4o`
-  
-  --api-base <URL>
-      Description: Base URL for the API endpoint.
-      Default: `https://api.openai.com`
-      Required: No
-      Example: `--api-base https://api.openai.com`
-
-  --test-command <COMMAND>
-      Description: The command used to execute the tests. Specify a single test file to run the tests on.
-      Required: Yes
-      Example: `--test-command pytest test_app.py`
-
-  --code-coverage-report-path <PATH>
-      Description: Path to the code coverage report of the test suite.
-      Required: Yes
-      Example: `--code-coverage-report-path /path/to/coverage.xml`
-  
-  --coverage-type <TYPE>
-      Description: Type of coverage report. Currently supports `cobertura`, `jacoco`, `lcov`.
-      Required: Yes
-      Example: `--coverage-type cobertura`
-
-  --exclude-files <FILES>
-      Description: Files to exclude from analysis.
-      Required: No
-      Example: `--exclude-files file1.py file2.py`
-
-  --only-mutate-file-paths <FILES>
-      Description: Specifies which files to mutate. This is useful when you want to focus on specific files and it makes the mutations faster!
-      Required: No
-      Example: `--only-mutate-file-paths file1.py file2.py`
-  
-  --modified-files-only
-      Description: Runs mutation testing only on modified files and lines based on the latest commit.
-      Required: No
-```
 
 ## Mutant Report
 
@@ -160,20 +111,14 @@ Help us improve Mutahunter and get rewarded! We have a cash bounty program to in
 
 ## Roadmap
 
-### Mutation Testing Capabilities
-
 - [x] **Fault Injection:** Utilize advanced LLM models to inject context-aware faults into the codebase, ensuring comprehensive mutation testing.
 - [x] **Language Support:** Expand support to include various programming languages.
 - [x] **Support for Other Coverage Report Formats:** Add compatibility for various coverage report formats.
+- [x] **Change-Based Testing:** Implement mutation testing on modified files based on the latest commit or pull request changes.
+- [x] **Extreme Mutation Testing:** Apply mutations to the codebase without using LLMs to detect pseudo-tested methods with significantly lower computational cost.
 - [ ] **Mutant Analysis:** Automatically analyze survived mutants to identify potential weaknesses in the test suite. Any suggestions are welcome!
-
-### Continuous Integration and Deployment
-
 - [ ] **CI/CD Integration:** Develop connectors for popular CI/CD platforms like GitHub Actions.
-- [ ] **PR Changeset Focus:** Generate mutations specifically targeting pull request changesets or modified code based on commit history.
 - [ ] **Automatic PR Bot:** Create a bot that automatically identifies bugs from the survived mutants list and provides fix suggestions.
-
----
 
 ## Acknowledgements
 

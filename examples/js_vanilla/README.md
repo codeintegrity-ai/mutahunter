@@ -12,6 +12,9 @@ npm run test:coverage
 ## Running Mutahunter to analyze the tests
 
 ```bash
+# first run without LLM using extreme mutation testing
+mutahunter run --test-command "npm run test" --code-coverage-report-path "coverage/coverage.xml" --only-mutate-file-paths "ui.js" --extreme
+
 export OPENAI_API_KEY=your-key-goes-here
-mutahunter run --test-command "npm run test" --code-coverage-report-path "coverage/coverage.xml" --only-mutate-file-paths "ui.js"
+mutahunter run --test-command "npm run test" --code-coverage-report-path "coverage/coverage.xml" --only-mutate-file-paths "ui.js" --model "gpt-3.5-turbo"
 ```

@@ -25,7 +25,6 @@ class LLMRouter:
         try:
             response_cost = kwargs.get("response_cost", 0)
             self.total_cost += response_cost
-            print("streaming response_cost", response_cost)
         except:
             pass
 
@@ -43,7 +42,6 @@ class LLMRouter:
         Returns:
             tuple: Generated response, prompt tokens used, and completion tokens used.
         """
-        streaming = False
         self._validate_prompt(prompt)
         messages = self._build_messages(prompt)
         completion_params = self._build_completion_params(

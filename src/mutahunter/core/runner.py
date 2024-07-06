@@ -3,10 +3,37 @@ import shutil
 import subprocess
 from shlex import split
 
+from mutahunter.core.entities.config import MutahunterConfig
+
 
 class TestRunner:
-    def __init__(self):
-        pass
+    def __init__(self, config: MutahunterConfig):
+        self.config = config
+
+    def dry_run(self) -> None:
+        """
+        Performs a dry run of the tests to ensure they pass before mutation testing.
+
+        Raises:
+            Exception: If any tests fail during the dry run.
+        """
+        result = self._run_test_command(self.config.test_command)
+        if result.returncode != 0:
+            raise Exception(
+                "Tests failed. Please ensure all tests pass before running mutation testing."
+            )
+
+    def _run_test_command(self, test_command: str) -> subprocess.CompletedProcess:
+        """
+        Runs a given test command in a subprocess.
+
+        Args:
+            test_command (str): The command to run.
+
+        Returns:
+            subprocess.CompletedProcess: The result of the command execution.
+        """
+        return subprocess.run(split(test_command), cwd=os.getcwd())
 
     def run_test(self, params: dict) -> subprocess.CompletedProcess:
         module_path = params["module_path"]

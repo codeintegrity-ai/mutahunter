@@ -1,6 +1,7 @@
 import argparse
 import sys
 
+from mutahunter.core.entities.config import MutahunterConfig
 from mutahunter.core.hunter import MutantHunter
 from mutahunter.core.logger import logger
 
@@ -75,6 +76,12 @@ def parse_arguments():
         action="store_true",
         help="Run mutation testing only on modified files in the latest commit.",
     )
+    main_parser.add_argument(
+        "--extreme",
+        default=False,
+        action="store_true",
+        help="Enable extreme mutation testing mode.",
+    )
     return parser.parse_args()
 
 
@@ -85,7 +92,17 @@ def run():
     args = parse_arguments()
     command_line_input = " ".join(sys.argv)
     logger.info(f"Command line input: {command_line_input}")
-    config = vars(args)  # Convert Namespace to dictionary
+    config = MutahunterConfig(
+        model=args.model,
+        api_base=args.api_base,
+        test_command=args.test_command,
+        code_coverage_report_path=args.code_coverage_report_path,
+        coverage_type=args.coverage_type,
+        exclude_files=args.exclude_files,
+        only_mutate_file_paths=args.only_mutate_file_paths,
+        modified_files_only=args.modified_files_only,
+        extreme=args.extreme,
+    )
     runner = MutantHunter(config=config)
     runner.run()
 

@@ -86,3 +86,29 @@
 
 (new_expression
   constructor: (_) @name.reference.class) @reference.class
+
+  
+;; For Extreme Mutation Testing
+
+;; Match if statements
+(if_statement
+  condition: (_) @condition
+  consequence: (statement_block) @consequence
+  alternative: (statement_block)? @alternative) @if_statement
+
+;; Match for loops
+(for_statement
+  body: (statement_block) @loop_body) @loop
+
+;; Match while loops
+(while_statement
+  body: (statement_block) @loop_body) @loop
+
+;; Match do-while loops
+(do_statement
+  body: (statement_block) @loop_body) @loop
+
+;; Match return
+(return_statement
+  "return"
+  (_)? @return_value) @return

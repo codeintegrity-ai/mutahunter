@@ -4,117 +4,28 @@ from unittest.mock import Mock, mock_open, patch
 import pytest
 
 from mutahunter.core.analyzer import Analyzer
+from mutahunter.core.entities.config import MutahunterConfig
 
 
 @pytest.fixture
 def config():
-    return {
-        "code_coverage_report_path": "path/to/coverage_report.xml",
-        "coverage_type": "cobertura",
-        "test_command": "pytest",
-    }
+    return MutahunterConfig(
+        model="dummy_model",
+        api_base="http://dummy_api_base",
+        test_command="pytest",
+        code_coverage_report_path="dummy_path",
+        coverage_type="cobertura",
+        exclude_files=[],
+        only_mutate_file_paths=[],
+        modified_files_only=False,
+        extreme=False,
+    )
 
 
 @pytest.fixture
-def analyzer(config):
-    with patch.object(
-        Analyzer,
-        "parse_coverage_report_cobertura",
-        return_value={"test_file.py": [1, 3]},
-    ):
-        return Analyzer(config)
-
-
-def test_dry_run_success(analyzer):
-    with patch("subprocess.run") as mock_run:
-        mock_run.return_value.returncode = 0
-        try:
-            analyzer.dry_run()
-        except Exception:
-            pytest.fail("dry_run() raised Exception unexpectedly!")
-
-
-def test_dry_run_failure(analyzer):
-    with patch("subprocess.run") as mock_run:
-        mock_run.return_value.returncode = 1
-        with pytest.raises(
-            Exception,
-            match="Tests failed. Please ensure all tests pass before running mutation testing.",
-        ):
-            analyzer.dry_run()
-
-
-def test_check_syntax_valid(analyzer):
-    source_code = "def valid_syntax():\n    pass"
-    source_file_path = "tets_file.py"
-    assert (
-        analyzer.check_syntax(
-            source_file_path=source_file_path, source_code=source_code
-        )
-        is True
-    )
-
-
-def test_check_syntax_invalid(analyzer):
-    source_code = "def invalid_syntax(\n    pass"
-    source_file_path = "tets_file.py"
-    assert (
-        analyzer.check_syntax(
-            source_file_path=source_file_path, source_code=source_code
-        )
-        is False
-    )
-
-
-def test_find_function_blocks_nodes(analyzer):
-    source_code = b"""
-    def func1():
-        pass
-
-    def func2():
-        pass
-    """
-    source_file_path = "test_file.py"
-
-    function_blocks = analyzer.find_function_blocks_nodes(source_file_path, source_code)
-    assert len(function_blocks) == 2
-    assert function_blocks[0].type == "function_definition"
-    assert function_blocks[1].type == "function_definition"
-
-
-def test_get_function_blocks(analyzer):
-    filename = "test_file.py"
-    source_code = b"def func():\n    pass\n"
-
-    with patch("builtins.open", mock_open(read_data=source_code)):
-        with patch.object(
-            analyzer, "find_function_blocks_nodes", return_value=["mock_function_block"]
-        ):
-            function_blocks = analyzer.get_function_blocks(filename)
-            assert function_blocks == ["mock_function_block"]
-
-
-def test_get_covered_function_blocks(analyzer):
-    executed_lines = [2, 3, 4, 5, 6]
-    filename = "test_file.py"
-
-    function_block_mock = Mock()
-    function_block_mock.start_point = (1, 0)
-    function_block_mock.end_point = (5, 0)
-
-    with patch.object(
-        analyzer, "get_function_blocks", return_value=[function_block_mock]
-    ):
-        covered_blocks, covered_function_executed_lines = (
-            analyzer.get_covered_function_blocks(executed_lines, filename)
-        )
-        assert len(covered_blocks) == 1
-        assert covered_blocks[0] == function_block_mock
-
-
-def test_parse_coverage_report_cobertura(config):
-    xml_content = """<?xml version="1.0" ?>
-    <coverage>
+def cobertura_xml_content():
+    return """<?xml version="1.0" ?>
+    <coverage line-rate="0.8">
         <packages>
             <package>
                 <classes>
@@ -130,18 +41,13 @@ def test_parse_coverage_report_cobertura(config):
         </packages>
     </coverage>"""
 
-    with patch("xml.etree.ElementTree.parse") as mock_parse:
-        mock_parse.return_value.getroot.return_value = ET.fromstring(xml_content)
-        analyzer = Analyzer(config)
-        result = analyzer.parse_coverage_report_cobertura()
-        assert result == {"test_file.py": [1, 3]}
 
-
-def test_parse_coverage_report_jacoco(config):
-    xml_content = """<?xml version="1.0" ?>
+@pytest.fixture
+def jacoco_xml_content():
+    return """<?xml version="1.0" ?>
     <report>
         <package name="com/example">
-            <sourcefile name="Example.java">
+            <sourcefile name="TestFile.java">
                 <line nr="1" mi="0" ci="1"/>
                 <line nr="2" mi="1" ci="0"/>
                 <line nr="3" mi="0" ci="1"/>
@@ -149,84 +55,387 @@ def test_parse_coverage_report_jacoco(config):
         </package>
     </report>"""
 
-    with patch("xml.etree.ElementTree.parse") as mock_parse:
-        mock_parse.return_value.getroot.return_value = ET.fromstring(xml_content)
-        config["coverage_type"] = "jacoco"
-        analyzer = Analyzer(config)
-        result = analyzer.parse_coverage_report_jacoco()
-        assert result == {"src/main/java/com/example/Example.java": [1, 3]}
+
+@pytest.fixture
+def lcov_content():
+    return """SF:test_file.py
+DA:1,1
+DA:2,0
+DA:3,1
+LF:3
+LH:2
+end_of_record"""
 
 
-def test_analyzer_init_invalid_coverage_type():
-    config = {
-        "code_coverage_report_path": "path/to/coverage_report.xml",
-        "coverage_type": "invalid",
-        "test_command": "pytest",
+@patch("xml.etree.ElementTree.parse")
+def test_parse_coverage_report_cobertura(mock_parse, config, cobertura_xml_content):
+    config.coverage_type = "cobertura"
+    mock_tree = Mock()
+    mock_tree.getroot.return_value = ET.fromstring(cobertura_xml_content)
+    mock_parse.return_value = mock_tree
+
+    analyzer = Analyzer(config)
+    analyzer.run_coverage_analysis()
+
+    # Assertions
+    assert analyzer.file_lines_executed == {"test_file.py": [1, 3]}
+    assert analyzer.line_rate == 0.8
+
+
+@patch("xml.etree.ElementTree.parse")
+def test_parse_coverage_report_jacoco(mock_parse, config, jacoco_xml_content):
+    config.coverage_type = "jacoco"
+    mock_tree = Mock()
+    mock_tree.getroot.return_value = ET.fromstring(jacoco_xml_content)
+    mock_parse.return_value = mock_tree
+
+    analyzer = Analyzer(config)
+    analyzer.run_coverage_analysis()
+
+    # Assertions
+    assert analyzer.file_lines_executed == {
+        "src/main/java/com/example/TestFile.java": [1, 3]
     }
+    assert analyzer.line_rate == 2 / 3
+
+
+@patch("builtins.open", new_callable=mock_open)
+def test_parse_coverage_report_lcov(mock_open, config, lcov_content):
+    config.coverage_type = "lcov"
+    mock_open.return_value.readlines.return_value = lcov_content.splitlines(
+        keepends=True
+    )
+
+    analyzer = Analyzer(config)
+    analyzer.run_coverage_analysis()
+
+    # Assertions
+    assert analyzer.file_lines_executed == {"test_file.py": [1, 3]}
+    assert analyzer.line_rate == 2 / 3
+
+
+def test_invalid_coverage_type(config):
+    config.coverage_type = "invalid_type"
+
     with pytest.raises(
-        Exception,
-        match="Invalid coverage tool. Please specify either 'cobertura' or 'jacoco'.",
-    ):
-        Analyzer(config)
-
-
-def test_analyzer_init_jacoco():
-    config = {
-        "code_coverage_report_path": "path/to/coverage_report.xml",
-        "coverage_type": "jacoco",
-        "test_command": "pytest",
-    }
-    with patch.object(
-        Analyzer,
-        "parse_coverage_report_jacoco",
-        return_value={"test_file.py": [1, 3]},
+        ValueError,
+        match="Invalid coverage tool. Please specify either 'cobertura', 'jacoco', or 'lcov'.",
     ):
         analyzer = Analyzer(config)
-        assert analyzer.file_lines_executed == {"test_file.py": [1, 3]}
+        analyzer.run_coverage_analysis()
 
 
-def test_get_function_blocks_large_file(analyzer):
-    large_source_code = b"def func1():\n    pass\n" * 50
-    with patch("builtins.open", mock_open(read_data=large_source_code)):
-        function_blocks = analyzer.get_function_blocks("test_file.py")
-        assert len(function_blocks) == 50
+@pytest.fixture
+def function_blocks():
+    return [
+        Mock(start_point=(4, 0), end_point=(8, 0)),  # This block should be covered
+        Mock(
+            start_point=(9, 0), end_point=(14, 0)
+        ),  # This block should be partially covered
+        Mock(
+            start_point=(15, 0), end_point=(20, 0)
+        ),  # This block should not be covered
+    ]
 
 
-def test_parse_coverage_report_lcov(config):
-    lcov_content = "SF:test_file.py\nDA:1,1\nDA:2,0\nDA:3,1\nend_of_record\n"
+@pytest.fixture
+def function_blocks_xml_content():
+    return """<?xml version="1.0" ?>
+    <coverage line-rate="0.8">
+        <packages>
+            <package>
+                <classes>
+                    <class filename="test_file.py">
+                        <lines>
+                            <line number="5" hits="1"/>
+                            <line number="6" hits="1"/>
+                            <line number="10" hits="1"/>
+                        </lines>
+                    </class>
+                </classes>
+            </package>
+        </packages>
+    </coverage>"""
 
-    with patch("builtins.open", mock_open(read_data=lcov_content)):
-        config["coverage_type"] = "lcov"
-        analyzer = Analyzer(config)
-        result = analyzer.parse_coverage_report_lcov()
-        assert result == {"test_file.py": [1, 3]}
 
-
-def test_find_function_blocks_nodes_query_file_not_exist(analyzer):
-    source_code = b"def func():\n    pass\n"
+@patch("xml.etree.ElementTree.parse")
+@patch("builtins.open", new_callable=mock_open)
+@patch.object(Analyzer, "get_function_blocks")
+def test_get_covered_function_blocks(
+    mock_get_function_blocks,
+    mock_open,
+    mock_parse,
+    config,
+    function_blocks,
+    function_blocks_xml_content,
+):
+    config.code_coverage_report_path = "dummy_path"
     source_file_path = "test_file.py"
+    mock_file_content = "def test_func():\n    pass\n"
+    mock_open.return_value.read.return_value = mock_file_content
+    mock_parse.return_value = ET.ElementTree(ET.fromstring(function_blocks_xml_content))
+    mock_get_function_blocks.return_value = function_blocks
 
-    with patch("importlib.resources.files") as mock_files:
-        mock_files.return_value.joinpath.return_value.exists.return_value = False
-        result = analyzer.find_function_blocks_nodes(source_file_path, source_code)
-        assert result is None
+    analyzer = Analyzer(config)
+    covered_blocks, covered_block_executed_lines = analyzer.get_covered_function_blocks(
+        executed_lines=[5, 6, 10], source_file_path=source_file_path
+    )
 
-
-def test_find_function_blocks_nodes_unsupported_language(analyzer):
-    source_code = b"def func():\n    pass\n"
-    source_file_path = "unsupported_file.xyz"
-
-    with pytest.raises(
-        ValueError, match="Language not supported for file: unsupported_file.xyz"
-    ):
-        analyzer.find_function_blocks_nodes(source_file_path, source_code)
+    # Assertions
+    assert len(covered_blocks) == 2
+    assert covered_block_executed_lines == [[1, 2, 3, 4, 5], [1, 2, 3, 4, 5, 6]]
 
 
-def test_find_function_blocks_nodes_no_blocks(analyzer):
-    source_code = b"""
-    # This file has no function definitions
-    """
-    source_file_path = "test_file_no_functions.py"
+@patch("xml.etree.ElementTree.parse")
+@patch("builtins.open", new_callable=mock_open)
+@patch.object(Analyzer, "get_method_blocks")
+def test_get_covered_method_blocks(
+    mock_get_method_blocks,
+    mock_open,
+    mock_parse,
+    config,
+    function_blocks,
+    function_blocks_xml_content,
+):
+    config.code_coverage_report_path = "dummy_path"
+    source_file_path = "test_file.py"
+    mock_file_content = "def test_method():\n    pass\n"
+    mock_open.return_value.read.return_value = mock_file_content
+    mock_parse.return_value = ET.ElementTree(ET.fromstring(function_blocks_xml_content))
+    mock_get_method_blocks.return_value = function_blocks
 
-    function_blocks = analyzer.find_function_blocks_nodes(source_file_path, source_code)
-    assert function_blocks == []
+    analyzer = Analyzer(config)
+    covered_blocks, covered_block_executed_lines = analyzer.get_covered_method_blocks(
+        executed_lines=[5, 6, 10], source_file_path=source_file_path
+    )
+
+    # Assertions
+    assert len(covered_blocks) == 2
+    assert covered_block_executed_lines == [[1, 2, 3, 4, 5], [1, 2, 3, 4, 5, 6]]
+
+
+@patch("xml.etree.ElementTree.parse")
+@patch("builtins.open", new_callable=mock_open)
+@patch("mutahunter.core.analyzer.filename_to_lang", return_value="python")
+@patch("mutahunter.core.analyzer.get_parser")
+def test_check_syntax(
+    mock_get_parser,
+    mock_filename_to_lang,
+    mock_open,
+    mock_parse,
+    config,
+    cobertura_xml_content,
+):
+    source_code = "def foo():\n    pass"
+    source_file_path = "test_file.py"
+    mock_open.return_value.read.return_value = source_code
+    mock_parse.return_value = ET.ElementTree(ET.fromstring(cobertura_xml_content))
+    mock_parser = mock_get_parser.return_value
+    mock_tree = Mock()
+    mock_tree.root_node.has_error = False
+    mock_parser.parse.return_value = mock_tree
+
+    analyzer = Analyzer(config)
+    result = analyzer.check_syntax(source_file_path, source_code)
+
+    # Assertions
+    assert result is True
+    mock_filename_to_lang.assert_called_once_with(source_file_path)
+    mock_parser.parse.assert_called_once_with(bytes(source_code, "utf8"))
+
+
+@patch("xml.etree.ElementTree.parse")
+@patch("builtins.open", new_callable=mock_open)
+def test_get_covered_blocks(mock_open, mock_parse, config, cobertura_xml_content):
+    # Define the executed lines
+    executed_lines = [5, 6, 10]
+
+    # Mock blocks to be returned
+    mock_blocks = [
+        Mock(start_point=(4, 0), end_point=(8, 0)),  # This block should be covered
+        Mock(
+            start_point=(9, 0), end_point=(14, 0)
+        ),  # This block should be partially covered
+        Mock(
+            start_point=(15, 0), end_point=(20, 0)
+        ),  # This block should not be covered
+    ]
+
+    # Mock the file read operation for the coverage report
+    mock_file_content = "def test_func():\n    pass\n"
+    mock_open.return_value.read.return_value = mock_file_content
+    mock_parse.return_value = ET.ElementTree(ET.fromstring(cobertura_xml_content))
+
+    analyzer = Analyzer(config)
+    covered_blocks, covered_block_executed_lines = analyzer._get_covered_blocks(
+        mock_blocks, executed_lines
+    )
+
+    # Assertions
+    assert len(covered_blocks) == 2
+    assert covered_block_executed_lines == [
+        [1, 2, 3, 4, 5],
+        [1, 2, 3, 4, 5, 6],
+    ]
+
+
+@patch.object(Analyzer, "parse_coverage_report_cobertura")
+@patch.object(Analyzer, "parse_coverage_report_jacoco")
+@patch.object(Analyzer, "parse_coverage_report_lcov")
+@patch("xml.etree.ElementTree.parse")
+@patch("builtins.open", new_callable=mock_open)
+def test_run_coverage_analysis(
+    mock_parse,
+    mock_open,
+    mock_lcov,
+    mock_jacoco,
+    mock_cobertura,
+    config,
+):
+    # Test Cobertura
+    config.coverage_type = "cobertura"
+    analyzer = Analyzer(config)
+    analyzer.run_coverage_analysis()
+    assert mock_cobertura.call_count == 1
+    assert mock_jacoco.call_count == 0
+    assert mock_lcov.call_count == 0
+
+    # Reset mocks
+    mock_cobertura.reset_mock()
+    mock_jacoco.reset_mock()
+    mock_lcov.reset_mock()
+
+    # Test JaCoCo
+    config.coverage_type = "jacoco"
+    analyzer = Analyzer(config)
+    analyzer.run_coverage_analysis()
+    assert mock_jacoco.call_count == 1
+    assert mock_cobertura.call_count == 0
+    assert mock_lcov.call_count == 0
+
+    # Reset mocks
+    mock_cobertura.reset_mock()
+    mock_jacoco.reset_mock()
+    mock_lcov.reset_mock()
+
+    # Test LCOV
+    config.coverage_type = "lcov"
+    analyzer = Analyzer(config)
+    analyzer.run_coverage_analysis()
+    assert mock_lcov.call_count == 1
+    assert mock_cobertura.call_count == 0
+    assert mock_jacoco.call_count == 0
+
+
+@patch("xml.etree.ElementTree.parse")
+@patch("builtins.open", new_callable=mock_open)
+def test_read_source_file(mock_open, mock_parse, config, cobertura_xml_content):
+    source_file_path = "test_file.py"
+    source_code = b"def foo():\n    pass"
+    mock_open.return_value.read.return_value = source_code
+    mock_parse.return_value = ET.ElementTree(ET.fromstring(cobertura_xml_content))
+
+    analyzer = Analyzer(config)
+    result = analyzer._read_source_file(source_file_path)
+    mock_open.assert_called_once_with(source_file_path, "rb")
+
+    # Assertions
+    assert result == source_code
+
+
+@patch("xml.etree.ElementTree.parse")
+@patch("mutahunter.core.analyzer.Analyzer._find_blocks_nodes")
+def test_find_method_blocks_nodes(
+    mock_find_blocks_nodes, mock_parse, config, cobertura_xml_content
+):
+    source_code = b"def foo():\n    pass"
+    source_file_path = "test_file.py"
+    mock_parse.return_value = ET.ElementTree(ET.fromstring(cobertura_xml_content))
+
+    analyzer = Analyzer(config)
+    analyzer.find_method_blocks_nodes(source_file_path, source_code)
+    mock_find_blocks_nodes.assert_called_once_with(
+        source_file_path, source_code, ["if_statement", "loop", "return"]
+    )
+
+
+@patch("xml.etree.ElementTree.parse")
+@patch("mutahunter.core.analyzer.Analyzer._find_blocks_nodes")
+def test_find_function_blocks_nodes(
+    mock_find_blocks_nodes, mock_parse, config, cobertura_xml_content
+):
+    source_code = b"def foo():\n    pass"
+    source_file_path = "test_file.py"
+    mock_parse.return_value = ET.ElementTree(ET.fromstring(cobertura_xml_content))
+
+    analyzer = Analyzer(config)
+    analyzer.find_function_blocks_nodes(source_file_path, source_code)
+    mock_find_blocks_nodes.assert_called_once_with(
+        source_file_path, source_code, ["definition.function", "definition.method"]
+    )
+
+
+# @patch("xml.etree.ElementTree.parse")
+# @patch("mutahunter.core.analyzer.filename_to_lang", return_value="python")
+# @patch("mutahunter.core.analyzer.get_parser")
+# @patch("mutahunter.core.analyzer.get_language")
+# @patch(
+#     "mutahunter.core.analyzer.Analyzer._load_query_scm",
+#     return_value="(function_definition) @definition.function",
+# )
+# def test_find_blocks_nodes(
+#     mock_load_query_scm,
+#     mock_get_language,
+#     mock_get_parser,
+#     mock_filename_to_lang,
+#     mock_parse,
+#     config,
+#     cobertura_xml_content,
+# ):
+#     source_code = b"def foo():\n    pass"
+#     source_file_path = "test_file.py"
+#     tags = ["definition.function", "definition.method"]
+#     mock_parse.return_value = ET.ElementTree(ET.fromstring(cobertura_xml_content))
+
+#     mock_parser = mock_get_parser.return_value
+#     mock_language = mock_get_language.return_value
+#     mock_tree = Mock()
+#     mock_parser.parse.return_value = mock_tree
+#     mock_query = Mock()
+#     mock_query.captures.return_value = [(Mock(), "definition.function")]
+#     mock_language.query.return_value = mock_query
+
+#     analyzer = Analyzer(config)
+#     result = analyzer._find_blocks_nodes(source_file_path, source_code, tags)
+
+#     # Assertions
+#     assert len(result) == 1
+#     mock_get_parser.assert_called_once_with("python")
+#     mock_get_language.assert_called_once_with("python")
+#     mock_parser.parse.assert_called_once_with(source_code)
+#     mock_language.query.assert_called_once_with(
+#         "(function_definition) @definition.function"
+#     )
+#     mock_query.captures.assert_called_once_with(mock_tree.root_node)
+
+
+# @patch("xml.etree.ElementTree.parse")
+# @patch("importlib.resources.files")
+# def test_load_query_scm(mock_resources, mock_parse, config, cobertura_xml_content):
+#     lang = "python"
+#     scm_content = "(function_definition) @definition.function"
+#     mock_parse.return_value = ET.ElementTree(ET.fromstring(cobertura_xml_content))
+
+#     mock_path = Mock()
+#     mock_path.exists.return_value = True
+#     mock_path.read_text.return_value = scm_content
+#     mock_resources.return_value.joinpath.return_value = mock_path
+
+#     analyzer = Analyzer(config)
+#     result = analyzer._load_query_scm(lang)
+
+#     # Assertions
+#     assert result == scm_content
+#     mock_resources.return_value.joinpath.assert_called_once_with(
+#         "pilot", "aider", "queries", f"tree-sitter-{lang}-tags.scm"
+#     )

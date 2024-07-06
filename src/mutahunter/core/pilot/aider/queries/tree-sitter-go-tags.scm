@@ -28,3 +28,20 @@
   name: (type_identifier) @name.definition.type) @definition.type
 
 (type_identifier) @name.reference.type @reference.type
+
+;; For extreme mutation testing
+
+;; Match if statements
+(if_statement
+  condition: (_expression) @condition
+  consequence: (block) @consequence
+  alternative: (block)? @alternative) @if_statement
+
+;; Match for loops
+(for_statement
+  body: (block) @loop_body) @loop
+
+;; Match return statements
+(return_statement
+  "return"
+  (_)? @return_value) @return

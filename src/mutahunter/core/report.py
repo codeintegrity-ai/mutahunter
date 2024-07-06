@@ -6,6 +6,7 @@ import json
 from dataclasses import asdict
 from typing import Any, List
 
+from mutahunter.core.entities.config import MutahunterConfig
 from mutahunter.core.entities.mutant import Mutant
 from mutahunter.core.logger import logger
 
@@ -19,7 +20,7 @@ MUTAHUNTER_ASCII = r"""
 class MutantReport:
     """Class for generating mutation testing reports."""
 
-    def __init__(self, config) -> None:
+    def __init__(self, config: MutahunterConfig) -> None:
         self.config = config
 
     def generate_report(
@@ -74,7 +75,10 @@ class MutantReport:
         logger.info("🗡️ Killed Mutants: %d 🗡️", len(killed_mutants))
         logger.info("🕒 Timeout Mutants: %d 🕒", len(timeout_mutants))
         logger.info("🔥 Compile Error Mutants: %d 🔥", len(compile_error_mutants))
-        logger.info("💰 Expected Cost: $%.5f USD 💰", total_cost)
+        if self.config.extreme:
+            logger.info("💰 No Cost for extreme mutation testing 💰")
+        else:
+            logger.info("💰 Expected Cost: $%.5f USD 💰", total_cost)
 
         mutation_coverage = {
             "total_mutants": len(mutants),

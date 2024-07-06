@@ -4,16 +4,24 @@ from unittest.mock import mock_open, patch
 
 import pytest
 
+from mutahunter.core.entities.config import MutahunterConfig
 from mutahunter.core.entities.mutant import Mutant
 from mutahunter.core.report import MutantReport
 
 
 @pytest.fixture
 def config():
-    return {
-        "model": "test_model",
-        "api_base": "http://localhost:8000",
-    }
+    return MutahunterConfig(
+        model="dummy_model",
+        api_base="http://dummy_api_base",
+        test_command="pytest",
+        code_coverage_report_path="dummy_path",
+        coverage_type="cobertura",
+        exclude_files=[],
+        only_mutate_file_paths=[],
+        modified_files_only=False,
+        extreme=False,
+    )
 
 
 @pytest.fixture
