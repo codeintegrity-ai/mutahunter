@@ -3,11 +3,8 @@
 
   Open-Source Language Agnostic LLM-based Mutation Testing for Automated Software Testing
   
-  Maintained by [CodeIntegrity](https://www.codeintegrity.ai). Anyone is welcome to contribute. 🌟
-
   [![GitHub license](https://img.shields.io/badge/License-AGPL_3.0-blue.svg)](https://github.com/yourcompany/mutahunter/blob/main/LICENSE)
   [![Discord](https://badgen.net/badge/icon/discord?icon=discord&label&color=purple)](https://discord.gg/S5u3RDMq)
-  [![Twitter](https://img.shields.io/twitter/follow/CodeIntegrity)](https://twitter.com/CodeIntegrity)
   [![Unit Tests](https://github.com/codeintegrity-ai/mutahunter/actions/workflows/test.yaml/badge.svg)](https://github.com/codeintegrity-ai/mutahunter/actions/workflows/test.yaml)
   <a href="https://github.com/codeintegrity-ai/mutahunter/commits/main">
   <img alt="GitHub" src="https://img.shields.io/github/last-commit/codeintegrity-ai/mutahunter/main?style=for-the-badge" height="20">
@@ -19,6 +16,7 @@
 - [Overview](#overview)
 - [Features](#features)
 - [Getting Started](#getting-started)
+- [CI/CD Integration](#cicd-integration)
 - [Roadmap](#roadmap)
 - [Cash Bounty Program](#cash-bounty-program)
 
@@ -102,12 +100,63 @@ Feel free to add more examples! ✨
 Check the logs directory to view the report:
 
 - `mutants.json` - Contains the list of mutants generated.
-- `mutation_coverage.json` - Contains the mutation coverage percentage.
-- `mutation_coverage_detail.json` - Contains detailed information per source file.
+- `coverage.txt` - Contains information about mutation coverage.
 
-## Cash Bounty Program
+## CI/CD Integration
 
-Help us improve Mutahunter and get rewarded! We have a cash bounty program to incentivize contributions to the project. Check out the [bounty board](https://docs.google.com/spreadsheets/d/1cT2_O55m5txrUgZV81g1gtqE_ZDu9LlzgbpNa_HIisc/edit?gid=0#gid=0) to see the available bounties and claim one today!
+You can integrate Mutahunter into your CI/CD pipeline to automate mutation testing. Here is an example GitHub Actions workflow file:
+
+![CI/CD](/images/github-bot.png)
+
+```yaml
+name: Mutahunter CI/CD 
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  mutahunter:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2 # needed for git diff
+
+      - name: Set up Python 
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+
+      - name: Install Mutahunter
+        run: pip install git+https://github.com/codeintegrity-ai/mutahunter.git
+
+      - name: Set up Java for your project
+        uses: actions/setup-java@v2
+        with:
+          distribution: "adopt"
+          java-version: "17"
+
+      - name: Install dependencies and run tests
+        run: mvn test
+
+      - name: Run Mutahunter
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          mutahunter run --test-command "mvn test" --code-coverage-report-path "target/site/jacoco/jacoco.xml" --coverage-type jacoco --model "gpt-4o" --modified-files-only 
+
+      - name: PR comment the mutation coverage
+        uses: thollander/actions-comment-pull-request@v2.5.0
+        with:
+          filePath: logs/_latest/coverage.txt
+```
 
 ## Roadmap
 
@@ -116,9 +165,13 @@ Help us improve Mutahunter and get rewarded! We have a cash bounty program to in
 - [x] **Support for Other Coverage Report Formats:** Add compatibility for various coverage report formats.
 - [x] **Change-Based Testing:** Implement mutation testing on modified files based on the latest commit or pull request changes.
 - [x] **Extreme Mutation Testing:** Apply mutations to the codebase without using LLMs to detect pseudo-tested methods with significantly lower computational cost.
-- [ ] **Mutant Analysis:** Automatically analyze survived mutants to identify potential weaknesses in the test suite. Any suggestions are welcome!
-- [ ] **CI/CD Integration:** Develop connectors for popular CI/CD platforms like GitHub Actions.
-- [ ] **Automatic PR Bot:** Create a bot that automatically identifies bugs from the survived mutants list and provides fix suggestions.
+- [x] **CI/CD Integration:** Display mutation coverage in pull requests and automate mutation testing using GitHub Actions.
+- [ ] **Mutant Analysis:** Automatically analyze survived mutants to identify potential weaknesses in the test suite.
+
+## Cash Bounty Program
+
+Help us improve Mutahunter and get rewarded! We have a cash bounty program to incentivize contributions to the project. Check out the [bounty board](https://docs.google.com/spreadsheets/d/1cT2_O55m5txrUgZV81g1gtqE_ZDu9LlzgbpNa_HIisc/edit?gid=0#gid=0) to see the available bounties and claim one today!
+
 
 ## Acknowledgements
 

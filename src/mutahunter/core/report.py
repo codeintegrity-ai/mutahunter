@@ -80,18 +80,19 @@ class MutantReport:
         else:
             logger.info("💰 Expected Cost: $%.5f USD 💰", total_cost)
 
-        mutation_coverage = {
-            "total_mutants": len(mutants),
-            "killed_mutants": len(killed_mutants),
-            "survived_mutants": len(survived_mutants),
-            "timeout_mutants": len(timeout_mutants),
-            "compile_error_mutants": len(compile_error_mutants),
-            "mutation_coverage": total_mutation_coverage,
-            "line_coverage": line_coverage,
-            "expected_cost": total_cost,
-        }
-
-        self.save_report("logs/_latest/mutation_coverage.json", mutation_coverage)
+        with open("logs/_latest/coverage.txt", "a") as file:
+            file.write("Mutation Coverage:\n")
+            file.write(f"📊 Line Coverage: {line_coverage} 📊\n")
+            file.write(f"🎯 Mutation Coverage: {total_mutation_coverage} 🎯\n")
+            file.write(f"🦠 Total Mutants: {len(mutants)} 🦠\n")
+            file.write(f"🛡️ Survived Mutants: {len(survived_mutants)} 🛡️\n")
+            file.write(f"🗡️ Killed Mutants: {len(killed_mutants)} 🗡️\n")
+            file.write(f"🕒 Timeout Mutants: {len(timeout_mutants)} 🕒\n")
+            file.write(f"🔥 Compile Error Mutants: {len(compile_error_mutants)} 🔥\n")
+            if self.config.extreme:
+                file.write("💰 No Cost for extreme mutation testing 💰\n")
+            else:
+                file.write("💰 Expected Cost: $%.5f USD 💰\n", total_cost)
 
     def generate_mutant_report_detail(self, mutants: List[Mutant]) -> None:
         """
@@ -118,6 +119,7 @@ class MutantReport:
                 report_detail[source_path]["survived_mutants"] += 1
             elif mutant["status"] == "TIMEOUT":
                 report_detail[source_path]["timeout_mutants"] += 1
+
             elif mutant["status"] == "COMPILE_ERROR":
                 report_detail[source_path]["compile_error_mutants"] += 1
 
@@ -134,7 +136,19 @@ class MutantReport:
             )
             detail["mutation_coverage"] = mutation_coverage
 
-        self.save_report("logs/_latest/mutation_coverage_detail.json", report_detail)
+        with open("logs/_latest/coverage.txt", "a") as file:
+            file.write("\nDetailed Mutation Coverage:\n")
+            for source_path, detail in report_detail.items():
+                file.write(f"📂 Source File: {source_path} 📂\n")
+                file.write(f"🎯  Mutation Coverage: {detail['mutation_coverage']}🎯\n")
+                file.write(f"🦠  Total Mutants: {detail['total_mutants']} 🦠\n")
+                file.write(f"🛡️  Survived Mutants: {detail['survived_mutants']} 🛡️\n")
+                file.write(f"🗡️  Killed Mutants: {detail['killed_mutants']} 🗡️\n")
+                file.write(f"🕒  Timeout Mutants: {detail['timeout_mutants']} 🕒\n")
+                file.write(
+                    f"🔥  Compile Error Mutants: {detail['compile_error_mutants']}🔥\n"
+                )
+                file.write("\n")
 
     def save_report(self, filepath: str, data: Any) -> None:
         """
