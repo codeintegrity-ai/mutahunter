@@ -181,10 +181,22 @@ class MutantGenerator:
                     temp_lines = original_lines.copy()
                     # check if the temp_lines[i] ends with a newline character
                     if temp_lines[i].endswith("\n"):
+                        # get indentation of the original line
+                        indentation_space = len(temp_lines[i]) - len(
+                            temp_lines[i].lstrip()
+                        )
+                        # add the indentation to the mutated line after lstripping
+                        mutated_line = " " * indentation_space + mutated_line.lstrip()
                         temp_lines[i] = mutated_line + "\n"
                         # updated change dict
                         change["mutant_code"] = "".join(temp_lines)
                     else:
+                        # get indentation of the original line
+                        indentation_space = len(temp_lines[i]) - len(
+                            temp_lines[i].lstrip()
+                        )
+                        # add the indentation to the mutated line after lstripping
+                        mutated_line = " " * indentation_space + mutated_line.lstrip()
                         temp_lines[i] = mutated_line
                         change["mutant_code"] = "".join(temp_lines)
                     break

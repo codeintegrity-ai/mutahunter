@@ -243,10 +243,6 @@ class MutantHunter:
             error_output = result.stderr + result.stdout.lower()
             mutant.error_msg = error_output
             mutant.status = "KILLED"
-        elif result.returncode == 2:
-            self.logger.info(f"⏱️ Mutant {mutant.id} timed out ⏱️\n")
-            mutant.error_msg = result.stderr
-            mutant.status = "TIMEOUT"
         else:
             error_output = result.stderr + result.stdout
             self.logger.info(f"🔧 Mutant {mutant.id} caused a compile error 🔧\n")

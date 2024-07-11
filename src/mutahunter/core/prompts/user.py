@@ -21,7 +21,7 @@ class Mutants(BaseModel):
 
 ## Function Block to Mutate
 Lines Covered: {{covered_lines}}. Only mutate lines that are covered by execution.
-Note that we have manually added line numbers for each line of code. Do not include line numbers in your mutation.
+Note that we have manually added line numbers for each line of code. Do not include line numbers in your mutation. Make sure indentation is preserverd when generating mutants.
 ```{{language}}
 {{function_block}}
 ```
