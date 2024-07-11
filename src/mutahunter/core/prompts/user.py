@@ -5,18 +5,33 @@ USER_PROMPT = """
 ```
 
 ## Response
-The output must be in JSON format, wrapped in triple backticks (json...), and adhere to the following Pydantic definitions.
+The output must be a JSON object equivalent to type $Mutants, according to the following Pydantic definitions:
 ```
 class SingleMutant(BaseModel):
-    type: str = Field(description="The type of the mutation operator.(e.g., Off-by-One Error, Boundary Condition, Arithmetic, Block removal, Relational Operator, etc.)")
+    function_name: str = Field(description="The name of the function where the mutation was applied.")
+    type: str = Field(description="The type of the mutation operator.")
     description: str = Field(description="Description of the mutation.")
-    context_before: str = Field(description="Line of code context before the mutation.")
     original_line: str = Field(description="The original line of code before mutation.")
     mutated_line: str = Field(description="The line of code after mutation, including a comment with the mutation description.")
-    context_after: str = Field(description="Line of code context after the mutation.")
 
 class Mutants(BaseModel):
     changes: List[Change] = Field(description="A list of changes representing the mutants.")
+```
+
+## Output
+The output must be in JSON format, wrapped in triple backticks (json...), and adhere to the following Pydantic definitions.
+```
+{
+    "changes": [
+        {
+            'function_name': "divide",
+            "type": "DivisionByZero",
+            'description': "Added division by zero check to prevent division by zero error.",
+            'original_line': "    return a / b",
+            'mutated_line': "    if (b == 0) throw new ArithmeticException("Division by zero"); return a / b; // Mutant: Added division by zero check"
+        }
+    ]
+}
 ```
 
 ## Function Block to Mutate
