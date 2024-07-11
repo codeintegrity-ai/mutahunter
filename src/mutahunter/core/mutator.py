@@ -132,7 +132,7 @@ class MutantGenerator:
             covered_lines=self.executed_lines,
             example_output=self.prompt.example_output,
             function_block=function_block_with_line_num,
-            maximum_num_of_mutants_per_function_block=3,
+            maximum_num_of_mutants_per_function_block=2,
         )
         prompt = {
             "system": system_template,
@@ -180,25 +180,13 @@ class MutantGenerator:
                     # dont modify the original lines
                     temp_lines = original_lines.copy()
                     # check if the temp_lines[i] ends with a newline character
-                    if temp_lines[i].endswith("\n"):
-                        # get indentation of the original line
-                        indentation_space = len(temp_lines[i]) - len(
-                            temp_lines[i].lstrip()
-                        )
-                        # add the indentation to the mutated line after lstripping
-                        mutated_line = " " * indentation_space + mutated_line.lstrip()
-                        temp_lines[i] = mutated_line + "\n"
-                        # updated change dict
-                        change["mutant_code"] = "".join(temp_lines)
-                    else:
-                        # get indentation of the original line
-                        indentation_space = len(temp_lines[i]) - len(
-                            temp_lines[i].lstrip()
-                        )
-                        # add the indentation to the mutated line after lstripping
-                        mutated_line = " " * indentation_space + mutated_line.lstrip()
-                        temp_lines[i] = mutated_line
-                        change["mutant_code"] = "".join(temp_lines)
+                    # get indentation of the original line
+                    indentation_space = len(temp_lines[i]) - len(temp_lines[i].lstrip())
+                    # add the indentation to the mutated line after lstripping
+                    mutated_line = " " * indentation_space + mutated_line.lstrip()
+                    temp_lines[i] = mutated_line + "\n"
+                    # updated change dict
+                    change["mutant_code"] = "".join(temp_lines)
                     break
             else:
                 logger.error(f"Could not apply mutation. Skipping mutation.")

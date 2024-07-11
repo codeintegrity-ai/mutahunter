@@ -17,9 +17,9 @@ class Mutant:
         mutant_path (str): The path to the file containing the mutant.
         status (Union[None, str]): The status of the mutant (e.g., "SURVIVED", "KILLED", "COMPILE_ERROR").
         error_msg (str): The error message associated with the mutant, if any.
-        mutant_code (str): The code of the mutant.
         type (str): The type of mutation applied to the code.
         description (str): A description of the mutation applied.
+        udiff (str): The unified diff between the original source code and the mutant code.
     """
 
     id: str
@@ -27,6 +27,6 @@ class Mutant:
     mutant_path: Union[None, str] = None
     status: Union[None, str] = None
     error_msg: str = ""
-    mutant_code: str = ""
     type: str = ""
     description: str = ""
+    udiff: str = ""

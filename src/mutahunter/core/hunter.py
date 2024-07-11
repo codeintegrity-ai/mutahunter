@@ -13,6 +13,7 @@ from mutahunter.core.mutator import ExtremeMutation, LLMBasedMutation, MutationS
 from mutahunter.core.report import MutantReport
 from mutahunter.core.router import LLMRouter
 from mutahunter.core.runner import TestRunner
+import difflib
 
 TEST_FILE_PATTERNS = [
     "test_",
@@ -162,11 +163,12 @@ class MutantHunter:
         mutant = Mutant(
             id=str(len(self.mutants) + 1),
             source_path=source_file_path,
-            mutant_code=mutant_data["mutant_code"],
             type=mutant_data["type"],
             description=mutant_data["description"],
         )
-        mutant_path = self.prepare_mutant_file(mutant, start_byte, end_byte)
+        mutant_path = self.prepare_mutant_file(
+            mutant, start_byte, end_byte, mutant_code=mutant_data["mutant_code"]
+        )
 
         if mutant_path:  # Only run tests if the mutant file is prepared successfully
             mutant.mutant_path = mutant_path
@@ -178,13 +180,24 @@ class MutantHunter:
                 }
             )
             self.process_test_result(result, mutant)
+            udiff_list = self.get_unified_diff(source_file_path, mutant_path, mutant)
+            mutant.udiff = "\n".join(udiff_list)
         else:
             mutant.status = "COMPILE_ERROR"
 
         self.mutants.append(mutant)
 
+    def get_unified_diff(self, source_file_path, mutant_path, mutant):
+        with open(source_file_path, "r") as file:
+            original = file.readlines()
+        with open(mutant_path, "r") as file:
+            mutant = file.readlines()
+        diff = difflib.unified_diff(original, mutant, lineterm="")
+        diff_lines = list(diff)
+        return diff_lines
+
     def prepare_mutant_file(
-        self, mutant: Mutant, start_byte: int, end_byte: int
+        self, mutant: Mutant, start_byte: int, end_byte: int, mutant_code: str
     ) -> str:
         """
         Prepares the mutant file for testing.
@@ -200,7 +213,7 @@ class MutantHunter:
 
         modified_byte_code = (
             source_code[:start_byte]
-            + bytes(mutant.mutant_code, "utf-8")
+            + bytes(mutant_code, "utf-8")
             + source_code[end_byte:]
         )
 

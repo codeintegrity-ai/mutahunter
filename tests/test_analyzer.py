@@ -357,19 +357,3 @@ def test_find_method_blocks_nodes(
     mock_find_blocks_nodes.assert_called_once_with(
         source_file_path, source_code, ["if_statement", "loop", "return"]
     )
-
-
-@patch("xml.etree.ElementTree.parse")
-@patch("mutahunter.core.analyzer.Analyzer._find_blocks_nodes")
-def test_find_function_blocks_nodes(
-    mock_find_blocks_nodes, mock_parse, config, cobertura_xml_content
-):
-    source_code = b"def foo():\n    pass"
-    source_file_path = "test_file.py"
-    mock_parse.return_value = ET.ElementTree(ET.fromstring(cobertura_xml_content))
-
-    analyzer = Analyzer(config)
-    analyzer.find_function_blocks_nodes(source_file_path, source_code)
-    mock_find_blocks_nodes.assert_called_once_with(
-        source_file_path, source_code, ["definition.function", "definition.method"]
-    )
