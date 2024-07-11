@@ -334,7 +334,7 @@ class Analyzer:
         """
         try:
             scm_fname = resources.files(__package__).joinpath(
-                "pilot", "aider", "queries", f"tree-sitter-{lang}-tags.scm"
+                "queries", f"tree-sitter-{lang}-tags.scm"
             )
         except KeyError:
             return ""

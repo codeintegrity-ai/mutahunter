@@ -25,12 +25,10 @@ dependencies = [
     'scipy',
     'setuptools',
     'jinja2',
-    'litellm'
+    'litellm',
 ]
 
-authors = [
-    { name = "Steven Jung", email = "jungsteven@codeintegrity.ai" },
-]
+authors = [{ name = "Steven Jung", email = "jungsteven@codeintegrity.ai" }]
 
 [project.optional-dependencies]
 dev = ['isort', 'black']
@@ -40,4 +38,4 @@ testing = ['pytest']
 mutahunter = "mutahunter.main:run"
 
 [tool.setuptools.package-data]
-mutahunter = ['src/mutahunter/core/pilot/aider/queries/*.scm']
+mutahunter = ['src/mutahunter/core/queries/*.scm']

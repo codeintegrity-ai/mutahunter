@@ -100,21 +100,20 @@ class MutantReport:
             str: Formatted summary report.
         """
         line_coverage = f"{line_rate * 100:.2f}%"
-        summary = [
-            "Mutation Coverage:",
-            f"📊 Line Coverage: {line_coverage} 📊",
-            f"🎯 Mutation Coverage: {data['mutation_coverage']} 🎯",
-            f"🦠 Total Mutants: {data['total_mutants']} 🦠",
-            f"🛡️ Survived Mutants: {data['survived_mutants']} 🛡️",
-            f"🗡️ Killed Mutants: {data['killed_mutants']} 🗡️",
-            f"🕒 Timeout Mutants: {data['timeout_mutants']} 🕒",
-            f"🔥 Compile Error Mutants: {data['compile_error_mutants']} 🔥",
-        ]
+        details = []
+        details.append("📊 Overall Mutation Coverage 📊")
+        details.append(f"📈 Line Coverage: {line_coverage} 📈")
+        details.append(f"🎯 Mutation Coverage: {data['mutation_coverage']} 🎯")
+        details.append(f"🦠 Total Mutants: {data['total_mutants']} 🦠")
+        details.append(f"🛡️ Survived Mutants: {data['survived_mutants']} 🛡️")
+        details.append(f"🗡️ Killed Mutants: {data['killed_mutants']} 🗡️")
+        details.append(f"🕒 Timeout Mutants: {data['timeout_mutants']} 🕒")
+        details.append(f"🔥 Compile Error Mutants: {data['compile_error_mutants']} 🔥")
         if self.config.extreme:
-            summary.append("💰 No Cost for extreme mutation testing 💰")
+            details.append("💰 No Cost for extreme mutation testing 💰")
         else:
-            summary.append(f"💰 Expected Cost: ${total_cost:.5f} USD 💰")
-        return "\n".join(summary)
+            details.append(f"💰 Expected Cost: ${total_cost:.5f} USD 💰")
+        return "\n".join(details)
 
     def _generate_detailed_report(self, mutants: List[dict]) -> None:
         """
@@ -125,7 +124,7 @@ class MutantReport:
         """
         report_detail = self._compute_detailed_data(mutants)
         detailed_text = self._format_detailed_report(report_detail)
-        self._log_and_write("\nDetailed Mutation Coverage:\n" + detailed_text)
+        self._log_and_write(detailed_text)
 
     def _compute_detailed_data(self, mutants: List[dict]) -> dict:
         """
@@ -181,7 +180,7 @@ class MutantReport:
         Returns:
             str: Formatted detailed report.
         """
-        details = []
+        details = ["📂 Detailed Mutation Coverage 📂"]
         for source_path, detail in report_detail.items():
             details.append(f"📂 Source File: {source_path} 📂")
             details.append(f"🎯 Mutation Coverage: {detail['mutation_coverage']} 🎯")

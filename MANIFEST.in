@@ -1,1 +1,1 @@
-include src/mutahunter/core/pilot/aider/queries/*.scm
+include src/mutahunter/core/queries/*.scm

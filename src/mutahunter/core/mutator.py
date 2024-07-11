@@ -6,8 +6,8 @@ from grep_ast import filename_to_lang
 from jinja2 import Template
 
 from mutahunter.core.logger import logger
-from mutahunter.core.pilot.aider.repomap import RepoMap
-from mutahunter.core.pilot.prompts.factory import PromptFactory
+from mutahunter.core.repomap import RepoMap
+from mutahunter.core.prompts.factory import PromptFactory
 
 
 class MutationStrategy:
@@ -42,15 +42,12 @@ class LLMBasedMutation(MutationStrategy):
         ):
             start_byte = function_block.start_byte
             end_byte = function_block.end_byte
-            function_name = function_block.child_by_field_name("name").text.decode(
-                "utf8"
-            )
+
             mutant_generator = MutantGenerator(
                 config=hunter.config,
                 executed_lines=executed_lines,
                 cov_files=list(hunter.analyzer.file_lines_executed.keys()),
                 source_file_path=file_path,
-                function_name=function_name,
                 start_byte=start_byte,
                 end_byte=end_byte,
                 router=hunter.router,
@@ -96,7 +93,6 @@ class MutantGenerator:
         executed_lines,
         cov_files,
         source_file_path,  # file_path for the source code
-        function_name,
         start_byte,
         end_byte,
         router,
@@ -105,7 +101,6 @@ class MutantGenerator:
         self.executed_lines = executed_lines
         self.cov_files = cov_files
         self.source_file_path = source_file_path
-        self.function_name = function_name
         self.start_byte = start_byte
         self.end_byte = end_byte
         self.router = router
@@ -121,22 +116,36 @@ class MutantGenerator:
         return src_code[self.start_byte : self.end_byte].decode("utf-8")
 
     def generate_mutant(self, repo_map_result):
-        system_template = Template(self.prompt.system_prompt).render()
+        # add line number for each line of code
+        function_block_with_line_num = "\n".join(
+            [
+                f"{i + 1} {line}"
+                for i, line in enumerate(self.function_block_source_code.splitlines())
+            ]
+        )
+        system_template = Template(self.prompt.system_prompt).render(
+            language=self.language
+        )
         user_template = Template(self.prompt.user_prompt).render(
             language=self.language,
-            covered_lines=self.executed_lines,
             ast=repo_map_result,
-            function_name=self.function_name,
+            covered_lines=self.executed_lines,
             example_output=self.prompt.example_output,
-            function_block=self.function_block_source_code,
+            function_block=function_block_with_line_num,
+            maximum_num_of_mutants_per_function_block=3,
         )
         prompt = {
             "system": system_template,
             "user": user_template,
         }
+        print("system_template:", system_template)
+        print("user_template:", user_template)
+
+        exit()
         model_response, _, _ = self.router.generate_response(
             prompt=prompt, streaming=True
         )
+        # print("model_response", model_response)
         return model_response
 
     def generate(self):
@@ -150,6 +159,7 @@ class MutantGenerator:
         ai_reply = self.generate_mutant(repo_map_result)
         mutation_info = self.extract_json_from_reply(ai_reply)
         changes = mutation_info["changes"]
+        print("changes:", len(changes))
         original_lines = self.function_block_source_code.splitlines(keepends=True)
         for change in changes:
             original_line = change["original_line"]

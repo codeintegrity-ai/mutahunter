@@ -30,7 +30,7 @@ Mutahunter uses LLM models to inject context-aware faults into your codebase. Th
 
 ## Features
 
-- **Extreme Mutation Testing:** Leverages language agnostic [TreeSitter](https://tree-sitter.github.io/) parser to apply extreme mutations to the codebase without using LLMs. [Research](https://arxiv.org/abs/2103.08480) shows that this approach is effective at detecting pseudo-tested methods with significantly lower computational cost. Currently supports Python, Java, JavaScript, and Go. Check the [scheme files](/src/mutahunter/core/pilot/aider/queries/) to see the supported operators. We welcome contributions to add more operators and languages.
+- **Extreme Mutation Testing:** Leverages language agnostic [TreeSitter](https://tree-sitter.github.io/) parser to apply extreme mutations to the codebase without using LLMs. [Research](https://arxiv.org/abs/2103.08480) shows that this approach is effective at detecting pseudo-tested methods with significantly lower computational cost. Currently supports Python, Java, JavaScript, and Go. Check the [scheme files](/src/mutahunter/core/queries/) to see the supported operators. We welcome contributions to add more operators and languages.
 - **LLM Context-aware Mutations:** Utilizes LLM models to generate context-aware mutants. [Research](https://arxiv.org/abs/2406.09843) indicates that LLM-generated mutants have higher fault detection potential, fewer equivalent mutants, and higher coupling and semantic similarity to real faults. It uses a map of your entire git repository to generate contextually relevant mutants using [aider's repomap](https://aider.chat/docs/repomap.html). Supports self-hosted LLMs, Anthropic, OpenAI, and any LLM models via [LiteLLM](https://github.com/BerriAI/litellm).
 - **Change-Based Testing:** Runs mutation tests on modified files and lines based on the latest commit or pull request changes, ensuring that only relevant parts of the code are tested.
 - **Language Agnostic:** Compatible with languages that provide coverage reports in Cobertura XML, Jacoco XML, and lcov formats. Extensible to additional languages and testing frameworks.
@@ -171,7 +171,6 @@ jobs:
 ## Cash Bounty Program
 
 Help us improve Mutahunter and get rewarded! We have a cash bounty program to incentivize contributions to the project. Check out the [bounty board](https://docs.google.com/spreadsheets/d/1cT2_O55m5txrUgZV81g1gtqE_ZDu9LlzgbpNa_HIisc/edit?gid=0#gid=0) to see the available bounties and claim one today!
-
 
 ## Acknowledgements
 

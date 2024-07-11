@@ -69,6 +69,36 @@ def mutants():
             type="",
             description="",
         ),
+        Mutant(
+            id="5",
+            source_path="app.go",
+            mutant_path="mutant1.py",
+            status="TIMEOUT",
+            error_msg="",
+            mutant_code="",
+            type="",
+            description="",
+        ),
+        Mutant(
+            id="6",
+            source_path="app.go",
+            mutant_path="mutant2.py",
+            status="TIMEOUT",
+            error_msg="",
+            mutant_code="",
+            type="",
+            description="",
+        ),
+        Mutant(
+            id="7",
+            source_path="app.go",
+            mutant_path="mutant3.py",
+            status="COMPILE_ERROR",
+            error_msg="",
+            mutant_code="",
+            type="",
+            description="",
+        ),
     ]
 
 
@@ -144,9 +174,9 @@ def test_compute_summary_data(config, mutants):
     expected_data = {
         "killed_mutants": 2,
         "survived_mutants": 2,
-        "timeout_mutants": 0,
-        "compile_error_mutants": 0,
-        "total_mutants": 4,
+        "timeout_mutants": 2,
+        "compile_error_mutants": 1,
+        "total_mutants": 7,
         "valid_mutants": 4,
         "mutation_coverage": "50.00%",
     }
@@ -170,9 +200,10 @@ def test_format_summary(config):
 
     formatted_summary = report._format_summary(summary_data, total_cost, line_rate)
 
+    print("formatted_summary:", formatted_summary)
     expected_summary = (
-        "Mutation Coverage:\n"
-        "📊 Line Coverage: 75.00% 📊\n"
+        "📊 Overall Mutation Coverage 📊\n"
+        "📈 Line Coverage: 75.00% 📈\n"
         "🎯 Mutation Coverage: 50.00% 🎯\n"
         "🦠 Total Mutants: 4 🦠\n"
         "🛡️ Survived Mutants: 2 🛡️\n"
@@ -192,11 +223,11 @@ def test_compute_detailed_data_with_all_statuses(config, mutants):
 
     expected_data = {
         "app.go": {
-            "total_mutants": 4,
+            "total_mutants": 7,
             "killed_mutants": 2,
             "survived_mutants": 2,
-            "timeout_mutants": 0,
-            "compile_error_mutants": 0,
+            "timeout_mutants": 2,
+            "compile_error_mutants": 1,
             "mutation_coverage": "50.00%",
         }
     }
@@ -205,7 +236,11 @@ def test_compute_detailed_data_with_all_statuses(config, mutants):
 
 @patch("builtins.open", new_callable=mock_open)
 @patch("mutahunter.core.logger.logger.info")
-def test_log_and_write(mock_logger_info, mock_open_func, config):
+def test_log_and_write(
+    mock_logger_info,
+    mock_open_func,
+    config,
+):
     report = MutantReport(config)
     text = "Test log and write"
 
@@ -217,7 +252,11 @@ def test_log_and_write(mock_logger_info, mock_open_func, config):
 
 
 @patch.object(MutantReport, "_log_and_write")
-def test_generate_detailed_report(mock_log_and_write, config, mutants):
+def test_generate_detailed_report(
+    mock_log_and_write,
+    config,
+    mutants,
+):
     report = MutantReport(config)
     mutant_dicts = [asdict(mutant) for mutant in mutants]
 
@@ -225,10 +264,7 @@ def test_generate_detailed_report(mock_log_and_write, config, mutants):
 
     detailed_data = report._compute_detailed_data(mutant_dicts)
     formatted_detailed_report = report._format_detailed_report(detailed_data)
-
-    mock_log_and_write.assert_called_once_with(
-        "\nDetailed Mutation Coverage:\n" + formatted_detailed_report
-    )
+    mock_log_and_write.assert_called_once_with(formatted_detailed_report)
 
 
 @patch("builtins.open", new_callable=mock_open)
@@ -244,88 +280,6 @@ def test_save_report(mock_logger_info, mock_json_dump, mock_open_func, config):
     mock_open_func.assert_called_once_with(filepath, "w")
     mock_json_dump.assert_called_once_with(data, mock_open_func(), indent=4)
     mock_logger_info.assert_called_once_with(f"Report saved to {filepath}")
-
-
-def test_compute_detailed_data_all_timeout(config):
-    mutants = [
-        Mutant(
-            id="1",
-            source_path="app.go",
-            mutant_path="mutant1.py",
-            status="TIMEOUT",
-            error_msg="",
-            mutant_code="",
-            type="",
-            description="",
-        ),
-        Mutant(
-            id="2",
-            source_path="app.go",
-            mutant_path="mutant2.py",
-            status="TIMEOUT",
-            error_msg="",
-            mutant_code="",
-            type="",
-            description="",
-        ),
-    ]
-    report = MutantReport(config)
-    mutant_dicts = [asdict(mutant) for mutant in mutants]
-
-    detailed_data = report._compute_detailed_data(mutant_dicts)
-
-    expected_data = {
-        "app.go": {
-            "total_mutants": 2,
-            "killed_mutants": 0,
-            "survived_mutants": 0,
-            "timeout_mutants": 2,
-            "compile_error_mutants": 0,
-            "mutation_coverage": "0.00%",
-        }
-    }
-    assert detailed_data == expected_data
-
-
-def test_compute_detailed_data_with_compile_error(config):
-    mutants = [
-        Mutant(
-            id="1",
-            source_path="app.go",
-            mutant_path="mutant1.py",
-            status="KILLED",
-            error_msg="",
-            mutant_code="",
-            type="",
-            description="",
-        ),
-        Mutant(
-            id="2",
-            source_path="app.go",
-            mutant_path="mutant2.py",
-            status="COMPILE_ERROR",
-            error_msg="",
-            mutant_code="",
-            type="",
-            description="",
-        ),
-    ]
-    report = MutantReport(config)
-    mutant_dicts = [asdict(mutant) for mutant in mutants]
-
-    detailed_data = report._compute_detailed_data(mutant_dicts)
-
-    expected_data = {
-        "app.go": {
-            "total_mutants": 2,
-            "killed_mutants": 1,
-            "survived_mutants": 0,
-            "timeout_mutants": 0,
-            "compile_error_mutants": 1,
-            "mutation_coverage": "100.00%",
-        }
-    }
-    assert detailed_data == expected_data
 
 
 def test_format_summary_extreme(config):
@@ -347,8 +301,8 @@ def test_format_summary_extreme(config):
     formatted_summary = report._format_summary(summary_data, total_cost, line_rate)
 
     expected_summary = (
-        "Mutation Coverage:\n"
-        "📊 Line Coverage: 75.00% 📊\n"
+        "📊 Overall Mutation Coverage 📊\n"
+        "📈 Line Coverage: 75.00% 📈\n"
         "🎯 Mutation Coverage: 50.00% 🎯\n"
         "🦠 Total Mutants: 4 🦠\n"
         "🛡️ Survived Mutants: 2 🛡️\n"
