@@ -6,8 +6,8 @@ from grep_ast import filename_to_lang
 from jinja2 import Template
 
 from mutahunter.core.logger import logger
-from mutahunter.core.repomap import RepoMap
 from mutahunter.core.prompts.factory import PromptFactory
+from mutahunter.core.repomap import RepoMap
 
 
 class MutationStrategy:
@@ -138,10 +138,9 @@ class MutantGenerator:
             "system": system_template,
             "user": user_template,
         }
-        print("system_template:", system_template)
-        print("user_template:", user_template)
+        # print("system_template:", system_template)
+        # print("user_template:", user_template)
 
-        exit()
         model_response, _, _ = self.router.generate_response(
             prompt=prompt, streaming=True
         )

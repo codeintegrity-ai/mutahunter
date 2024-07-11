@@ -2,12 +2,10 @@
 Module for generating prompts based on the programming language.
 """
 
-from mutahunter.core.prompts.examples import (
-    GO_EXAMPLE_OUTPUT,
-    JAVA_EXAMPLE_OUTPUT,
-    JAVASCRIPT_EXAMPLE_OUTPUT,
-    PYTHON_EXAMPLE_OUTPUT,
-)
+from mutahunter.core.prompts.examples import (GO_EXAMPLE_OUTPUT,
+                                              JAVA_EXAMPLE_OUTPUT,
+                                              JAVASCRIPT_EXAMPLE_OUTPUT,
+                                              PYTHON_EXAMPLE_OUTPUT)
 from mutahunter.core.prompts.system import SYSTEM_PROMPT
 from mutahunter.core.prompts.user import USER_PROMPT
 
