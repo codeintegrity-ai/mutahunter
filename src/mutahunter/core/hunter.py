@@ -9,8 +9,7 @@ from mutahunter.core.analyzer import Analyzer
 from mutahunter.core.entities.config import MutahunterConfig
 from mutahunter.core.entities.mutant import Mutant
 from mutahunter.core.logger import logger
-from mutahunter.core.mutator import (ExtremeMutation, LLMBasedMutation,
-                                     MutationStrategy)
+from mutahunter.core.mutator import ExtremeMutation, LLMBasedMutation, MutationStrategy
 from mutahunter.core.report import MutantReport
 from mutahunter.core.router import LLMRouter
 from mutahunter.core.runner import TestRunner

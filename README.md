@@ -42,7 +42,7 @@ Mutahunter uses LLM models to inject context-aware faults into your codebase. Th
 
 1. **Achieve High Line Coverage:** Ensure your test suite has high line coverage, preferably 100%.
 
-2. **Strict Mutation Testing:** Use strict mutation testing to improve mutation coverage without additional cost. Utilize the `--only-mutate-file-paths` flag for targeted testing on critical files.
+2. **Strict Mutation Testing:** Use strict mutation testing to improve mutation coverage during development without additional cost. Utilize the `--only-mutate-file-paths` flag for targeted testing on critical files.
 
 3. **LLM-Based Mutation Testing on Changed Files:** Inject context-aware mutants using LLMs on changed files during pull requests as the final line of defense. Use the `--modified-files-only` flag to focus on recent changes. In this way it will make the mutation testing significantly **faster** and **cost effective.**
 

@@ -158,7 +158,6 @@ class MutantGenerator:
         ai_reply = self.generate_mutant(repo_map_result)
         mutation_info = self.extract_json_from_reply(ai_reply)
         changes = mutation_info["changes"]
-        print("changes:", len(changes))
         original_lines = self.function_block_source_code.splitlines(keepends=True)
         for change in changes:
             original_line = change["original_line"]
