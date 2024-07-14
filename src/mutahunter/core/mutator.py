@@ -1,25 +1,45 @@
-import json
+import difflib
+import os
+import subprocess
 import time
 from typing import Any, Dict, List
 
-from grep_ast import filename_to_lang
-from jinja2 import Template
+from tqdm import tqdm
 
+from mutahunter.core.analyzer import Analyzer
+from mutahunter.core.coverage_processor import CoverageProcessor
+from mutahunter.core.entities.config import MutahunterConfig
+from mutahunter.core.entities.mutant import Mutant
+from mutahunter.core.llm_mutation_engine import LLMMutationEngine
 from mutahunter.core.logger import logger
-from mutahunter.core.prompts.factory import PromptFactory
-from mutahunter.core.repomap import RepoMap
+from mutahunter.core.report import MutantReport
+from mutahunter.core.router import LLMRouter
+from mutahunter.core.runner import TestRunner
+
+TEST_FILE_PATTERNS = [
+    "test_",
+    "_test",
+    ".test",
+    ".spec",
+    ".tests",
+    ".Test",
+    "tests/",
+    "test/",
+]
+
+from typing import List
 
 
 class MutationStrategy:
     def generate_mutations(
-        self, hunter: "MutantHunter", file_path: str, executed_lines: List[int]
+        self, hunter: "Mutator", file_path: str, executed_lines: List[int]
     ):
         raise NotImplementedError("Must implement generate_mutations method")
 
 
 class LLMBasedMutation(MutationStrategy):
     def generate_mutations(
-        self, hunter: "MutantHunter", file_path: str, executed_lines: List[int]
+        self, hunter: "Mutator", file_path: str, executed_lines: List[int]
     ):
         """
         Generates mutations for a single file based on the executed lines.
@@ -43,16 +63,16 @@ class LLMBasedMutation(MutationStrategy):
             start_byte = function_block.start_byte
             end_byte = function_block.end_byte
 
-            mutant_generator = MutantGenerator(
-                config=hunter.config,
+            engine = LLMMutationEngine(
+                model=hunter.config.model,
                 executed_lines=executed_lines,
-                cov_files=list(hunter.analyzer.file_lines_executed.keys()),
+                cov_files=list(hunter.coverage_processor.file_lines_executed.keys()),
                 source_file_path=file_path,
                 start_byte=start_byte,
                 end_byte=end_byte,
                 router=hunter.router,
             )
-            for mutant_data in mutant_generator.generate():
+            for mutant_data in engine.generate():
                 if "mutant_code" not in mutant_data:
                     continue
                 hunter.process_mutant(mutant_data, file_path, start_byte, end_byte)
@@ -67,6 +87,8 @@ class ExtremeMutation(MutationStrategy):
                 source_file_path=file_path,
             )
         )
+        print("covered_method_blocks:", covered_method_blocks)
+        print("covered_method_lines:", covered_method_lines)
 
         if not covered_method_blocks:
             return
@@ -74,175 +96,367 @@ class ExtremeMutation(MutationStrategy):
         with open(file_path, "rb") as f:
             src_code = f.read()
 
-        for method_block in covered_method_blocks:
+        for method_block, _ in zip(covered_method_blocks, covered_method_lines):
             start_byte = method_block.start_byte
             end_byte = method_block.end_byte
             removed_code = src_code[start_byte:end_byte].decode("utf-8")
+            print("start_byte:", start_byte)
+            print("end_byte:", end_byte)
+            print("removed_code:", removed_code)
             mutant_data = {
                 "mutant_code": "",
-                "type": "extreme",
-                "description": removed_code,
+                "type": "",
+                "description": "",
             }
             hunter.process_mutant(mutant_data, file_path, start_byte, end_byte)
 
 
-class MutantGenerator:
-    def __init__(
-        self,
-        config,
-        executed_lines,
-        cov_files,
-        source_file_path,  # file_path for the source code
-        start_byte,
-        end_byte,
-        router,
-    ):
+class Mutator:
+    def __init__(self, config: MutahunterConfig) -> None:
         self.config = config
-        self.executed_lines = executed_lines
-        self.cov_files = cov_files
-        self.source_file_path = source_file_path
-        self.start_byte = start_byte
-        self.end_byte = end_byte
-        self.router = router
-        self.repo_map = RepoMap(model=self.config.model)
-        self.language = filename_to_lang(self.source_file_path)
-        self.prompt = PromptFactory.get_prompt(language=self.language)
-
-        self.function_block_source_code = self.get_function_block_source_code()
-
-    def get_function_block_source_code(self):
-        with open(self.source_file_path, "rb") as f:
-            src_code = f.read()
-        return src_code[self.start_byte : self.end_byte].decode("utf-8")
-
-    def generate_mutant(self, repo_map_result):
-        # add line number for each line of code
-        function_block_with_line_num = "\n".join(
-            [
-                f"{i + 1} {line}"
-                for i, line in enumerate(self.function_block_source_code.splitlines())
-            ]
+        self.logger = logger
+        self.mutants = []
+        self.coverage_processor = CoverageProcessor(
+            code_coverage_report_path=self.config.code_coverage_report_path,
+            coverage_type=self.config.coverage_type,
         )
-        system_template = Template(self.prompt.system_prompt).render(
-            language=self.language
-        )
-        user_template = Template(self.prompt.user_prompt).render(
-            language=self.language,
-            ast=repo_map_result,
-            covered_lines=self.executed_lines,
-            example_output=self.prompt.example_output,
-            function_block=function_block_with_line_num,
-            maximum_num_of_mutants_per_function_block=2,
-        )
-        prompt = {
-            "system": system_template,
-            "user": user_template,
-        }
-        # print("system_template:", system_template)
-        # print("user_template:", user_template)
+        self.analyzer = Analyzer()
+        self.mutant_report = MutantReport(extreme=self.config.extreme)
+        self.test_runner = TestRunner(test_command=self.config.test_command)
+        self.router = LLMRouter(model=self.config.model, api_base=self.config.api_base)
+        self.mutation_strategy = self._select_mutation_strategy()
 
-        model_response, _, _ = self.router.generate_response(
-            prompt=prompt, streaming=True
-        )
-        # print("model_response", model_response)
-        return model_response
+    def _select_mutation_strategy(self) -> MutationStrategy:
+        if self.config.extreme:
+            return ExtremeMutation()
+        else:
+            return LLMBasedMutation()
 
-    def generate(self):
-        repo_map_result = self.repo_map.get_repo_map(
-            chat_files=[],
-            other_files=self.cov_files,
-        )
-        if not repo_map_result:
-            logger.error("No repository map found.")
-
-        ai_reply = self.generate_mutant(repo_map_result)
-        mutation_info = self.extract_json_from_reply(ai_reply)
-        changes = mutation_info["changes"]
-        original_lines = self.function_block_source_code.splitlines(keepends=True)
-        for change in changes:
-            original_line = change["original_line"]
-            mutated_line = change["mutated_line"]
-
-            for i, line in enumerate(original_lines):
-                # print("line: ---->", line.lstrip().rstrip())
-                # print("original_line: ---->", original_line.lstrip().rstrip())
-                # print(
-                #     "check: ---->",
-                #     line.lstrip().rstrip() == original_line.lstrip().rstrip(),
-                # )
-                # print("\n")
-                if line.lstrip().rstrip() == original_line.lstrip().rstrip():
-                    # print("FOUND SAME LINE")
-                    # print("original_lines[i]: ---->", original_lines[i])
-                    # print("line: ---->", line)
-                    # print("mutated_line: ---->", mutated_line)
-                    # original_lines[i] = mutated_line + "\n"
-                    # dont modify the original lines
-                    temp_lines = original_lines.copy()
-                    # check if the temp_lines[i] ends with a newline character
-                    # get indentation of the original line
-                    indentation_space = len(temp_lines[i]) - len(temp_lines[i].lstrip())
-                    # add the indentation to the mutated line after lstripping
-                    mutated_line = " " * indentation_space + mutated_line.lstrip()
-                    temp_lines[i] = mutated_line + "\n"
-                    # updated change dict
-                    change["mutant_code"] = "".join(temp_lines)
-                    break
+    def run(self) -> None:
+        """
+        Executes the mutation testing process from start to finish.
+        """
+        try:
+            start = time.time()
+            self.logger.info("Starting Coverage Analysis...")
+            self.test_runner.dry_run()
+            self.coverage_processor.parse_coverage_report()
+            if self.config.modified_files_only:
+                self.logger.info("Running mutation testing on modified files...")
+                self.run_mutation_testing_on_modified_files()
             else:
-                logger.error(f"Could not apply mutation. Skipping mutation.")
+                self.logger.info("Running mutation testing on entire codebase...")
+                self.run_mutation_testing()
+
+            self.mutant_report.generate_report(
+                mutants=self.mutants,
+                total_cost=self.router.total_cost,
+                line_rate=self.coverage_processor.line_coverage_rate,
+            )
+            self.logger.info(
+                f"Mutation Testing Ended. Took {round(time.time() - start)}s"
+            )
+        except Exception as e:
+            self.logger.error(
+                "Error during mutation testing. Please report this issue.",
+                exc_info=True,
+            )
+
+    def should_skip_file(self, filename: str) -> bool:
+        """
+        Determines if a file should be skipped based on various conditions.
+        """
+        self.logger.debug(f"Checking if file should be skipped: {filename}")
+        if self.config.only_mutate_file_paths:
+            for file_path in self.config.only_mutate_file_paths:
+                if not os.path.exists(file_path):
+                    self.logger.error(f"File {file_path} does not exist.")
+                    raise FileNotFoundError(f"File {file_path} does not exist.")
+            return all(
+                file_path != filename
+                for file_path in self.config.only_mutate_file_paths
+            )
+        if filename in self.config.exclude_files:
+            return True
+
+        should_skip = any(keyword in filename for keyword in TEST_FILE_PATTERNS)
+        self.logger.info(
+            f"File {filename} {'is' if should_skip else 'is not'} identified as a test file."
+        )
+        return should_skip
+
+    def run_mutation_testing(self) -> None:
+        self.logger.info("Running mutation testing on the entire codebase.")
+        all_covered_files = self.coverage_processor.file_lines_executed.keys()
+        self.logger.info(
+            f"Generating mutations for {len(all_covered_files)} covered files."
+        )
+
+        for covered_file_path in tqdm(all_covered_files):
+            if self.should_skip_file(covered_file_path):
+                self.logger.debug(f"Skipping file: {covered_file_path}")
                 continue
-        return changes
+            executed_lines = self.coverage_processor.file_lines_executed[
+                covered_file_path
+            ]
+            print("executed_lines", executed_lines)
+            if not executed_lines:
+                self.logger.debug(
+                    f"No executed lines found in file: {covered_file_path}"
+                )
+                continue
+            self.mutation_strategy.generate_mutations(
+                self,
+                file_path=covered_file_path,
+                executed_lines=executed_lines,
+            )
 
-    def extract_json_from_reply(self, ai_reply: str) -> dict:
-        retries = 2
-        for attempt in range(retries):
-            try:
-                if "```json" in ai_reply:
-                    json_content = ai_reply.split("```json")[1].split("```")[0]
-                else:
-                    json_content = ai_reply.strip()
+    def run_mutation_testing_on_modified_files(self) -> None:
+        """
+        Runs mutation testing on modified files.
+        """
+        self.logger.info("Running mutation testing on modified files.")
+        modified_files = self.get_modified_files()
+        self.logger.info(
+            f"Generating mutations for {len(modified_files)} modified files - {','.join(modified_files)}"
+        )
 
-                mutation_info = json.loads(json_content)
-                return mutation_info
-            except (IndexError, json.JSONDecodeError) as e:
-                logger.error(f"Error extracting JSON content: {e}")
-                if attempt < retries - 1:
-                    logger.info(f"Retrying to extract JSON with retry {attempt + 1}...")
-                    json_content = self.fix_json_format(e, ai_reply)
-                    ai_reply = json_content
-                else:
-                    logger.error(
-                        f"Error extracting JSON content after {retries} attempts: {e}"
+        for file_path in tqdm(modified_files):
+            if self.should_skip_file(file_path):
+                self.logger.debug(f"Skipping file: {file_path}")
+                continue
+
+            modified_lines = self.get_modified_lines(file_path)
+            if not modified_lines:
+                self.logger.debug(f"No modified lines found in file: {file_path}")
+                continue
+
+            self.mutation_strategy.generate_mutations(
+                self, file_path=file_path, executed_lines=modified_lines
+            )
+
+    def process_mutant(
+        self,
+        mutant_data: Dict[str, Any],
+        source_file_path: str,
+        start_byte: int,
+        end_byte: int,
+    ) -> None:
+        """
+        Processes a single mutant data dictionary.
+        """
+        mutant = Mutant(
+            id=str(len(self.mutants) + 1),
+            source_path=source_file_path,
+            type=mutant_data["type"],
+            description=mutant_data["description"],
+        )
+        mutant_path = self.prepare_mutant_file(
+            mutant, start_byte, end_byte, mutant_code=mutant_data["mutant_code"]
+        )
+
+        if mutant_path:  # Only run tests if the mutant file is prepared successfully
+            mutant.mutant_path = mutant_path
+            result = self.run_test(
+                {
+                    "module_path": source_file_path,
+                    "replacement_module_path": mutant_path,
+                    "test_command": self.config.test_command,
+                }
+            )
+            self.process_test_result(result, mutant)
+            udiff_list = self.get_unified_diff(source_file_path, mutant_path, mutant)
+            mutant.udiff = "\n".join(udiff_list)
+        else:
+            mutant.status = "COMPILE_ERROR"
+
+        self.mutants.append(mutant)
+
+    def get_unified_diff(self, source_file_path, mutant_path, mutant):
+        with open(source_file_path, "r") as file:
+            original = file.readlines()
+        with open(mutant_path, "r") as file:
+            mutant = file.readlines()
+        diff = difflib.unified_diff(original, mutant, lineterm="")
+        diff_lines = list(diff)
+        return diff_lines
+
+    def prepare_mutant_file(
+        self, mutant: Mutant, start_byte: int, end_byte: int, mutant_code: str
+    ) -> str:
+        """
+        Prepares the mutant file for testing.
+        """
+        mutant_file_name = f"{mutant.id}_{os.path.basename(mutant.source_path)}"
+        mutant_path = os.path.join(
+            os.getcwd(), f"logs/_latest/mutants/{mutant_file_name}"
+        )
+        self.logger.debug(f"Preparing mutant file: {mutant_path}")
+
+        with open(mutant.source_path, "rb") as f:
+            source_code = f.read()
+
+        modified_byte_code = (
+            source_code[:start_byte]
+            + bytes(mutant_code, "utf-8")
+            + source_code[end_byte:]
+        )
+
+        if self.analyzer.check_syntax(
+            source_file_path=mutant.source_path,
+            source_code=modified_byte_code.decode("utf-8"),
+        ):
+            with open(mutant_path, "wb") as f:
+                f.write(modified_byte_code)
+            self.logger.info(f"Mutant file prepared: {mutant_path}")
+            return mutant_path
+        else:
+            self.logger.error(
+                f"Syntax error in mutant code for file: {mutant.source_path}"
+            )
+            return ""
+
+    def run_test(self, params: Dict[str, str]) -> Any:
+        """
+        Runs the test command on the given parameters.
+        """
+        self.logger.info(
+            f"Running test command: {params['test_command']} for mutant file: {params['replacement_module_path']}"
+        )
+        return self.test_runner.run_test(params)
+
+    def process_test_result(self, result: Any, mutant: Mutant) -> None:
+        """
+        Processes the result of a test run.
+
+        Args:
+            result (Any): The result of the test command execution.
+            mutant (Mutant): The mutant being tested.
+        """
+        if result.returncode == 0:
+            self.logger.info(f"🛡️ Mutant {mutant.id} survived 🛡️\n")
+            mutant.status = "SURVIVED"
+        elif result.returncode == 1:
+            self.logger.info(f"🗡️ Mutant {mutant.id} killed 🗡️\n")
+            error_output = result.stderr + result.stdout.lower()
+            mutant.error_msg = error_output
+            mutant.status = "KILLED"
+        else:
+            error_output = result.stderr + result.stdout
+            self.logger.info(f"🔧 Mutant {mutant.id} caused a compile error 🔧\n")
+            mutant.error_msg = error_output
+            mutant.status = "COMPILE_ERROR"
+
+    def get_modified_files(self) -> List[str]:
+        """
+        Identifies the files that were modified based on the current context (PR stage or local development).
+
+        Returns:
+            List[str]: A list of modified file paths.
+        """
+        try:
+            unstaged_changes = (
+                subprocess.check_output(["git", "diff", "--name-only"])
+                .decode("utf-8")
+                .splitlines()
+            )
+            if unstaged_changes:
+                modified_files = (
+                    subprocess.check_output(["git", "diff", "--name-only", "HEAD"])
+                    .decode("utf-8")
+                    .splitlines()
+                )
+            else:
+                try:
+                    modified_files = (
+                        subprocess.check_output(
+                            ["git", "diff", "--name-only", "HEAD^..HEAD"]
+                        )
+                        .decode("utf-8")
+                        .splitlines()
                     )
-                    return {"changes": []}
+                except subprocess.CalledProcessError as e:
+                    if "ambiguous argument 'HEAD^'" in e.stderr.decode("utf-8"):
+                        self.logger.warning(
+                            "No previous commit found. Using initial commit for diff."
+                        )
+                        modified_files = (
+                            subprocess.check_output(
+                                ["git", "diff", "--name-only", "HEAD"]
+                            )
+                            .decode("utf-8")
+                            .splitlines()
+                        )
+                    else:
+                        raise
 
-    def fix_json_format(self, error, json_content):
-        system_template = Template(SYSTEM_JSON_FIX).render()
-        user_template = Template(USER_JSON_FIX).render(
-            json_content=json_content,
-            error=error,
-        )
-        prompt = {
-            "system": system_template,
-            "user": user_template,
-        }
-        model_response, _, _ = self.router.generate_response(
-            prompt=prompt, streaming=True
-        )
-        return model_response
+            covered_files = list(self.coverage_processor.file_lines_executed.keys())
+            modified_files = [
+                file_path for file_path in modified_files if file_path in covered_files
+            ]
+            self.logger.info(f"Modified files: {modified_files}")
+            return modified_files
+        except subprocess.CalledProcessError as e:
+            self.logger.error(f"Error identifying modified files: {e}")
+            return []
 
+    def get_modified_lines(self, file_path: str) -> List[int]:
+        """
+        Identifies the lines that were modified in the latest commit for a given file.
 
-SYSTEM_JSON_FIX = """
-Based on the error message, the JSON content provided is not in the correct format. Please ensure the JSON content is in the correct format and try again.
-"""
-USER_JSON_FIX = """
-JSON content:
-{{json_content}}
+        Args:
+            file_path (str): The path to the file.
 
-Error:
-{{error}}
+            Returns:
+                List[int]: A list of modified line numbers.
+        """
+        try:
+            unstaged_changes = (
+                subprocess.check_output(["git", "diff", "--name-only"])
+                .decode("utf-8")
+                .splitlines()
+            )
+            if unstaged_changes:
+                diff_output = (
+                    subprocess.check_output(["git", "diff", "-U0", file_path])
+                    .decode("utf-8")
+                    .splitlines()
+                )
+            else:
+                try:
+                    diff_output = (
+                        subprocess.check_output(
+                            ["git", "diff", "-U0", "HEAD^..HEAD", file_path]
+                        )
+                        .decode("utf-8")
+                        .splitlines()
+                    )
+                except subprocess.CalledProcessError as e:
+                    if "ambiguous argument 'HEAD^'" in e.stderr.decode("utf-8"):
+                        self.logger.warning(
+                            "No previous commit found. Using initial commit for diff."
+                        )
+                        diff_output = (
+                            subprocess.check_output(
+                                ["git", "diff", "-U0", "HEAD", file_path]
+                            )
+                            .decode("utf-8")
+                            .splitlines()
+                        )
+                    else:
+                        raise
 
-Output must be wrapped in triple backticks and in JSON format:
-```json
-...fix the json content here...
-"""
+            modified_lines = []
+            for line in diff_output:
+                if line.startswith("@@"):
+                    parts = line.split()
+                    line_info = parts[2]
+                    start_line = int(line_info.split(",")[0][1:])
+                    line_count = int(line_info.split(",")[1]) if "," in line_info else 1
+                    modified_lines.extend(range(start_line, start_line + line_count))
+            self.logger.info(f"Modified lines in file {file_path}: {modified_lines}")
+            return modified_lines
+
+        except subprocess.CalledProcessError as e:
+            self.logger.error(f"Error identifying modified lines in {file_path}: {e}")
+            return []

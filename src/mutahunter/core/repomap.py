@@ -355,8 +355,6 @@ class RepoMap:
         # Guess a small starting number to help with giant repos
         middle = min(max_map_tokens // 25, num_tags)
 
-        self.tree_cache = dict()
-
         while lower_bound <= upper_bound:
             tree = self.to_tree(ranked_tags[:middle], chat_rel_fnames)
             num_tokens = self.token_count(tree)
@@ -374,13 +372,8 @@ class RepoMap:
 
         return best_tree
 
-    tree_cache = dict()
-
     def render_tree(self, abs_fname, rel_fname, lois):
         key = (rel_fname, tuple(sorted(lois)))
-
-        if key in self.tree_cache:
-            return self.tree_cache[key]
 
         with open(abs_fname, "r", encoding="utf-8") as f:
             code = f.read() or ""
@@ -405,7 +398,6 @@ class RepoMap:
         context.add_lines_of_interest(lois)
         context.add_context()
         res = context.format()
-        self.tree_cache[key] = res
         return res
 
     def to_tree(self, tags, chat_rel_fnames):
@@ -446,49 +438,3 @@ class RepoMap:
         output = "\n".join([line[:100] for line in output.splitlines()]) + "\n"
 
         return output
-
-
-def find_src_files(directory):
-    if not os.path.isdir(directory):
-        return [directory]
-
-    src_files = []
-    for root, dirs, files in os.walk(directory):
-        for file in files:
-            src_files.append(os.path.join(root, file))
-    return src_files
-
-
-def get_random_color():
-    hue = random.random()
-    r, g, b = [int(x * 255) for x in colorsys.hsv_to_rgb(hue, 1, 0.75)]
-    res = f"#{r:02x}{g:02x}{b:02x}"
-    return res
-
-
-def get_supported_languages_md():
-    from grep_ast.parsers import PARSERS
-
-    res = ""
-    data = sorted((lang, ex) for ex, lang in PARSERS.items())
-    for lang, ext in data:
-        res += "<tr>"
-        res += f'<td style="text-align: center;">{lang:20}</td>\n'
-        res += f'<td style="text-align: center;">{ext:20}</td>\n'
-        res += "</tr>"
-    return res
-
-
-if __name__ == "__main__":
-    fnames = sys.argv[1:]
-
-    chat_fnames = []
-    other_fnames = []
-    for fname in sys.argv[1:]:
-        if Path(fname).is_dir():
-            chat_fnames += find_src_files(fname)
-        else:
-            chat_fnames.append(fname)
-
-    rm = RepoMap(root=".")
-    repo_map = rm.get_ranked_tags_map(chat_fnames, other_fnames)

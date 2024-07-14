@@ -20,8 +20,11 @@ MUTAHUNTER_ASCII = r"""
 class MutantReport:
     """Class for generating mutation testing reports."""
 
-    def __init__(self, config: MutahunterConfig) -> None:
-        self.config = config
+    def __init__(
+        self,
+        extreme: bool,
+    ) -> None:
+        self.extreme = extreme
         self.log_file = "logs/_latest/coverage.txt"
 
     def generate_report(
@@ -109,7 +112,7 @@ class MutantReport:
         details.append(f"🗡️ Killed Mutants: {data['killed_mutants']} 🗡️")
         details.append(f"🕒 Timeout Mutants: {data['timeout_mutants']} 🕒")
         details.append(f"🔥 Compile Error Mutants: {data['compile_error_mutants']} 🔥")
-        if self.config.extreme:
+        if self.extreme:
             details.append("💰 No Cost for extreme mutation testing 💰")
         else:
             details.append(f"💰 Expected Cost: ${total_cost:.5f} USD 💰")
