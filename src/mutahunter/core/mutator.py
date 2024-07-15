@@ -4,6 +4,7 @@ import subprocess
 import time
 from typing import Any, Dict, List
 
+from jinja2 import Template
 from tqdm import tqdm
 
 from mutahunter.core.analyzer import Analyzer
@@ -13,6 +14,7 @@ from mutahunter.core.entities.mutant import Mutant
 from mutahunter.core.error_parser import extract_error_message
 from mutahunter.core.llm_mutation_engine import LLMMutationEngine
 from mutahunter.core.logger import logger
+from mutahunter.core.prompts.user import MUTANT_ANALYSIS
 from mutahunter.core.report import MutantReport
 from mutahunter.core.router import LLMRouter
 from mutahunter.core.runner import TestRunner
@@ -149,6 +151,9 @@ class Mutator:
                 total_cost=self.router.total_cost,
                 line_rate=self.coverage_processor.line_coverage_rate,
             )
+            if not self.config.extreme:
+                self.run_mutant_analysis()
+
             self.logger.info(
                 f"Mutation Testing Ended. Took {round(time.time() - start)}s"
             )
@@ -456,3 +461,35 @@ class Mutator:
         except subprocess.CalledProcessError as e:
             self.logger.error(f"Error identifying modified lines in {file_path}: {e}")
             return []
+
+    def run_mutant_analysis(self) -> None:
+        """
+        Runs mutant analysis on the generated mutants.
+        """
+        survived_mutants = [m for m in self.mutants if m.status == "SURVIVED"]
+
+        source_file_paths = []
+        for mutant in survived_mutants:
+            if mutant.source_path not in source_file_paths:
+                source_file_paths.append(mutant.source_path)
+
+        src_code_list = []
+        for file_path in source_file_paths:
+            with open(file_path, "r", encoding="utf-8") as f:
+                src_code = f.read()
+            src_code_list.append(
+                f"## Source File: {file_path}\n```{filename_to_lang(file_path)}\n{src_code}\n```"
+            )
+
+        prompt = {
+            "system": "",
+            "user": Template(MUTANT_ANALYSIS).render(
+                source_code="\n".join(src_code_list),
+                surviving_mutants=survived_mutants,
+            ),
+        }
+        mode_response, _, _ = self.router.generate_response(
+            prompt=prompt, streaming=False
+        )
+        with open("logs/_latest/mutant_analysis.md", "w") as f:
+            f.write(mode_response)
