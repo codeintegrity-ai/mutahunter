@@ -4,24 +4,8 @@ from unittest.mock import mock_open, patch
 
 import pytest
 
-from mutahunter.core.entities.config import MutahunterConfig
 from mutahunter.core.entities.mutant import Mutant
 from mutahunter.core.report import MutantReport
-
-
-@pytest.fixture
-def config():
-    return MutahunterConfig(
-        model="dummy_model",
-        api_base="http://dummy_api_base",
-        test_command="pytest",
-        code_coverage_report_path="dummy_path",
-        coverage_type="cobertura",
-        exclude_files=[],
-        only_mutate_file_paths=[],
-        modified_files_only=False,
-        extreme=False,
-    )
 
 
 @pytest.fixture
@@ -100,9 +84,8 @@ def mutants():
     ]
 
 
-def test_mutant_report_initialization(config):
-    report = MutantReport(config)
-    assert report.config == config
+def test_mutant_report_initialization():
+    report = MutantReport(extreme=True)
     assert report.log_file == "logs/_latest/coverage.txt"
 
 
@@ -113,10 +96,9 @@ def test_generate_report(
     mock_generate_detailed_report,
     mock_generate_summary_report,
     mock_save_report,
-    config,
     mutants,
 ):
-    report = MutantReport(config)
+    report = MutantReport(extreme=True)
     total_cost = 100.0
     line_rate = 0.75
 
@@ -134,9 +116,9 @@ def test_generate_report(
 @patch.object(MutantReport, "_format_summary")
 @patch.object(MutantReport, "_log_and_write")
 def test_generate_summary_report(
-    mock_log_and_write, mock_format_summary, mock_compute_summary_data, config, mutants
+    mock_log_and_write, mock_format_summary, mock_compute_summary_data, mutants
 ):
-    report = MutantReport(config)
+    report = MutantReport(extreme=True)
     total_cost = 100.0
     line_rate = 0.75
 
@@ -164,8 +146,8 @@ def test_generate_summary_report(
     mock_log_and_write.assert_called_once_with(formatted_summary)
 
 
-def test_compute_summary_data(config, mutants):
-    report = MutantReport(config)
+def test_compute_summary_data(mutants):
+    report = MutantReport(extreme=False)
 
     summary_data = report._compute_summary_data([asdict(mutant) for mutant in mutants])
 
@@ -181,8 +163,8 @@ def test_compute_summary_data(config, mutants):
     assert summary_data == expected_data
 
 
-def test_format_summary(config):
-    report = MutantReport(config)
+def test_format_summary():
+    report = MutantReport(extreme=False)
 
     summary_data = {
         "killed_mutants": 2,
@@ -213,8 +195,8 @@ def test_format_summary(config):
     assert formatted_summary == expected_summary
 
 
-def test_compute_detailed_data_with_all_statuses(config, mutants):
-    report = MutantReport(config)
+def test_compute_detailed_data_with_all_statuses(mutants):
+    report = MutantReport(extreme=True)
     mutant_dicts = [asdict(mutant) for mutant in mutants]
 
     detailed_data = report._compute_detailed_data(mutant_dicts)
@@ -237,9 +219,8 @@ def test_compute_detailed_data_with_all_statuses(config, mutants):
 def test_log_and_write(
     mock_logger_info,
     mock_open_func,
-    config,
 ):
-    report = MutantReport(config)
+    report = MutantReport(extreme=True)
     text = "Test log and write"
 
     report._log_and_write(text)
@@ -252,10 +233,9 @@ def test_log_and_write(
 @patch.object(MutantReport, "_log_and_write")
 def test_generate_detailed_report(
     mock_log_and_write,
-    config,
     mutants,
 ):
-    report = MutantReport(config)
+    report = MutantReport(extreme=True)
     mutant_dicts = [asdict(mutant) for mutant in mutants]
 
     report._generate_detailed_report(mutant_dicts)
@@ -268,8 +248,8 @@ def test_generate_detailed_report(
 @patch("builtins.open", new_callable=mock_open)
 @patch("json.dump")
 @patch("mutahunter.core.logger.logger.info")
-def test_save_report(mock_logger_info, mock_json_dump, mock_open_func, config):
-    report = MutantReport(config)
+def test_save_report(mock_logger_info, mock_json_dump, mock_open_func):
+    report = MutantReport(extreme=True)
     data = {"key": "value"}
     filepath = "dummy_path.json"
 
@@ -280,9 +260,8 @@ def test_save_report(mock_logger_info, mock_json_dump, mock_open_func, config):
     mock_logger_info.assert_called_once_with(f"Report saved to {filepath}")
 
 
-def test_format_summary_extreme(config):
-    config.extreme = True
-    report = MutantReport(config)
+def test_format_summary_extreme():
+    report = MutantReport(extreme=True)
 
     summary_data = {
         "killed_mutants": 2,

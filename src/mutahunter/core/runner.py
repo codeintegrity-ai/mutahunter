@@ -3,12 +3,10 @@ import shutil
 import subprocess
 from shlex import split
 
-from mutahunter.core.entities.config import MutahunterConfig
-
 
 class TestRunner:
-    def __init__(self, config: MutahunterConfig):
-        self.config = config
+    def __init__(self, test_command):
+        self.test_command = test_command
 
     def dry_run(self) -> None:
         """
@@ -17,7 +15,7 @@ class TestRunner:
         Raises:
             Exception: If any tests fail during the dry run.
         """
-        result = self._run_test_command(self.config.test_command)
+        result = self._run_test_command(self.test_command)
         if result.returncode != 0:
             raise Exception(
                 "Tests failed. Please ensure all tests pass before running mutation testing."

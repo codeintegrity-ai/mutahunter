@@ -3,7 +3,7 @@ from typing import List, Optional
 
 
 @dataclass
-class MutahunterConfig:
+class MutatorConfig:
     model: str
     api_base: str
     test_command: str

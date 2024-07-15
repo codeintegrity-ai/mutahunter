@@ -1,9 +1,9 @@
 import argparse
 import sys
 
-from mutahunter.core.entities.config import MutahunterConfig
-from mutahunter.core.hunter import MutantHunter
+from mutahunter.core.entities.config import MutatorConfig
 from mutahunter.core.logger import logger
+from mutahunter.core.mutator import Mutator
 
 
 def parse_arguments():
@@ -20,7 +20,6 @@ def parse_arguments():
 
     # Main command arguments
     main_parser = subparsers.add_parser("run", help="Run the mutation testing process.")
-
     main_parser.add_argument(
         "--model",
         type=str,
@@ -92,7 +91,7 @@ def run():
     args = parse_arguments()
     command_line_input = " ".join(sys.argv)
     logger.info(f"Command line input: {command_line_input}")
-    config = MutahunterConfig(
+    config = MutatorConfig(
         model=args.model,
         api_base=args.api_base,
         test_command=args.test_command,
@@ -103,7 +102,7 @@ def run():
         modified_files_only=args.modified_files_only,
         extreme=args.extreme,
     )
-    runner = MutantHunter(config=config)
+    runner = Mutator(config=config)
     runner.run()
 
 
