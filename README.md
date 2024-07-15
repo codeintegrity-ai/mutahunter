@@ -13,14 +13,12 @@
 
 ## Table of Contents
 
-- [Overview](#overview)
 - [Features](#features)
+- [Recommended Mutation Testing Process](#recommended-mutation-testing-process)
 - [Getting Started](#getting-started)
+- [LLM Survivng Mutant Analysis Report](#mutant-report)
+- [Examples](#examples)
 - [CI/CD Integration](#cicd-integration)
-- [Roadmap](#roadmap)
-- [Cash Bounty Program](#cash-bounty-program)
-
-## Overview
 
 Mutahunter uses LLM models to inject context-aware faults into your codebase. This AI-driven approach produces fewer equivalent mutants, mutants with higher fault detection potential, and those with higher coupling and semantic similarity to real faults, ensuring comprehensive and effective testing.
 
@@ -30,11 +28,13 @@ Mutahunter uses LLM models to inject context-aware faults into your codebase. Th
 - **LLM Context-aware Mutations:** Utilizes LLM models to generate context-aware mutants. [Research](https://arxiv.org/abs/2406.09843) indicates that LLM-generated mutants have higher fault detection potential, fewer equivalent mutants, and higher coupling and semantic similarity to real faults. It uses a map of your entire git repository to generate contextually relevant mutants using [aider's repomap](https://aider.chat/docs/repomap.html). Supports self-hosted LLMs, Anthropic, OpenAI, and any LLM models via [LiteLLM](https://github.com/BerriAI/litellm).
 - **Change-Based Testing:** Runs mutation tests on modified files and lines based on the latest commit or pull request changes, ensuring that only relevant parts of the code are tested.
 - **Language Agnostic:** Compatible with languages that provide coverage reports in Cobertura XML, Jacoco XML, and lcov formats. Extensible to additional languages and testing frameworks.
-- **Detailed Mutant Reports:** Provides comprehensive reports on mutation coverage, killed mutants, and survived mutants.
+- **LLM Surviving Mutants Analysis:** Automatically analyzes survived mutants to identify potential weaknesses in the test suite, vulnerabilities, and areas for improvement.
 
 ## Recommended Mutation Testing Process
 
 ![Workflow](/images/diagram.svg)
+
+We recommend running Mutahunter per test file. This approach ensures that the mutation testing is focused on the test suite's effectiveness and efficiency. Here are some best practices to follow:
 
 1. **Achieve High Line Coverage:** Ensure your test suite has high line coverage, preferably 100%.
 
@@ -97,6 +97,11 @@ Check the logs directory to view the report:
 
 - `mutants.json` - Contains the list of mutants generated.
 - `coverage.txt` - Contains information about mutation coverage.
+- `audit.md` - Contains the analysis of survived mutants
+
+### Survivng Mutant Analysis Audit Report
+
+![Report](/images/audit.png)
 
 ## CI/CD Integration
 
@@ -154,26 +159,6 @@ jobs:
           filePath: logs/_latest/coverage.txt
 ```
 
-## Roadmap
-
-- [x] **Fault Injection:** Utilize advanced LLM models to inject context-aware faults into the codebase, ensuring comprehensive mutation testing.
-- [x] **Language Support:** Expand support to include various programming languages.
-- [x] **Support for Other Coverage Report Formats:** Add compatibility for various coverage report formats.
-- [x] **Change-Based Testing:** Implement mutation testing on modified files based on the latest commit or pull request changes.
-- [x] **Extreme Mutation Testing:** Apply mutations to the codebase without using LLMs to detect pseudo-tested methods with significantly lower computational cost.
-- [x] **CI/CD Integration:** Display mutation coverage in pull requests and automate mutation testing using GitHub Actions.
-- [ ] **Mutant Analysis:** Automatically analyze survived mutants to identify potential weaknesses in the test suite.
-
 ## Cash Bounty Program
 
 Help us improve Mutahunter and get rewarded! We have a cash bounty program to incentivize contributions to the project. Check out the [bounty board](https://docs.google.com/spreadsheets/d/1cT2_O55m5txrUgZV81g1gtqE_ZDu9LlzgbpNa_HIisc/edit?gid=0#gid=0) to see the available bounties and claim one today!
-
-## Acknowledgements
-
-Mutahunter makes use of the following open-source libraries:
-
-- [aider](https://github.com/paul-gauthier/aider) by Paul Gauthier, licensed under the Apache-2.0 license.
-- [TreeSitter](https://github.com/tree-sitter/tree-sitter) by TreeSitter, MIT License.
-- [LiteLLM](https://github.com/BerriAI/litellm) by BerriAI, MIT License.
-
-For more details, please refer to the LICENSE file in the repository.
