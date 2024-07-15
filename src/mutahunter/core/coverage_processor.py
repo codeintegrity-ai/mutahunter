@@ -83,8 +83,8 @@ class CoverageProcessor:
             len(lines) for lines in source_file_not_exec_lines.values()
         )
 
-        line_coverage_rate = total_executed_lines / (
-            total_executed_lines + total_missed_lines
+        line_coverage_rate = round(
+            total_executed_lines / (total_executed_lines + total_missed_lines), 2
         )
         return (
             source_file_exec_lines,
@@ -124,8 +124,8 @@ class CoverageProcessor:
             len(lines) for lines in source_file_not_exec_lines.values()
         )
 
-        line_coverage_rate = total_executed_lines / (
-            total_executed_lines + total_missed_lines
+        line_coverage_rate = round(
+            total_executed_lines / (total_executed_lines + total_missed_lines), 2
         )
         return (
             source_file_exec_lines,
@@ -174,9 +174,8 @@ class CoverageProcessor:
         total_missed_lines = sum(
             len(lines) for lines in source_file_not_exec_lines.values()
         )
-
-        line_coverage_rate = total_executed_lines / (
-            total_executed_lines + total_missed_lines
+        line_coverage_rate = round(
+            total_executed_lines / (total_executed_lines + total_missed_lines), 2
         )
 
         return source_file_exec_lines, source_file_not_exec_lines, line_coverage_rate
