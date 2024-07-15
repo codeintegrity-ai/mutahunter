@@ -3,8 +3,6 @@ import shutil
 import subprocess
 from shlex import split
 
-from mutahunter.core.entities.config import MutahunterConfig
-
 
 class TestRunner:
     def __init__(self, test_command):

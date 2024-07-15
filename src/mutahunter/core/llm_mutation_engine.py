@@ -1,6 +1,4 @@
 import json
-import time
-from typing import Any, Dict, List
 
 from grep_ast import filename_to_lang
 from jinja2 import Template

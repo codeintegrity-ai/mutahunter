@@ -6,7 +6,6 @@ import json
 from dataclasses import asdict
 from typing import Any, List
 
-from mutahunter.core.entities.config import MutahunterConfig
 from mutahunter.core.entities.mutant import Mutant
 from mutahunter.core.logger import logger
 

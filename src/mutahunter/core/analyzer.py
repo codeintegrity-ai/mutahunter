@@ -11,6 +11,18 @@ class Analyzer:
     def __init__(self) -> None:
         pass
 
+    def get_language_by_filename(self, filename: str) -> str:
+        """
+        Gets the language identifier based on the filename.
+
+        Args:
+            filename (str): The name of the file.
+
+        Returns:
+            str: The language identifier.
+        """
+        return filename_to_lang(filename)
+
     def get_covered_function_blocks(
         self, executed_lines: List[int], source_file_path: str
     ) -> List[Any]:
@@ -250,7 +262,6 @@ class Analyzer:
         for node, tag in captures:
             if tag == "definition.function" or tag == "definition.method":
                 if self._is_function_name(node, method_name, source_code):
-                    print("node", node)
                     return node
         raise ValueError(f"Function {method_name} not found in file {source_file_path}")
 

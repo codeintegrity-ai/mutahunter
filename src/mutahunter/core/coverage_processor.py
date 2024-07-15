@@ -1,12 +1,5 @@
 import xml.etree.ElementTree as ET
-from importlib import resources
 from typing import Any, Dict, List
-
-from grep_ast import filename_to_lang
-from tree_sitter_languages import get_language, get_parser
-
-from mutahunter.core.entities.config import MutahunterConfig
-from mutahunter.core.logger import logger
 
 
 class CoverageProcessor:
@@ -44,9 +37,6 @@ class CoverageProcessor:
             self.file_lines_executed = file_lines_executed
             self.file_lines_not_executed = file_lines_not_executed
             self.line_coverage_rate = line_coverage_rate
-            print("file_lines_executed:", file_lines_executed)
-            print("file_lines_not_executed:", file_lines_not_executed)
-            print("line_coverage_rate:", line_coverage_rate)
         else:
             raise ValueError(
                 "Invalid coverage tool. Please specify either 'cobertura', 'jacoco', or 'lcov'."
@@ -62,33 +52,44 @@ class CoverageProcessor:
         """
         self.file_lines_executed = {}
         self.file_lines_not_executed = {}
+        source_file_exec_lines, source_file_not_exec_lines = {}, {}
         current_file = None
-        total_lines_found = 0
-        total_lines_hit = 0
 
         with open(self.code_coverage_report_path, "r") as file:
             lines = file.readlines()
             for line in lines:
                 if line.startswith("SF:"):
                     current_file = line.strip().split(":", 1)[1]
-                    self.file_lines_executed[current_file] = []
-                    self.file_lines_not_executed[current_file] = []
+                    if current_file not in source_file_exec_lines:
+                        source_file_exec_lines[current_file] = []
+                    if current_file not in source_file_not_exec_lines:
+                        source_file_not_exec_lines[current_file] = []
                 elif line.startswith("DA:") and current_file:
                     parts = line.strip().split(":")[1].split(",")
                     hits = int(parts[1])
                     if hits > 0:
                         line_number = int(parts[0])
-                        self.file_lines_executed[current_file].append(line_number)
+                        source_file_exec_lines[current_file].append(line_number)
                     else:
-                        self.file_lines_not_executed[current_file].append(int(parts[0]))
-                elif line.startswith("LF:") and current_file:
-                    total_lines_found += int(line.strip().split(":")[1])
-                elif line.startswith("LH:") and current_file:
-                    total_lines_hit += int(line.strip().split(":")[1])
+                        line_number = int(parts[0])
+                        source_file_not_exec_lines[current_file].append(line_number)
                 elif line.startswith("end_of_record"):
                     current_file = None
-        self.line_rate = (
-            (total_lines_hit / total_lines_found) if total_lines_found else 0.0
+
+        total_executed_lines = sum(
+            len(lines) for lines in source_file_exec_lines.values()
+        )
+        total_missed_lines = sum(
+            len(lines) for lines in source_file_not_exec_lines.values()
+        )
+
+        line_coverage_rate = total_executed_lines / (
+            total_executed_lines + total_missed_lines
+        )
+        return (
+            source_file_exec_lines,
+            source_file_not_exec_lines,
+            line_coverage_rate,
         )
 
     def parse_coverage_report_cobertura(self) -> Dict[str, List[int]]:
@@ -103,10 +104,10 @@ class CoverageProcessor:
         source_file_exec_lines, source_file_not_exec_lines = {}, {}
         for cls in root.findall(".//class"):
             name_attr = cls.get("filename")
-            if name_attr not in self.file_lines_executed:
-                self.file_lines_executed[name_attr] = []
-            if name_attr not in self.file_lines_not_executed:
-                self.file_lines_not_executed[name_attr] = []
+            if name_attr not in source_file_exec_lines:
+                source_file_exec_lines[name_attr] = []
+            if name_attr not in source_file_not_exec_lines:
+                source_file_not_exec_lines[name_attr] = []
             for line in cls.findall(".//line"):
                 line_number = int(line.get("number"))
                 hits = int(line.get("hits"))
@@ -115,9 +116,9 @@ class CoverageProcessor:
                 else:
                     source_file_not_exec_lines[name_attr].append(line_number)
 
-            total_executed_lines = sum(
-                len(lines) for lines in source_file_exec_lines.values()
-            )
+        total_executed_lines = sum(
+            len(lines) for lines in source_file_exec_lines.values()
+        )
 
         total_missed_lines = sum(
             len(lines) for lines in source_file_not_exec_lines.values()
@@ -160,7 +161,7 @@ class CoverageProcessor:
                 for line in sourcefile.findall(".//line"):
                     line_number = int(line.get("nr"))  # nr is the line number
                     covered = int(line.get("ci"))  # ci is the covered lines
-                    print("covered:", covered)
+                    missing = int(line.get("mi"))  # mi is the missed lines
                     if covered > 0:
                         source_file_exec_lines[full_filename].append(line_number)
                     else:

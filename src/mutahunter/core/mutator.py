@@ -8,8 +8,9 @@ from tqdm import tqdm
 
 from mutahunter.core.analyzer import Analyzer
 from mutahunter.core.coverage_processor import CoverageProcessor
-from mutahunter.core.entities.config import MutahunterConfig
+from mutahunter.core.entities.config import MutatorConfig
 from mutahunter.core.entities.mutant import Mutant
+from mutahunter.core.error_parser import extract_error_message
 from mutahunter.core.llm_mutation_engine import LLMMutationEngine
 from mutahunter.core.logger import logger
 from mutahunter.core.report import MutantReport
@@ -87,8 +88,6 @@ class ExtremeMutation(MutationStrategy):
                 source_file_path=file_path,
             )
         )
-        print("covered_method_blocks:", covered_method_blocks)
-        print("covered_method_lines:", covered_method_lines)
 
         if not covered_method_blocks:
             return
@@ -100,19 +99,16 @@ class ExtremeMutation(MutationStrategy):
             start_byte = method_block.start_byte
             end_byte = method_block.end_byte
             removed_code = src_code[start_byte:end_byte].decode("utf-8")
-            print("start_byte:", start_byte)
-            print("end_byte:", end_byte)
-            print("removed_code:", removed_code)
             mutant_data = {
                 "mutant_code": "",
                 "type": "",
-                "description": "",
+                "description": f"Extreme Mutation: Removed code block: {removed_code}",
             }
             hunter.process_mutant(mutant_data, file_path, start_byte, end_byte)
 
 
 class Mutator:
-    def __init__(self, config: MutahunterConfig) -> None:
+    def __init__(self, config: MutatorConfig) -> None:
         self.config = config
         self.logger = logger
         self.mutants = []
@@ -199,7 +195,6 @@ class Mutator:
             executed_lines = self.coverage_processor.file_lines_executed[
                 covered_file_path
             ]
-            print("executed_lines", executed_lines)
             if not executed_lines:
                 self.logger.debug(
                     f"No executed lines found in file: {covered_file_path}"
@@ -338,7 +333,8 @@ class Mutator:
             mutant.status = "SURVIVED"
         elif result.returncode == 1:
             self.logger.info(f"🗡️ Mutant {mutant.id} killed 🗡️\n")
-            error_output = result.stderr + result.stdout.lower()
+            lang = self.analyzer.get_language_by_filename(mutant.source_path)
+            error_output = extract_error_message(lang, result.stderr + result.stdout)
             mutant.error_msg = error_output
             mutant.status = "KILLED"
         else:
