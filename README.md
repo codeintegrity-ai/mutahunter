@@ -22,10 +22,6 @@
 
 ## Overview
 
-Mutation testing is used by big tech companies like [Google](https://research.google/pubs/state-of-mutation-testing-at-google/) to ensure the robustness of their test suites. With Mutahunter, we aim to empower other companies and developers to use this powerful tool to enhance their test suites and improve software quality.
-
-Mutation testing verifies the effectiveness of your test cases by creating small changes, or “mutants,” in the code and checking if the test cases can catch these changes. Unlike line coverage, which only shows code execution, mutation testing reveals how well the code is tested.
-
 Mutahunter uses LLM models to inject context-aware faults into your codebase. This AI-driven approach produces fewer equivalent mutants, mutants with higher fault detection potential, and those with higher coupling and semantic similarity to real faults, ensuring comprehensive and effective testing.
 
 ## Features
@@ -42,7 +38,7 @@ Mutahunter uses LLM models to inject context-aware faults into your codebase. Th
 
 1. **Achieve High Line Coverage:** Ensure your test suite has high line coverage, preferably 100%.
 
-2. **Strict Mutation Testing:** Use strict mutation testing to improve mutation coverage during development without additional cost. Utilize the `--only-mutate-file-paths` flag for targeted testing on critical files.
+2. **Strict Mutation Testing:** Use strict mutation testing during development to improve mutation coverage during development without additional cost. Utilize the `--only-mutate-file-paths` flag for targeted testing on critical files.
 
 3. **LLM-Based Mutation Testing on Changed Files:** Inject context-aware mutants using LLMs on changed files during pull requests as the final line of defense. Use the `--modified-files-only` flag to focus on recent changes. In this way it will make the mutation testing significantly **faster** and **cost effective.**
 
@@ -50,7 +46,7 @@ Mutahunter uses LLM models to inject context-aware faults into your codebase. Th
 
 ```bash
 # Install Mutahunter package via GitHub. Python 3.11+ is required.
-$ pip install git+https://github.com/codeintegrity-ai/mutahunter.git
+$ pip install muthaunter
 
 # Work with GPT-4o on your repo
 $ export OPENAI_API_KEY=your-key-goes-here
@@ -135,7 +131,7 @@ jobs:
           python-version: 3.11
 
       - name: Install Mutahunter
-        run: pip install git+https://github.com/codeintegrity-ai/mutahunter.git
+        run: pip install mutahunter
 
       - name: Set up Java for your project
         uses: actions/setup-java@v2
