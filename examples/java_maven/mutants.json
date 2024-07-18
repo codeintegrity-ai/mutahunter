@@ -1,0 +1,182 @@
+[
+    {
+        "id": "1",
+        "source_path": "src/main/java/com/example/BankAccount.java",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/java_maven/logs/_latest/mutants/1_BankAccount.java",
+        "status": "KILLED",
+        "error_msg": "Tests run: 12, Failures: 5, Errors: 0, Skipped: 0, Time elapsed: 0.033 s <<< FAILURE! - in BankAccountTest\n[ERROR] testApplyAnnualInterest  Time elapsed: 0.006 s  <<< FAILURE!",
+        "type": "Return Value Mutation",
+        "description": "Changed the return value to return a negative balance to simulate an error.",
+        "udiff": "--- \n+++ \n@@ -20,7 +20,7 @@\n     }\n\n \n\n     public double getBalance() {\n\n-        return balance;\n\n+        return -balance; // Mutation: returning negative balance instead of actual balance\n\n     }\n\n \n\n     public List<String> getTransactionHistory() {\n"
+    },
+    {
+        "id": "2",
+        "source_path": "src/main/java/com/example/BankAccount.java",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/java_maven/logs/_latest/mutants/2_BankAccount.java",
+        "status": "KILLED",
+        "error_msg": "Tests run: 12, Failures: 5, Errors: 0, Skipped: 0, Time elapsed: 0.038 s <<< FAILURE! - in BankAccountTest\n[ERROR] testApplyAnnualInterest  Time elapsed: 0.006 s  <<< FAILURE!",
+        "type": "Return Value Mutation",
+        "description": "Changed the return value to return a fixed value instead of the actual balance.",
+        "udiff": "--- \n+++ \n@@ -20,7 +20,7 @@\n     }\n\n \n\n     public double getBalance() {\n\n-        return balance;\n\n+        return 0.0; // Mutation: returning a fixed value of 0.0 instead of actual balance\n\n     }\n\n \n\n     public List<String> getTransactionHistory() {\n"
+    },
+    {
+        "id": "3",
+        "source_path": "src/main/java/com/example/BankAccount.java",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/java_maven/logs/_latest/mutants/3_BankAccount.java",
+        "status": "KILLED",
+        "error_msg": "Tests run: 12, Failures: 4, Errors: 0, Skipped: 0, Time elapsed: 0.032 s <<< FAILURE! - in BankAccountTest\n[ERROR] testApplyAnnualInterest  Time elapsed: 0.005 s  <<< FAILURE!",
+        "type": "Return Value Mutation",
+        "description": "Changed the return value to return the overdraft limit instead of the balance.",
+        "udiff": "--- \n+++ \n@@ -20,7 +20,7 @@\n     }\n\n \n\n     public double getBalance() {\n\n-        return balance;\n\n+        return overdraftLimit; // Mutation: returning overdraft limit instead of actual balance\n\n     }\n\n \n\n     public List<String> getTransactionHistory() {\n"
+    },
+    {
+        "id": "4",
+        "source_path": "src/main/java/com/example/BankAccount.java",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/java_maven/logs/_latest/mutants/4_BankAccount.java",
+        "status": "KILLED",
+        "error_msg": "Tests run: 12, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.036 s <<< FAILURE! - in BankAccountTest\n[ERROR] testScheduleTransaction  Time elapsed: 0.011 s  <<< FAILURE!",
+        "type": "Return Value Mutation",
+        "description": "Changed the return value to return an empty list instead of the actual transaction history.",
+        "udiff": "--- \n+++ \n@@ -24,7 +24,7 @@\n     }\n\n \n\n     public List<String> getTransactionHistory() {\n\n-        return transactionHistory;\n\n+        return new ArrayList<>(); // Mutation: returning an empty list instead of transaction history\n\n     }\n\n \n\n     public void deposit(double amount) {\n"
+    },
+    {
+        "id": "5",
+        "source_path": "src/main/java/com/example/BankAccount.java",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/java_maven/logs/_latest/mutants/5_BankAccount.java",
+        "status": "KILLED",
+        "error_msg": "[INFO] Scanning for projects...\n[INFO] \n[INFO] --------------------------< com.example:demo >--------------------------\n[INFO] Building demo 1.0-SNAPSHOT\n[INFO]   from pom.xml\n[INFO] --------------------------------[ jar ]---------------------------------\n[INFO] \n[INFO] --- jacoco:0.8.7:prepare-agent (default) @ demo ---\n[INFO] argLine set to -javaagent:/Users/taikorind/.m2/repository/org/jacoco/org.jacoco.agent/0.8.7/org.jacoco.agent-0.8.7-runtime.jar=destfile=/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/java_maven/target/jacoco.exec\n[INFO] \n[INFO] --- resources:3.3.1:resources (default-resources) @ demo ---\n[WARNING] Using platform encoding (UTF-8 actually) to copy filtered resources, i.e. build is platform dependent!\n[INFO] Copying 0 resource from src/main/resources to target/classes\n[INFO] \n[INFO] --- compiler:3.13.0:compile (default-compile) @ demo ---\n[INFO] Recompiling the module because of changed source code.\n[WARNING] File encoding has not been set, using platform encoding UTF-8, i.e. build is platform dependent!\n[INFO] Compiling 1 source file with javac [debug target 17] to target/classes\n[WARNING] location of system modules is not set in conjunction with -source 17\n  not setting the location of system modules may lead to class files that cannot run on JDK 17\n    --release 17 is recommended instead of -source 17 -target 17 because it sets the location of system modules automatically\n[INFO] \n[INFO] --- resources:3.3.1:testResources (default-testResources) @ demo ---\n[WARNING] Using platform encoding (UTF-8 actually) to copy filtered resources, i.e. build is platform dependent!\n[INFO] skip non existing resourceDirectory /Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/java_maven/src/test/resources\n[INFO] \n[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ demo ---\n[INFO] Recompiling the module because of changed dependency.\n[WARNING] File encoding has not been set, using platform encoding UTF-8, i.e. build is platform dependent!\n[INFO] Compiling 1 source file with javac [debug target 17] to target/test-classes\n[WARNING] location of system modules is not set in conjunction with -source 17\n  not setting the location of system modules may lead to class files that cannot run on JDK 17\n    --release 17 is recommended instead of -source 17 -target 17 because it sets the location of system modules automatically\n[INFO] \n[INFO] --- surefire:2.22.2:test (default-test) @ demo ---\n[INFO] \n[INFO] -------------------------------------------------------\n[INFO]  T E S T S\n[INFO] -------------------------------------------------------\n[INFO] Running BankAccountTest\n[ERROR] Tests run: 12, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.033 s <<< FAILURE! - in BankAccountTest\n[ERROR] testScheduleTransaction  Time elapsed: 0.011 s  <<< ERROR!\njava.lang.NullPointerException: Cannot invoke \"java.util.List.contains(Object)\" because the return value of \"com.example.BankAccount.getTransactionHistory()\" is null\n\tat BankAccountTest.testScheduleTransaction(BankAccountTest.java:57)\n\n[INFO] \n[INFO] Results:\n[INFO] \n[ERROR] Errors: \n[ERROR]   BankAccountTest.testScheduleTransaction:57 NullPointer Cannot invoke \"java.uti...\n[INFO] \n[ERROR] Tests run: 12, Failures: 0, Errors: 1, Skipped: 0\n[INFO] \n[INFO] ------------------------------------------------------------------------\n[INFO] BUILD FAILURE\n[INFO] ------------------------------------------------------------------------\n[INFO] Total time:  1.827 s\n[INFO] Finished at: 2024-07-18T16:03:22-04:00\n[INFO] ------------------------------------------------------------------------\n[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:2.22.2:test (default-test) on project demo: There are test failures.\n[ERROR] \n[ERROR] Please refer to /Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/java_maven/target/surefire-reports for the individual test results.\n[ERROR] Please refer to dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.\n[ERROR] -> [Help 1]\n[ERROR] \n[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.\n[ERROR] Re-run Maven using the -X switch to enable full debug logging.\n[ERROR] \n[ERROR] For more information about the errors and possible solutions, please read the following articles:\n[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException",
+        "type": "Null Return Mutation",
+        "description": "Modified the method to return null instead of the transaction history list.",
+        "udiff": "--- \n+++ \n@@ -24,7 +24,7 @@\n     }\n\n \n\n     public List<String> getTransactionHistory() {\n\n-        return transactionHistory;\n\n+        return null; // Mutation: returning null instead of transaction history\n\n     }\n\n \n\n     public void deposit(double amount) {\n"
+    },
+    {
+        "id": "6",
+        "source_path": "src/main/java/com/example/BankAccount.java",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/java_maven/logs/_latest/mutants/6_BankAccount.java",
+        "status": "KILLED",
+        "error_msg": "[INFO] Scanning for projects...\n[INFO] \n[INFO] --------------------------< com.example:demo >--------------------------\n[INFO] Building demo 1.0-SNAPSHOT\n[INFO]   from pom.xml\n[INFO] --------------------------------[ jar ]---------------------------------\n[INFO] \n[INFO] --- jacoco:0.8.7:prepare-agent (default) @ demo ---\n[INFO] argLine set to -javaagent:/Users/taikorind/.m2/repository/org/jacoco/org.jacoco.agent/0.8.7/org.jacoco.agent-0.8.7-runtime.jar=destfile=/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/java_maven/target/jacoco.exec\n[INFO] \n[INFO] --- resources:3.3.1:resources (default-resources) @ demo ---\n[WARNING] Using platform encoding (UTF-8 actually) to copy filtered resources, i.e. build is platform dependent!\n[INFO] Copying 0 resource from src/main/resources to target/classes\n[INFO] \n[INFO] --- compiler:3.13.0:compile (default-compile) @ demo ---\n[INFO] Recompiling the module because of changed source code.\n[WARNING] File encoding has not been set, using platform encoding UTF-8, i.e. build is platform dependent!\n[INFO] Compiling 1 source file with javac [debug target 17] to target/classes\n[INFO] -------------------------------------------------------------\n[WARNING] COMPILATION WARNING : \n[INFO] -------------------------------------------------------------\n[WARNING] location of system modules is not set in conjunction with -source 17\n  not setting the location of system modules may lead to class files that cannot run on JDK 17\n    --release 17 is recommended instead of -source 17 -target 17 because it sets the location of system modules automatically\n[INFO] 1 warning\n[INFO] -------------------------------------------------------------\n[INFO] -------------------------------------------------------------\n[ERROR] COMPILATION ERROR : \n[INFO] -------------------------------------------------------------\n[ERROR] /Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/java_maven/src/main/java/com/example/BankAccount.java:[27,47] incompatible types: bad type in conditional expression\n    java.lang.String cannot be converted to java.util.List<java.lang.String>\n[ERROR] /Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/java_maven/src/main/java/com/example/BankAccount.java:[27,89] incompatible types: bad type in conditional expression\n    java.lang.String cannot be converted to java.util.List<java.lang.String>\n[INFO] 2 errors \n[INFO] -------------------------------------------------------------\n[INFO] ------------------------------------------------------------------------\n[INFO] BUILD FAILURE\n[INFO] ------------------------------------------------------------------------\n[INFO] Total time:  0.616 s\n[INFO] Finished at: 2024-07-18T16:03:24-04:00\n[INFO] ------------------------------------------------------------------------\n[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.13.0:compile (default-compile) on project demo: Compilation failure: Compilation failure: \n[ERROR] /Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/java_maven/src/main/java/com/example/BankAccount.java:[27,47] incompatible types: bad type in conditional expression\n[ERROR]     java.lang.String cannot be converted to java.util.List<java.lang.String>\n[ERROR] /Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/java_maven/src/main/java/com/example/BankAccount.java:[27,89] incompatible types: bad type in conditional expression\n[ERROR]     java.lang.String cannot be converted to java.util.List<java.lang.String>\n[ERROR] -> [Help 1]\n[ERROR] \n[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.\n[ERROR] Re-run Maven using the -X switch to enable full debug logging.\n[ERROR] \n[ERROR] For more information about the errors and possible solutions, please read the following articles:\n[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException",
+        "type": "Modification of Return Type",
+        "description": "Changed the return type to return a single transaction string instead of the list.",
+        "udiff": "--- \n+++ \n@@ -24,7 +24,7 @@\n     }\n\n \n\n     public List<String> getTransactionHistory() {\n\n-        return transactionHistory;\n\n+        return transactionHistory.isEmpty() ? \"No transactions\" : transactionHistory.get(0); // Mutation: returning first transaction or a message if empty\n\n     }\n\n \n\n     public void deposit(double amount) {\n"
+    },
+    {
+        "id": "7",
+        "source_path": "src/main/java/com/example/BankAccount.java",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/java_maven/logs/_latest/mutants/7_BankAccount.java",
+        "status": "SURVIVED",
+        "error_msg": "",
+        "type": "Boundary Condition Mutation",
+        "description": "Changed the condition to allow zero deposit amount.",
+        "udiff": "--- \n+++ \n@@ -28,7 +28,7 @@\n     }\n\n \n\n     public void deposit(double amount) {\n\n-        if (amount <= 0) {\n\n+        if (amount < 0) { // Mutation: Allow zero deposit amount\n\n             throw new IllegalArgumentException(\"Deposit amount must be positive\");\n\n         }\n\n         balance += amount;\n"
+    },
+    {
+        "id": "8",
+        "source_path": "src/main/java/com/example/BankAccount.java",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/java_maven/logs/_latest/mutants/8_BankAccount.java",
+        "status": "KILLED",
+        "error_msg": "Tests run: 12, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.035 s <<< FAILURE! - in BankAccountTest\n[ERROR] testDepositNegativeAmount  Time elapsed: 0.007 s  <<< FAILURE!",
+        "type": "Error Message Mutation",
+        "description": "Modified the error message for clarity.",
+        "udiff": "--- \n+++ \n@@ -29,7 +29,7 @@\n \n\n     public void deposit(double amount) {\n\n         if (amount <= 0) {\n\n-            throw new IllegalArgumentException(\"Deposit amount must be positive\");\n\n+            throw new IllegalArgumentException(\"Deposit amount must be greater than zero\"); // Mutation: Changed error message for clarity\n\n         }\n\n         balance += amount;\n\n         transactionHistory.add(\"Deposited: \" + amount);\n"
+    },
+    {
+        "id": "9",
+        "source_path": "src/main/java/com/example/BankAccount.java",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/java_maven/logs/_latest/mutants/9_BankAccount.java",
+        "status": "SURVIVED",
+        "error_msg": "",
+        "type": "Transaction History Mutation",
+        "description": "Changed the transaction history message format.",
+        "udiff": "--- \n+++ \n@@ -32,7 +32,7 @@\n             throw new IllegalArgumentException(\"Deposit amount must be positive\");\n\n         }\n\n         balance += amount;\n\n-        transactionHistory.add(\"Deposited: \" + amount);\n\n+        transactionHistory.add(\"Amount Deposited: \" + amount); // Mutation: Changed transaction message format\n\n     }\n\n \n\n     public void withdraw(double amount) {\n"
+    },
+    {
+        "id": "10",
+        "source_path": "src/main/java/com/example/BankAccount.java",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/java_maven/logs/_latest/mutants/10_BankAccount.java",
+        "status": "SURVIVED",
+        "error_msg": "",
+        "type": "Boundary Condition Mutation",
+        "description": "Changed the condition to allow withdrawal of zero amount.",
+        "udiff": "--- \n+++ \n@@ -36,7 +36,7 @@\n     }\n\n \n\n     public void withdraw(double amount) {\n\n-        if (amount <= 0) {\n\n+        if (amount < 0) { // Mutation: Allow withdrawal of zero amount.\n\n             throw new IllegalArgumentException(\"Withdrawal amount must be positive\");\n\n         }\n\n         if (amount > balance + overdraftLimit) {\n"
+    },
+    {
+        "id": "11",
+        "source_path": "src/main/java/com/example/BankAccount.java",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/java_maven/logs/_latest/mutants/11_BankAccount.java",
+        "status": "SURVIVED",
+        "error_msg": "",
+        "type": "Logical Operator Mutation",
+        "description": "Changed the logical condition to allow overdraft limit to be ignored.",
+        "udiff": "--- \n+++ \n@@ -39,7 +39,7 @@\n         if (amount <= 0) {\n\n             throw new IllegalArgumentException(\"Withdrawal amount must be positive\");\n\n         }\n\n-        if (amount > balance + overdraftLimit) {\n\n+        if (amount > balance) { // Mutation: Ignore overdraft limit.\n\n             throw new IllegalArgumentException(\"Insufficient funds, including overdraft limit\");\n\n         }\n\n         balance -= amount;\n"
+    },
+    {
+        "id": "12",
+        "source_path": "src/main/java/com/example/BankAccount.java",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/java_maven/logs/_latest/mutants/12_BankAccount.java",
+        "status": "KILLED",
+        "error_msg": "Tests run: 12, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.036 s <<< FAILURE! - in BankAccountTest\n[ERROR] testWithdrawExceedingBalance  Time elapsed: 0.007 s  <<< FAILURE!",
+        "type": "Error Message Mutation",
+        "description": "Changed the error message for insufficient funds.",
+        "udiff": "--- \n+++ \n@@ -40,7 +40,7 @@\n             throw new IllegalArgumentException(\"Withdrawal amount must be positive\");\n\n         }\n\n         if (amount > balance + overdraftLimit) {\n\n-            throw new IllegalArgumentException(\"Insufficient funds, including overdraft limit\");\n\n+            throw new IllegalArgumentException(\"Not enough money to withdraw\"); // Mutation: Changed error message.\n\n         }\n\n         balance -= amount;\n\n         transactionHistory.add(\"Withdrew: \" + amount);\n"
+    },
+    {
+        "id": "13",
+        "source_path": "src/main/java/com/example/BankAccount.java",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/java_maven/logs/_latest/mutants/13_BankAccount.java",
+        "status": "KILLED",
+        "error_msg": "Tests run: 12, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.036 s <<< FAILURE! - in BankAccountTest\n[ERROR] testApplyZeroInterestRate  Time elapsed: 0.007 s  <<< FAILURE!",
+        "type": "Boundary Condition Mutation",
+        "description": "Changed the condition to allow zero interest rate, which should not throw an exception.",
+        "udiff": "--- \n+++ \n@@ -47,7 +47,7 @@\n     }\n\n \n\n     public void applyAnnualInterest(double interestRate) {\n\n-        if (interestRate <= 0) {\n\n+        if (interestRate < 0) { // Mutation: Allow zero interest rate, which is not valid.\n\n             throw new IllegalArgumentException(\"Interest rate must be positive\");\n\n         }\n\n         double interest = balance * (interestRate / 100);\n"
+    },
+    {
+        "id": "14",
+        "source_path": "src/main/java/com/example/BankAccount.java",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/java_maven/logs/_latest/mutants/14_BankAccount.java",
+        "status": "KILLED",
+        "error_msg": "Tests run: 12, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.036 s <<< FAILURE! - in BankAccountTest\n[ERROR] testApplyAnnualInterest  Time elapsed: 0.006 s  <<< FAILURE!",
+        "type": "Logical Mutation",
+        "description": "Changed the calculation of interest to use a fixed rate instead of the provided interest rate.",
+        "udiff": "--- \n+++ \n@@ -50,7 +50,7 @@\n         if (interestRate <= 0) {\n\n             throw new IllegalArgumentException(\"Interest rate must be positive\");\n\n         }\n\n-        double interest = balance * (interestRate / 100);\n\n+        double interest = balance * (5 / 100); // Mutation: Fixed interest rate of 5% instead of provided rate.\n\n         balance += interest;\n\n         transactionHistory.add(\"Interest applied: \" + interest);\n\n     }\n"
+    },
+    {
+        "id": "15",
+        "source_path": "src/main/java/com/example/BankAccount.java",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/java_maven/logs/_latest/mutants/15_BankAccount.java",
+        "status": "KILLED",
+        "error_msg": "Tests run: 12, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.035 s <<< FAILURE! - in BankAccountTest\n[ERROR] testApplyZeroInterestRate  Time elapsed: 0.006 s  <<< FAILURE!",
+        "type": "Error Handling Mutation",
+        "description": "Changed the exception message to be less informative.",
+        "udiff": "--- \n+++ \n@@ -48,7 +48,7 @@\n \n\n     public void applyAnnualInterest(double interestRate) {\n\n         if (interestRate <= 0) {\n\n-            throw new IllegalArgumentException(\"Interest rate must be positive\");\n\n+            throw new IllegalArgumentException(\"Invalid interest rate\"); // Mutation: Less informative exception message.\n\n         }\n\n         double interest = balance * (interestRate / 100);\n\n         balance += interest;\n"
+    },
+    {
+        "id": "16",
+        "source_path": "src/main/java/com/example/BankAccount.java",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/java_maven/logs/_latest/mutants/16_BankAccount.java",
+        "status": "SURVIVED",
+        "error_msg": "",
+        "type": "Boundary Condition Mutation",
+        "description": "Changed the condition to allow negative daysFromNow, which should not be allowed.",
+        "udiff": "--- \n+++ \n@@ -66,7 +66,7 @@\n     }\n\n \n\n     public void scheduleTransaction(String type, double amount, int daysFromNow) {\n\n-        if (daysFromNow < 0) {\n\n+        if (daysFromNow <= 0) { // Mutation: Changed '<' to '<=' to allow zero days.\n\n             throw new IllegalArgumentException(\"Days from now must be non-negative\");\n\n         }\n\n         // This is a simplification; in a real system, you would have a scheduler.\n"
+    },
+    {
+        "id": "17",
+        "source_path": "src/main/java/com/example/BankAccount.java",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/java_maven/logs/_latest/mutants/17_BankAccount.java",
+        "status": "KILLED",
+        "error_msg": "Tests run: 12, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.035 s <<< FAILURE! - in BankAccountTest\n[ERROR] testScheduleTransactionNegativeDays  Time elapsed: 0.007 s  <<< FAILURE!",
+        "type": "Error Message Mutation",
+        "description": "Modified the error message to be less informative.",
+        "udiff": "--- \n+++ \n@@ -67,7 +67,7 @@\n \n\n     public void scheduleTransaction(String type, double amount, int daysFromNow) {\n\n         if (daysFromNow < 0) {\n\n-            throw new IllegalArgumentException(\"Days from now must be non-negative\");\n\n+            throw new IllegalArgumentException(\"Invalid input\"); // Mutation: Changed error message to be less specific.\n\n         }\n\n         // This is a simplification; in a real system, you would have a scheduler.\n\n         // We'll just log the scheduled transaction for demonstration purposes.\n"
+    },
+    {
+        "id": "18",
+        "source_path": "src/main/java/com/example/BankAccount.java",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/java_maven/logs/_latest/mutants/18_BankAccount.java",
+        "status": "KILLED",
+        "error_msg": "Tests run: 12, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.033 s <<< FAILURE! - in BankAccountTest\n[ERROR] testScheduleTransaction  Time elapsed: 0.009 s  <<< FAILURE!",
+        "type": "Logical Mutation",
+        "description": "Changed the transaction type to a fixed value instead of using the parameter.",
+        "udiff": "--- \n+++ \n@@ -71,6 +71,6 @@\n         }\n\n         // This is a simplification; in a real system, you would have a scheduler.\n\n         // We'll just log the scheduled transaction for demonstration purposes.\n\n-        transactionHistory.add(\"Scheduled \" + type + \" of \" + amount + \" in \" + daysFromNow + \" days\");\n\n+        transactionHistory.add(\"Scheduled deposit of \" + amount + \" in \" + daysFromNow + \" days\"); // Mutation: Fixed transaction type to 'deposit'.\n\n     }\n\n }\n"
+    }
+]

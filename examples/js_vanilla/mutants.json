@@ -1,0 +1,122 @@
+[
+    {
+        "id": "1",
+        "source_path": "ui.js",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla/logs/_latest/mutants/1_ui.js",
+        "status": "SURVIVED",
+        "error_msg": "",
+        "type": "Variable Mutation",
+        "description": "Changed the variable name 'output' to 'result' to test the impact of variable renaming.",
+        "udiff": "--- \n+++ \n@@ -32,7 +32,7 @@\n   }\n\n \n\n   showRepos(repos) {\n\n-    let output = '';\n\n+    let result = ''; // Changed variable name from 'output' to 'result'\n\n \n\n     repos.forEach(function (repo) {\n\n       output += `\n"
+    },
+    {
+        "id": "2",
+        "source_path": "ui.js",
+        "mutant_path": null,
+        "status": "COMPILE_ERROR",
+        "error_msg": "",
+        "type": "Logical Mutation",
+        "description": "Changed the condition to check if 'repos' is an array before proceeding to iterate over it.",
+        "udiff": ""
+    },
+    {
+        "id": "3",
+        "source_path": "ui.js",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla/logs/_latest/mutants/3_ui.js",
+        "status": "SURVIVED",
+        "error_msg": "",
+        "type": "Error Handling Mutation",
+        "description": "Added a fallback for when 'repo.description' is undefined to prevent potential runtime errors.",
+        "udiff": "--- \n+++ \n@@ -40,7 +40,7 @@\n                 <div class=\"row\">\n\n                     <div class=\"col-sm-6\">\n\n                         <a href=\"${repo.html_url}\" target=\"_blank\">${repo.name}</a>\n\n-                        <p class=\"pt-2\">${repo.description}</p>\n\n+                        <p class=\"pt-2\">${repo.description || 'No description available'}</p> // Added fallback for undefined description\n\n                     </div>\n\n                     <div class=\"col-sm-6\">\n\n                         <span class=\"badge badge-primary\"> Starts: ${repo.stargazers_count}</span>\n"
+    },
+    {
+        "id": "4",
+        "source_path": "ui.js",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla/logs/_latest/mutants/4_ui.js",
+        "status": "SURVIVED",
+        "error_msg": "",
+        "type": "Mutation",
+        "description": "Changed the timeout duration to 1000 milliseconds to test the effect of a shorter alert display time.",
+        "udiff": "--- \n+++ \n@@ -66,7 +66,7 @@\n \n\n     setTimeout(() => {\n\n       this.clearAlert();\n\n-    }, 2000);\n\n+    }, 1000); // Mutation: Changed timeout duration to 1000 milliseconds.\n\n   }\n\n \n\n   clearAlert() {\n"
+    },
+    {
+        "id": "5",
+        "source_path": "ui.js",
+        "mutant_path": null,
+        "status": "COMPILE_ERROR",
+        "error_msg": "",
+        "type": "Mutation",
+        "description": "Added a check to ensure the message is not empty before creating the alert.",
+        "udiff": ""
+    },
+    {
+        "id": "6",
+        "source_path": "ui.js",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla/logs/_latest/mutants/6_ui.js",
+        "status": "KILLED",
+        "error_msg": "\u23af\u23af\u23af\u23af\u23af\u23af\u23af Failed Tests 1 \u23af\u23af\u23af\u23af\u23af\u23af\u23af\n\n FAIL  ui.test.js > UI Class > should show alert message\nTypeError: Cannot read properties of null (reading 'textContent')\n \u276f ui.test.js:43:25\n     41|     const alertElement = document.querySelector('.alert.alert-danger');\n     42|     expect(alertElement).toBeDefined();\n     43|     expect(alertElement.textContent).toBe(message);\n       |                         ^\n     44|   });\n     45| \n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af[1/1]\u23af\n\n\n> js-vanilla-example@1.0.0 test\n> vitest run\n\n\n RUN  v1.6.0 /Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla\n\n \u276f ui.test.js  (6 tests | 1 failed) 44ms\n   \u276f ui.test.js > UI Class > should show alert message\n     \u2192 Cannot read properties of null (reading 'textContent')\n\n Test Files  1 failed (1)\n      Tests  1 failed | 5 passed (6)\n   Start at  16:15:47\n   Duration  363ms (transform 15ms, setup 0ms, collect 14ms, tests 44ms, environment 179ms, prepare 45ms)",
+        "type": "Mutation",
+        "description": "Changed the class name of the alert div to 'alert-warning' to test different alert styles.",
+        "udiff": "--- \n+++ \n@@ -58,7 +58,7 @@\n   showAlert(message, className) {\n\n     this.clearAlert();\n\n     const div = document.createElement('div');\n\n-    div.className = className;\n\n+    div.className = 'alert-warning'; // Mutation: Changed class name to 'alert-warning'.\n\n     div.appendChild(document.createTextNode(message));\n\n     const container = document.querySelector('.searchContainer');\n\n     const search = document.querySelector('.search');\n"
+    },
+    {
+        "id": "7",
+        "source_path": "ui.js",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla/logs/_latest/mutants/7_ui.js",
+        "status": "SURVIVED",
+        "error_msg": "",
+        "type": "Logical Operator Mutation",
+        "description": "Changed the condition to check if currentAlert is not null or undefined.",
+        "udiff": "--- \n+++ \n@@ -71,7 +71,7 @@\n \n\n   clearAlert() {\n\n     const currentAlert = document.querySelector('.alert');\n\n-    if (currentAlert) {\n\n+    if (currentAlert !== null && currentAlert !== undefined) { // Mutation: Explicit null and undefined check\n\n       currentAlert.remove();\n\n     }\n\n   }\n"
+    },
+    {
+        "id": "8",
+        "source_path": "ui.js",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla/logs/_latest/mutants/8_ui.js",
+        "status": "SURVIVED",
+        "error_msg": "",
+        "type": "Return Statement Mutation",
+        "description": "Added a return statement to indicate the function's completion.",
+        "udiff": "--- \n+++ \n@@ -72,7 +72,7 @@\n   clearAlert() {\n\n     const currentAlert = document.querySelector('.alert');\n\n     if (currentAlert) {\n\n-      currentAlert.remove();\n\n+      currentAlert.remove(); return; // Mutation: Added return statement for clarity\n\n     }\n\n   }\n\n \n"
+    },
+    {
+        "id": "9",
+        "source_path": "ui.js",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla/logs/_latest/mutants/9_ui.js",
+        "status": "SURVIVED",
+        "error_msg": "",
+        "type": "Error Handling Mutation",
+        "description": "Introduced a try-catch block to handle potential errors during removal.",
+        "udiff": "--- \n+++ \n@@ -72,7 +72,7 @@\n   clearAlert() {\n\n     const currentAlert = document.querySelector('.alert');\n\n     if (currentAlert) {\n\n-      currentAlert.remove();\n\n+      try { currentAlert.remove(); } catch (error) { console.error('Error removing alert:', error); } // Mutation: Added error handling\n\n     }\n\n   }\n\n \n"
+    },
+    {
+        "id": "10",
+        "source_path": "ui.js",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla/logs/_latest/mutants/10_ui.js",
+        "status": "SURVIVED",
+        "error_msg": "",
+        "type": "Mutation",
+        "description": "Changed the innerHTML assignment to null instead of an empty string.",
+        "udiff": "--- \n+++ \n@@ -77,6 +77,6 @@\n   }\n\n \n\n   clearProfile() {\n\n-    this.profile.innerHTML = '';\n\n+    this.profile.innerHTML = null; // Mutation: Changed to null instead of an empty string.\n\n   }\n\n }\n"
+    },
+    {
+        "id": "11",
+        "source_path": "ui.js",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla/logs/_latest/mutants/11_ui.js",
+        "status": "SURVIVED",
+        "error_msg": "",
+        "type": "Mutation",
+        "description": "Added a console log to indicate that the profile is being cleared.",
+        "udiff": "--- \n+++ \n@@ -77,6 +77,6 @@\n   }\n\n \n\n   clearProfile() {\n\n-    this.profile.innerHTML = '';\n\n+    console.log('Clearing profile...'); this.profile.innerHTML = ''; // Mutation: Added logging for clarity.\n\n   }\n\n }\n"
+    },
+    {
+        "id": "12",
+        "source_path": "ui.js",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla/logs/_latest/mutants/12_ui.js",
+        "status": "SURVIVED",
+        "error_msg": "",
+        "type": "Mutation",
+        "description": "Introduced a condition to check if profile exists before clearing.",
+        "udiff": "--- \n+++ \n@@ -77,6 +77,6 @@\n   }\n\n \n\n   clearProfile() {\n\n-    this.profile.innerHTML = '';\n\n+    if (this.profile) { this.profile.innerHTML = ''; } // Mutation: Added check for profile existence.\n\n   }\n\n }\n"
+    }
+]

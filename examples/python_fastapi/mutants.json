@@ -1,0 +1,322 @@
+[
+    {
+        "id": "1",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/1_app.py",
+        "status": "KILLED",
+        "error_msg": "__________________________________ test_root ___________________________________\n\n    def test_root():\n        \"\"\"\n        Test the root endpoint by sending a GET request to \"/\" and checking the response status code and JSON body.\n        \"\"\"\n        response = client.get(\"/\")\n        assert response.status_code == 200\n>       assert response.json() == {\"message\": \"Welcome to the FastAPI application!\"}\nE       AssertionError: assert {'message': '...application!'} == {'message': '...application!'}\nE         \nE         Differing items:\nE         {'message': 'Hello from the FastAPI application!'} != {'message': 'Welcome to the FastAPI application!'}\nE         Use -v to get more diff\n\ntests/test_app.py:15: AssertionError",
+        "type": "Return Value Mutation",
+        "description": "Changed the return message to a different welcome message.",
+        "udiff": "--- \n+++ \n@@ -12,7 +12,8 @@\n     No parameters are passed into the function.\n\n     Returns a dictionary with a welcome message.\n\n     \"\"\"\n\n-    return {\"message\": \"Welcome to the FastAPI application!\"}\n\n+    return {\"message\": \"Hello from the FastAPI application!\"}  # Mutation: Changed welcome message\n\n+\n\n \n\n \n\n @app.get(\"/current-date\")\n"
+    },
+    {
+        "id": "2",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/2_app.py",
+        "status": "KILLED",
+        "error_msg": "__________________________________ test_root ___________________________________\n\n    def test_root():\n        \"\"\"\n        Test the root endpoint by sending a GET request to \"/\" and checking the response status code and JSON body.\n        \"\"\"\n        response = client.get(\"/\")\n        assert response.status_code == 200\n>       assert response.json() == {\"message\": \"Welcome to the FastAPI application!\"}\nE       AssertionError: assert 'Welcome to the FastAPI application!' == {'message': 'Welcome to the FastAPI application!'}\nE        +  where 'Welcome to the FastAPI application!' = <bound method Response.json of <Response [200 OK]>>()\nE        +    where <bound method Response.json of <Response [200 OK]>> = <Response [200 OK]>.json\n\ntests/test_app.py:15: AssertionError",
+        "type": "Return Value Mutation",
+        "description": "Changed the return type from dictionary to string.",
+        "udiff": "--- \n+++ \n@@ -12,7 +12,8 @@\n     No parameters are passed into the function.\n\n     Returns a dictionary with a welcome message.\n\n     \"\"\"\n\n-    return {\"message\": \"Welcome to the FastAPI application!\"}\n\n+    return \"Welcome to the FastAPI application!\"  # Mutation: Changed return type to string\n\n+\n\n \n\n \n\n @app.get(\"/current-date\")\n"
+    },
+    {
+        "id": "3",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/3_app.py",
+        "status": "KILLED",
+        "error_msg": "__________________________________ test_root ___________________________________\n\n    def test_root():\n        \"\"\"\n        Test the root endpoint by sending a GET request to \"/\" and checking the response status code and JSON body.\n        \"\"\"\n        response = client.get(\"/\")\n        assert response.status_code == 200\n>       assert response.json() == {\"message\": \"Welcome to the FastAPI application!\"}\nE       AssertionError: assert {'message': '...application!'} == {'message': '...application!'}\nE         \nE         Differing items:\nE         {'message': 'Error: Unable to load the FastAPI application!'} != {'message': 'Welcome to the FastAPI application!'}\nE         Use -v to get more diff\n\ntests/test_app.py:15: AssertionError",
+        "type": "Return Value Mutation",
+        "description": "Changed the return message to an error message.",
+        "udiff": "--- \n+++ \n@@ -12,7 +12,8 @@\n     No parameters are passed into the function.\n\n     Returns a dictionary with a welcome message.\n\n     \"\"\"\n\n-    return {\"message\": \"Welcome to the FastAPI application!\"}\n\n+    return {\"message\": \"Error: Unable to load the FastAPI application!\"}  # Mutation: Changed welcome message to error message\n\n+\n\n \n\n \n\n @app.get(\"/current-date\")\n"
+    },
+    {
+        "id": "4",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/4_app.py",
+        "status": "SURVIVED",
+        "error_msg": "",
+        "type": "Return Value Mutation",
+        "description": "Changed the return value to a fixed date string.",
+        "udiff": "--- \n+++ \n@@ -20,7 +20,8 @@\n     \"\"\"\n\n     Get the current date as an ISO-formatted string.\n\n     \"\"\"\n\n-    return {\"date\": date.today().isoformat()}\n\n+    return {\"date\": \"2023-01-01\"}  # Mutated to return a fixed date\n\n+\n\n \n\n \n\n @app.get(\"/add/{num1}/{num2}\")\n"
+    },
+    {
+        "id": "5",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/5_app.py",
+        "status": "SURVIVED",
+        "error_msg": "",
+        "type": "Return Value Mutation",
+        "description": "Changed the return value to include time as well.",
+        "udiff": "--- \n+++ \n@@ -20,7 +20,8 @@\n     \"\"\"\n\n     Get the current date as an ISO-formatted string.\n\n     \"\"\"\n\n-    return {\"date\": date.today().isoformat()}\n\n+    return {\"date\": datetime.now().isoformat()}  # Mutated to include time\n\n+\n\n \n\n \n\n @app.get(\"/add/{num1}/{num2}\")\n"
+    },
+    {
+        "id": "6",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/6_app.py",
+        "status": "SURVIVED",
+        "error_msg": "",
+        "type": "Exception Handling Mutation",
+        "description": "Added exception handling for date retrieval.",
+        "udiff": "--- \n+++ \n@@ -20,7 +20,11 @@\n     \"\"\"\n\n     Get the current date as an ISO-formatted string.\n\n     \"\"\"\n\n-    return {\"date\": date.today().isoformat()}\n\n+    try:\n\n+        return {\"date\": date.today().isoformat()}\n\n+    except Exception as e:\n\n+        return {\"error\": str(e)}  # Mutated to add exception handling\n\n+\n\n \n\n \n\n @app.get(\"/add/{num1}/{num2}\")\n"
+    },
+    {
+        "id": "7",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/7_app.py",
+        "status": "KILLED",
+        "error_msg": "___________________________________ test_add ___________________________________\n\n    def test_add():\n        response = client.get(\"/add/3/4\")\n        assert response.status_code == 200\n>       assert response.json() == {\"result\": 7}\nE       AssertionError: assert {'result': -1} == {'result': 7}\nE         \nE         Differing items:\nE         {'result': -1} != {'result': 7}\nE         Use -v to get more diff\n\ntests/test_app.py:75: AssertionError",
+        "type": "ArithmeticOperatorReplacement",
+        "description": "Replaced addition operator with subtraction operator.",
+        "udiff": "--- \n+++ \n@@ -28,7 +28,8 @@\n     \"\"\"\n\n     An asynchronous function that takes two integer parameters 'num1' and 'num2', and returns a dictionary containing the result of adding 'num1' and 'num2' under the key 'result'.\n\n     \"\"\"\n\n-    return {\"result\": num1 + num2}\n\n+    return {\"result\": num1 - num2}  # Mutation: Changed + to -\n\n+\n\n \n\n \n\n @app.get(\"/subtract/{num1}/{num2}\")\n"
+    },
+    {
+        "id": "8",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/8_app.py",
+        "status": "KILLED",
+        "error_msg": "___________________________________ test_add ___________________________________\n\n    def test_add():\n        response = client.get(\"/add/3/4\")\n        assert response.status_code == 200\n>       assert response.json() == {\"result\": 7}\nE       AssertionError: assert {'result': 42} == {'result': 7}\nE         \nE         Differing items:\nE         {'result': 42} != {'result': 7}\nE         Use -v to get more diff\n\ntests/test_app.py:75: AssertionError",
+        "type": "ReturnValueModification",
+        "description": "Changed the return value to a fixed number.",
+        "udiff": "--- \n+++ \n@@ -28,7 +28,8 @@\n     \"\"\"\n\n     An asynchronous function that takes two integer parameters 'num1' and 'num2', and returns a dictionary containing the result of adding 'num1' and 'num2' under the key 'result'.\n\n     \"\"\"\n\n-    return {\"result\": num1 + num2}\n\n+    return {\"result\": 42}  # Mutation: Changed return value to a fixed number\n\n+\n\n \n\n \n\n @app.get(\"/subtract/{num1}/{num2}\")\n"
+    },
+    {
+        "id": "9",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/9_app.py",
+        "status": "SURVIVED",
+        "error_msg": "",
+        "type": "ParameterTypeChange",
+        "description": "Changed parameter type from int to float.",
+        "udiff": "--- \n+++ \n@@ -24,7 +24,7 @@\n \n\n \n\n @app.get(\"/add/{num1}/{num2}\")\n\n-async def add(num1: int, num2: int):\n\n+async def add(num1: float, num2: float):  # Mutation: Changed parameter type from int to float\n\n     \"\"\"\n\n     An asynchronous function that takes two integer parameters 'num1' and 'num2', and returns a dictionary containing the result of adding 'num1' and 'num2' under the key 'result'.\n\n     \"\"\"\n"
+    },
+    {
+        "id": "10",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/10_app.py",
+        "status": "KILLED",
+        "error_msg": "________________________________ test_subtract _________________________________\n\n    def test_subtract():\n        response = client.get(\"/subtract/10/4\")\n        assert response.status_code == 200\n>       assert response.json() == {\"result\": 6}\nE       AssertionError: assert {'result': 14} == {'result': 6}\nE         \nE         Differing items:\nE         {'result': 14} != {'result': 6}\nE         Use -v to get more diff\n\ntests/test_app.py:69: AssertionError",
+        "type": "ArithmeticOperatorReplacement",
+        "description": "Replaced subtraction operator with addition operator.",
+        "udiff": "--- \n+++ \n@@ -43,7 +43,8 @@\n     Returns:\n\n         dict: A dictionary containing the result of the subtraction.\n\n     \"\"\"\n\n-    return {\"result\": num1 - num2}\n\n+    return {\"result\": num1 + num2}  # Mutation: Replaced subtraction with addition\n\n+\n\n \n\n \n\n @app.get(\"/multiply/{num1}/{num2}\")\n"
+    },
+    {
+        "id": "11",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/11_app.py",
+        "status": "KILLED",
+        "error_msg": "________________________________ test_subtract _________________________________\n\n    def test_subtract():\n        response = client.get(\"/subtract/10/4\")\n        assert response.status_code == 200\n>       assert response.json() == {\"result\": 6}\nE       AssertionError: assert 6 == {'result': 6}\nE        +  where 6 = <bound method Response.json of <Response [200 OK]>>()\nE        +    where <bound method Response.json of <Response [200 OK]>> = <Response [200 OK]>.json\n\ntests/test_app.py:69: AssertionError",
+        "type": "ReturnTypeModification",
+        "description": "Changed the return type from dictionary to integer.",
+        "udiff": "--- \n+++ \n@@ -43,7 +43,8 @@\n     Returns:\n\n         dict: A dictionary containing the result of the subtraction.\n\n     \"\"\"\n\n-    return {\"result\": num1 - num2}\n\n+    return num1 - num2  # Mutation: Changed return type from dictionary to integer\n\n+\n\n \n\n \n\n @app.get(\"/multiply/{num1}/{num2}\")\n"
+    },
+    {
+        "id": "12",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/12_app.py",
+        "status": "SURVIVED",
+        "error_msg": "",
+        "type": "BoundaryCondition",
+        "description": "Added a check to return zero if both numbers are equal.",
+        "udiff": "--- \n+++ \n@@ -43,7 +43,9 @@\n     Returns:\n\n         dict: A dictionary containing the result of the subtraction.\n\n     \"\"\"\n\n+    if num1 == num2: return {\"result\": 0}  # Mutation: Added boundary condition to return zero if both numbers are equal\n\n     return {\"result\": num1 - num2}\n\n+\n\n \n\n \n\n @app.get(\"/multiply/{num1}/{num2}\")\n"
+    },
+    {
+        "id": "13",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/13_app.py",
+        "status": "KILLED",
+        "error_msg": "________________________________ test_multiply _________________________________\n\n    def test_multiply():\n        response = client.get(\"/multiply/3/4\")\n        assert response.status_code == 200\n>       assert response.json() == {\"result\": 12}\nE       AssertionError: assert {'result': 7} == {'result': 12}\nE         \nE         Differing items:\nE         {'result': 7} != {'result': 12}\nE         Use -v to get more diff\n\ntests/test_app.py:63: AssertionError",
+        "type": "ArithmeticOperatorReplacement",
+        "description": "Replaced multiplication with addition.",
+        "udiff": "--- \n+++ \n@@ -58,7 +58,8 @@\n     Returns:\n\n     - dict: A dictionary containing the result of the multiplication.\n\n     \"\"\"\n\n-    return {\"result\": num1 * num2}\n\n+    return {\"result\": num1 + num2}  # Mutation: Replaced multiplication with addition\n\n+\n\n \n\n \n\n @app.get(\"/divide/{num1}/{num2}\")\n"
+    },
+    {
+        "id": "14",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/14_app.py",
+        "status": "KILLED",
+        "error_msg": "________________________________ test_multiply _________________________________\n\n    def test_multiply():\n        response = client.get(\"/multiply/3/4\")\n        assert response.status_code == 200\n>       assert response.json() == {\"result\": 12}\nE       AssertionError: assert 12 == {'result': 12}\nE        +  where 12 = <bound method Response.json of <Response [200 OK]>>()\nE        +    where <bound method Response.json of <Response [200 OK]>> = <Response [200 OK]>.json\n\ntests/test_app.py:63: AssertionError",
+        "type": "ReturnTypeModification",
+        "description": "Changed return type from dictionary to integer.",
+        "udiff": "--- \n+++ \n@@ -58,7 +58,8 @@\n     Returns:\n\n     - dict: A dictionary containing the result of the multiplication.\n\n     \"\"\"\n\n-    return {\"result\": num1 * num2}\n\n+    return num1 * num2  # Mutation: Changed return type from dictionary to integer\n\n+\n\n \n\n \n\n @app.get(\"/divide/{num1}/{num2}\")\n"
+    },
+    {
+        "id": "15",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/15_app.py",
+        "status": "SURVIVED",
+        "error_msg": "",
+        "type": "BoundaryConditionModification",
+        "description": "Added a check to return 0 if either number is 0.",
+        "udiff": "--- \n+++ \n@@ -58,7 +58,9 @@\n     Returns:\n\n     - dict: A dictionary containing the result of the multiplication.\n\n     \"\"\"\n\n+    if num1 == 0 or num2 == 0: return {\"result\": 0}  # Mutation: Added check for zero\n\n     return {\"result\": num1 * num2}\n\n+\n\n \n\n \n\n @app.get(\"/divide/{num1}/{num2}\")\n"
+    },
+    {
+        "id": "16",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/16_app.py",
+        "status": "SURVIVED",
+        "error_msg": "",
+        "type": "Boundary Condition Mutation",
+        "description": "Changed the condition to check if num2 is less than or equal to 0 to handle negative denominators.",
+        "udiff": "--- \n+++ \n@@ -73,7 +73,7 @@\n     Raises:\n\n     - HTTPException with status code 400 if num2 is 0\n\n     \"\"\"\n\n-    if num2 == 0:\n\n+    if num2 <= 0:  # Mutation: Handle negative denominators\n\n         raise HTTPException(status_code=400, detail=\"Cannot divide by zero\")\n\n     return {\"result\": num1 / num2}\n\n \n"
+    },
+    {
+        "id": "17",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/17_app.py",
+        "status": "KILLED",
+        "error_msg": "_____________________________ test_divide_by_zero ______________________________\n\n    def test_divide_by_zero():\n        response = client.get(\"/divide/8/0\")\n>       assert response.status_code == 400\nE       assert 422 == 400\nE        +  where 422 = <Response [422 Unprocessable Entity]>.status_code\n\ntests/test_app.py:50: AssertionError",
+        "type": "Error Handling Mutation",
+        "description": "Changed the HTTP status code from 400 to 422 for division by zero error.",
+        "udiff": "--- \n+++ \n@@ -74,7 +74,7 @@\n     - HTTPException with status code 400 if num2 is 0\n\n     \"\"\"\n\n     if num2 == 0:\n\n-        raise HTTPException(status_code=400, detail=\"Cannot divide by zero\")\n\n+        raise HTTPException(status_code=422, detail=\"Cannot divide by zero\")  # Mutation: Changed status code to 422\n\n     return {\"result\": num1 / num2}\n\n \n\n \n"
+    },
+    {
+        "id": "18",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/18_app.py",
+        "status": "KILLED",
+        "error_msg": "_________________________________ test_divide __________________________________\n\n    def test_divide():\n        response = client.get(\"/divide/8/2\")\n        assert response.status_code == 200\n>       assert response.json() == {\"result\": 4.0}\nE       AssertionError: assert '4.0' == {'result': 4.0}\nE        +  where '4.0' = <bound method Response.json of <Response [200 OK]>>()\nE        +    where <bound method Response.json of <Response [200 OK]>> = <Response [200 OK]>.json\n\ntests/test_app.py:57: AssertionError",
+        "type": "Logical Branch Mutation",
+        "description": "Changed the return value to return the result as a string instead of a dictionary.",
+        "udiff": "--- \n+++ \n@@ -75,7 +75,8 @@\n     \"\"\"\n\n     if num2 == 0:\n\n         raise HTTPException(status_code=400, detail=\"Cannot divide by zero\")\n\n-    return {\"result\": num1 / num2}\n\n+    return str(num1 / num2)  # Mutation: Return result as string\n\n+\n\n \n\n \n\n @app.get(\"/square/{number}\")\n"
+    },
+    {
+        "id": "19",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/19_app.py",
+        "status": "KILLED",
+        "error_msg": "_________________________________ test_square __________________________________\n\n    def test_square():\n        response = client.get(\"/square/5\")\n        assert response.status_code == 200\n>       assert response.json() == {\"result\": 25}\nE       AssertionError: assert {'result': 10} == {'result': 25}\nE         \nE         Differing items:\nE         {'result': 10} != {'result': 25}\nE         Use -v to get more diff\n\ntests/test_app.py:45: AssertionError",
+        "type": "ArithmeticOperatorReplacement",
+        "description": "Replaced exponentiation operator with multiplication operator.",
+        "udiff": "--- \n+++ \n@@ -83,7 +83,8 @@\n     \"\"\"\n\n     Return the square of a number.\n\n     \"\"\"\n\n-    return {\"result\": number**2}\n\n+    return {\"result\": number*2}  # Mutation: Replaced exponentiation with multiplication\n\n+\n\n \n\n \n\n @app.get(\"/sqrt/{number}\")\n"
+    },
+    {
+        "id": "20",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/20_app.py",
+        "status": "KILLED",
+        "error_msg": "_________________________________ test_square __________________________________\n\n    def test_square():\n        response = client.get(\"/square/5\")\n        assert response.status_code == 200\n>       assert response.json() == {\"result\": 25}\nE       AssertionError: assert {'result': 42} == {'result': 25}\nE         \nE         Differing items:\nE         {'result': 42} != {'result': 25}\nE         Use -v to get more diff\n\ntests/test_app.py:45: AssertionError",
+        "type": "ReturnValueModification",
+        "description": "Changed the return value to a fixed number.",
+        "udiff": "--- \n+++ \n@@ -83,7 +83,8 @@\n     \"\"\"\n\n     Return the square of a number.\n\n     \"\"\"\n\n-    return {\"result\": number**2}\n\n+    return {\"result\": 42}  # Mutation: Changed return value to a fixed number\n\n+\n\n \n\n \n\n @app.get(\"/sqrt/{number}\")\n"
+    },
+    {
+        "id": "21",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/21_app.py",
+        "status": "SURVIVED",
+        "error_msg": "",
+        "type": "ParameterTypeChange",
+        "description": "Changed the parameter type from int to float.",
+        "udiff": "--- \n+++ \n@@ -79,7 +79,7 @@\n \n\n \n\n @app.get(\"/square/{number}\")\n\n-async def square(number: int):\n\n+async def square(number: float):  # Mutation: Changed parameter type from int to float\n\n     \"\"\"\n\n     Return the square of a number.\n\n     \"\"\"\n"
+    },
+    {
+        "id": "22",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/22_app.py",
+        "status": "SURVIVED",
+        "error_msg": "",
+        "type": "Boundary Condition Mutation",
+        "description": "Changed the condition to check if the number is less than or equal to 0 instead of just less than 0.",
+        "udiff": "--- \n+++ \n@@ -91,7 +91,7 @@\n     \"\"\"\n\n     Return the square root of a number. Returns an error for negative numbers.\n\n     \"\"\"\n\n-    if number < 0:\n\n+    if number <= 0:  # Mutation: Changed boundary condition to include zero\n\n         raise HTTPException(\n\n             status_code=400, detail=\"Cannot take square root of a negative number\"\n\n         )\n"
+    },
+    {
+        "id": "23",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/23_app.py",
+        "status": "SURVIVED",
+        "error_msg": "",
+        "type": "Logical Mutation",
+        "description": "Changed the function to return the square of the number instead of the square root.",
+        "udiff": "--- \n+++ \n@@ -95,7 +95,8 @@\n         raise HTTPException(\n\n             status_code=400, detail=\"Cannot take square root of a negative number\"\n\n         )\n\n-    return {\"result\": math.sqrt(number)}\n\n+    return {\"result\": number ** 2}  # Mutation: Changed to return the square of the number\n\n+\n\n \n\n \n\n @app.get(\"/is-palindrome/{text}\")\n"
+    },
+    {
+        "id": "24",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/24_app.py",
+        "status": "KILLED",
+        "error_msg": "______________________________ test_is_palindrome ______________________________\n\n    def test_is_palindrome():\n        response = client.get(\"/is-palindrome/radar\")\n        assert response.status_code == 200\n>       assert response.json() == {\"is_palindrome\": True}\nE       AssertionError: assert {'is_palindrome': False} == {'is_palindrome': True}\nE         \nE         Differing items:\nE         {'is_palindrome': False} != {'is_palindrome': True}\nE         Use -v to get more diff\n\ntests/test_app.py:33: AssertionError",
+        "type": "Logical Operator Replacement",
+        "description": "Replaced equality check with inequality check to invert the palindrome logic.",
+        "udiff": "--- \n+++ \n@@ -103,7 +103,8 @@\n     \"\"\"\n\n     Check if a string is a palindrome.\n\n     \"\"\"\n\n-    return {\"is_palindrome\": text == text[::-1]}\n\n+    return {\"is_palindrome\": text != text[::-1]}  # Mutation: Inverted palindrome logic\n\n+\n\n \n\n \n\n @app.get(\"/days-until-new-year\")\n"
+    },
+    {
+        "id": "25",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/25_app.py",
+        "status": "KILLED",
+        "error_msg": "______________________________ test_is_palindrome ______________________________\n\n    def test_is_palindrome():\n        response = client.get(\"/is-palindrome/radar\")\n        assert response.status_code == 200\n>       assert response.json() == {\"is_palindrome\": True}\nE       AssertionError: assert {'is_palindrome': False} == {'is_palindrome': True}\nE         \nE         Differing items:\nE         {'is_palindrome': False} != {'is_palindrome': True}\nE         Use -v to get more diff\n\ntests/test_app.py:33: AssertionError",
+        "type": "Boundary Condition Alteration",
+        "description": "Changed the slicing to exclude the last character, altering the palindrome check.",
+        "udiff": "--- \n+++ \n@@ -103,7 +103,8 @@\n     \"\"\"\n\n     Check if a string is a palindrome.\n\n     \"\"\"\n\n-    return {\"is_palindrome\": text == text[::-1]}\n\n+    return {\"is_palindrome\": text == text[:-1][::-1]}  # Mutation: Excluded last character in palindrome check\n\n+\n\n \n\n \n\n @app.get(\"/days-until-new-year\")\n"
+    },
+    {
+        "id": "26",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/26_app.py",
+        "status": "KILLED",
+        "error_msg": "______________________________ test_is_palindrome ______________________________\n\n    def test_is_palindrome():\n        response = client.get(\"/is-palindrome/radar\")\n        assert response.status_code == 200\n>       assert response.json() == {\"is_palindrome\": True}\nE       AssertionError: assert {'is_palindrome': False} == {'is_palindrome': True}\nE         \nE         Differing items:\nE         {'is_palindrome': False} != {'is_palindrome': True}\nE         Use -v to get more diff\n\ntests/test_app.py:33: AssertionError",
+        "type": "Return Value Modification",
+        "description": "Changed the return value to always indicate the text is not a palindrome.",
+        "udiff": "--- \n+++ \n@@ -103,7 +103,8 @@\n     \"\"\"\n\n     Check if a string is a palindrome.\n\n     \"\"\"\n\n-    return {\"is_palindrome\": text == text[::-1]}\n\n+    return {\"is_palindrome\": False}  # Mutation: Always return False\n\n+\n\n \n\n \n\n @app.get(\"/days-until-new-year\")\n"
+    },
+    {
+        "id": "27",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/27_app.py",
+        "status": "SURVIVED",
+        "error_msg": "",
+        "type": "ArithmeticOperatorReplacement",
+        "description": "Replaced addition with subtraction in the year calculation.",
+        "udiff": "--- \n+++ \n@@ -112,7 +112,7 @@\n     Calculates the number of days until the next New Year.\n\n     \"\"\"\n\n     today = date.today()\n\n-    next_new_year = date(today.year + 1, 1, 1)\n\n+    next_new_year = date(today.year - 1, 1, 1)  # Mutation: Changed year increment to decrement\n\n     delta = next_new_year - today\n\n     return {\"days_until_new_year\": delta.days}\n\n \n"
+    },
+    {
+        "id": "28",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/28_app.py",
+        "status": "KILLED",
+        "error_msg": "___________________________ test_days_until_new_year ___________________________\n\n    def test_days_until_new_year():\n        response = client.get(\"/days-until-new-year\")\n        assert response.status_code == 200\n>       assert \"days_until_new_year\" in response.json()\nE       AssertionError: assert 'days_until_new_year' in {'hours_until_new_year': 4008}\nE        +  where {'hours_until_new_year': 4008} = <bound method Response.json of <Response [200 OK]>>()\nE        +    where <bound method Response.json of <Response [200 OK]>> = <Response [200 OK]>.json\n\ntests/test_app.py:27: AssertionError",
+        "type": "ReturnValueModification",
+        "description": "Changed the return value to include hours instead of days.",
+        "udiff": "--- \n+++ \n@@ -114,7 +114,8 @@\n     today = date.today()\n\n     next_new_year = date(today.year + 1, 1, 1)\n\n     delta = next_new_year - today\n\n-    return {\"days_until_new_year\": delta.days}\n\n+    return {\"hours_until_new_year\": delta.days * 24}  # Mutation: Changed days to hours\n\n+\n\n \n\n \n\n @app.get(\"/echo/{message}\")\n"
+    },
+    {
+        "id": "29",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/29_app.py",
+        "status": "SURVIVED",
+        "error_msg": "",
+        "type": "BoundaryConditionModification",
+        "description": "Changed the next new year calculation to the current year.",
+        "udiff": "--- \n+++ \n@@ -112,7 +112,7 @@\n     Calculates the number of days until the next New Year.\n\n     \"\"\"\n\n     today = date.today()\n\n-    next_new_year = date(today.year + 1, 1, 1)\n\n+    next_new_year = date(today.year, 1, 1)  # Mutation: Changed next new year to current year\n\n     delta = next_new_year - today\n\n     return {\"days_until_new_year\": delta.days}\n\n \n"
+    },
+    {
+        "id": "30",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/30_app.py",
+        "status": "KILLED",
+        "error_msg": "__________________________________ test_echo ___________________________________\n\n    def test_echo():\n        response = client.get(\"/echo/hello\")\n        assert response.status_code == 200\n>       assert response.json() == {\"message\": \"hello\"}\nE       AssertionError: assert {} == {'message': 'hello'}\nE         \nE         Right contains 1 more item:\nE         {'message': 'hello'}\nE         Use -v to get more diff\n\ntests/test_app.py:21: AssertionError",
+        "type": "Return Value Mutation",
+        "description": "Changed the return value to an empty dictionary.",
+        "udiff": "--- \n+++ \n@@ -122,4 +122,5 @@\n     \"\"\"\n\n     Returns the same message that is sent to it.\n\n     \"\"\"\n\n-    return {\"message\": message}\n\n+    return {}  # Mutated: Changed the return value to an empty dictionary.\n\n+\n"
+    },
+    {
+        "id": "31",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/31_app.py",
+        "status": "KILLED",
+        "error_msg": "__________________________________ test_echo ___________________________________\n\n    def test_echo():\n        response = client.get(\"/echo/hello\")\n>       assert response.status_code == 200\nE       assert 422 == 200\nE        +  where 422 = <Response [422 Unprocessable Entity]>.status_code\n\ntests/test_app.py:20: AssertionError",
+        "type": "Parameter Mutation",
+        "description": "Changed the parameter type from str to int.",
+        "udiff": "--- \n+++ \n@@ -118,7 +118,7 @@\n \n\n \n\n @app.get(\"/echo/{message}\")\n\n-async def echo(message: str):\n\n+async def echo(message: int):  # Mutated: Changed the parameter type from str to int.\n\n     \"\"\"\n\n     Returns the same message that is sent to it.\n\n     \"\"\"\n"
+    },
+    {
+        "id": "32",
+        "source_path": "app.py",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/python_fastapi/logs/_latest/mutants/32_app.py",
+        "status": "KILLED",
+        "error_msg": "__________________________________ test_echo ___________________________________\n\n    def test_echo():\n        response = client.get(\"/echo/hello\")\n        assert response.status_code == 200\n>       assert response.json() == {\"message\": \"hello\"}\nE       AssertionError: assert {'message': 'fixed message'} == {'message': 'hello'}\nE         \nE         Differing items:\nE         {'message': 'fixed message'} != {'message': 'hello'}\nE         Use -v to get more diff\n\ntests/test_app.py:21: AssertionError",
+        "type": "Logic Mutation",
+        "description": "Changed the return value to a fixed message.",
+        "udiff": "--- \n+++ \n@@ -122,4 +122,5 @@\n     \"\"\"\n\n     Returns the same message that is sent to it.\n\n     \"\"\"\n\n-    return {\"message\": message}\n\n+    return {\"message\": \"fixed message\"}  # Mutated: Changed the return value to a fixed message.\n\n+\n"
+    }
+]

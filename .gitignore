@@ -165,5 +165,4 @@ vendor
 dist*
 
 *.html
-*.json
 *.log
