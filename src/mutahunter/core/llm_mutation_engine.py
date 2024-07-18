@@ -54,7 +54,7 @@ class LLMMutationEngine:
             covered_lines=self.executed_lines,
             example_output=self.prompt.example_output,
             function_block=function_block_with_line_num,
-            maximum_num_of_mutants_per_function_block=2,
+            maximum_num_of_mutants_per_function_block=3,
         )
         prompt = {
             "system": system_template,

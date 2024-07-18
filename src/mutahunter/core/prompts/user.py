@@ -18,22 +18,6 @@ class Mutants(BaseModel):
     changes: List[Change] = Field(description="A list of changes representing the mutants.")
 ```
 
-## Output
-The output must be in JSON format, wrapped in triple backticks (json...), and adhere to the following Pydantic definitions.
-```
-{
-    "changes": [
-        {
-            'function_name': "divide",
-            "type": "DivisionByZero",
-            'description': "Added division by zero check to prevent division by zero error.",
-            'original_line': "    return a / b",
-            'mutated_line': "    if (b == 0) throw new ArithmeticException("Division by zero"); return a / b; // Mutant: Added division by zero check"
-        }
-    ]
-}
-```
-
 ## Function Block to Mutate
 Lines Covered: {{covered_lines}}. Only mutate lines that are covered by execution.
 Note that we have manually added line numbers for each line of code. Do not include line numbers in your mutation. Make sure indentation is preserverd when generating mutants.

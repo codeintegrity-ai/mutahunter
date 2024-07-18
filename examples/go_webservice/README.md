@@ -19,19 +19,34 @@ gocov convert coverage.out | gocov-xml > coverage.xml
 Currently test coverage is 96.6%. Let's see what the mutation coverage is.
 
 ```bash
-# --extreme flag is used to run the mutation testing in extreme mode. This does not use the LLM-based model.
-mutahunter run --test-command "go test" --code-coverage-report-path "coverage.xml" --only-mutate-file-paths "app.go" --extreme
-
-# After achieving a high mutation score, let's say 90%, you can check one last time using LLM-based
-
-# go seems to do pretty bad when using gpt-3.5-turbo, so we recommend using gpt-4o
-
 export OPENAI_API_KEY=your-key-goes-here
 
-mutahunter run --test-command "go test" --code-coverage-report-path "coverage.xml" --only-mutate-file-paths "app.go" --model "gpt-4o"
-
-## you can use --modifies-files-only to only mutate the files that are modified by the test suite
-mutahunter run --test-command "go test" --code-coverage-report-path "coverage.xml" --only-mutate-file-paths "app.go" --extreme --modifies-files-only
-
-## and then keeping improving the test suite until you get 100%
+mutahunter run --test-command "go test" --code-coverage-report-path "coverage.xml" --only-mutate-file-paths "app.go" --model "gpt-4o-mini"
 ```
+
+```bash
+2024-07-18 16:13:56,632 INFO: 📊 Overall Mutation Coverage 📊
+📈 Line Coverage: 97.00% 📈
+🎯 Mutation Coverage: 52.63% 🎯
+🦠 Total Mutants: 21 🦠
+🛡️ Survived Mutants: 9 🛡️
+🗡️ Killed Mutants: 10 🗡️
+🕒 Timeout Mutants: 0 🕒
+🔥 Compile Error Mutants: 2 🔥
+💰 Expected Cost: $0.00579 USD 💰
+2024-07-18 16:13:56,632 INFO: 📂 Detailed Mutation Coverage 📂
+📂 Source File: app.go 📂
+🎯 Mutation Coverage: 52.63% 🎯
+🦠 Total Mutants: 21 🦠
+🛡️ Survived Mutants: 9 🛡️
+🗡️ Killed Mutants: 10 🗡️
+🕒 Timeout Mutants: 0 🕒
+🔥 Compile Error Mutants: 2 🔥
+
+2024-07-18 16:13:59,928 INFO: Mutation Testing Ended. Took 121s
+```
+
+### Surviving Mutant Analysis
+
+[Mutants](./mutants.json)
+[Report](./mutant_analysis.md)

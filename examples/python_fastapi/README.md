@@ -12,8 +12,11 @@ pytest --cov=. --cov-report=xml --cov-report=term
 ## Running Mutahunter to analyze the tests
 
 ```bash
-mutahunter run --test-command "pytest" --code-coverage-report-path "coverage.xml" --only-mutate-file-paths "app.py" --extreme
-
 export OPENAI_API_KEY=your-key-goes-here
-mutahunter run --test-command "pytest" --code-coverage-report-path "coverage.xml" --only-mutate-file-paths "app.py" --model "gpt-4o" --modifies-files-only
+mutahunter run --test-command "pytest" --code-coverage-report-path "coverage.xml" --only-mutate-file-paths "app.py" --model "gpt-4o"
 ```
+
+### Surviving Mutant Analysis
+
+[Mutants](./mutants.json)
+[Report](./mutant_analysis.md)

@@ -19,7 +19,6 @@ Check it out here: [Roadmap](https://github.com/codeintegrity-ai/mutahunter/issu
 
 We'd love to hear your feedback, suggestions, and any thoughts you have on mutation testing. Join the discussion and share your insights on the roadmap or any other ideas you have. 🙌
 
-
 ## Table of Contents
 
 - [Features](#features)
