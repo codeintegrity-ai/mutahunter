@@ -25,7 +25,7 @@ Note that we have manually added line numbers for each line of code. Do not incl
 {{function_block}}
 ```
 
-Generate 1~{{maximum_num_of_mutants_per_function_block}} mutants for the function block provided to you. Ensure that the mutants are semantically different from the original code. Focus on critical areas such as error handling, boundary conditions, and logical branches.
+Generate 1~{{maximum_num_of_mutants_per_function_block}} mutants for the function block provided to you. Ensure that the mutants are semantically different from the original code. Refer to the mutation guidelines provided in the system prompt for mutation focus areas. Each mutant should be a single mutation applied to the original code. Provide the mutated line along with a comment describing the mutation. Ensure that the mutated line is syntactically correct and does not introduce compilation errors.
 """
 
 
@@ -46,7 +46,6 @@ Based on the mutation testing results only showing the surviving mutants. Please
 - Improvement Recommendations: Suggestions for new or improved test cases to effectively target and eliminate the surviving mutants.
 
 ## Example Output:
-======
 ### Vulnerable Code Areas
 **File:** `src/main/java/com/example/BankAccount.java`
 **Location:** Line 45
