@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = 'mutahunter'
 description = "LLM Mutation Testing for any programming language"
 requires-python = ">= 3.11"
-version = "1.1.1"
+version = "1.1.2"
 dependencies = [
     "tree-sitter==0.21.3",
     'tree_sitter_languages==1.10.2',
