@@ -24,6 +24,8 @@ We'd love to hear your feedback, suggestions, and any thoughts you have on mutat
 - [Features](#features)
 - [Recommended Mutation Testing Process](#recommended-mutation-testing-process)
 - [Getting Started](#getting-started)
+- [Examples](#examples)
+- [Unit Test Generator: Enhancing Line and Mutation Coverage (WIP)](#unit-test-generator-enhancing-line-and-mutation-coverage-wip)
 - [LLM Survivng Mutant Analysis Report](#mutant-report)
 - [Examples](#examples)
 - [CI/CD Integration](#cicd-integration)
@@ -32,11 +34,12 @@ Mutahunter uses LLM models to inject context-aware faults into your codebase. Th
 
 ## Features
 
-- **Extreme Mutation Testing:** Leverages language agnostic [TreeSitter](https://tree-sitter.github.io/) parser to apply extreme mutations to the codebase without using LLMs. [Research](https://arxiv.org/abs/2103.08480) shows that this approach is effective at detecting pseudo-tested methods with significantly lower computational cost. Currently supports Python, Java, JavaScript, and Go. Check the [scheme files](/src/mutahunter/core/queries/) to see the supported operators. We welcome contributions to add more operators and languages.
+- **Automatuic Test Generation:** Generates unit tests to increase line and mutation coverage, leveraging LLMs to identify and fill gaps in test coverage. See the [Unit Test Generator](#unit-test-generator-enhancing-line-and-mutation-coverage-wip) section for more details.
+- **Language Agnostic:** Compatible with languages that provide coverage reports in Cobertura XML, Jacoco XML, and lcov formats. Extensible to additional languages and testing frameworks.
 - **LLM Context-aware Mutations:** Utilizes LLM models to generate context-aware mutants. [Research](https://arxiv.org/abs/2406.09843) indicates that LLM-generated mutants have higher fault detection potential, fewer equivalent mutants, and higher coupling and semantic similarity to real faults. It uses a map of your entire git repository to generate contextually relevant mutants using [aider's repomap](https://aider.chat/docs/repomap.html). Supports self-hosted LLMs, Anthropic, OpenAI, and any LLM models via [LiteLLM](https://github.com/BerriAI/litellm).
 - **Change-Based Testing:** Runs mutation tests on modified files and lines based on the latest commit or pull request changes, ensuring that only relevant parts of the code are tested.
-- **Language Agnostic:** Compatible with languages that provide coverage reports in Cobertura XML, Jacoco XML, and lcov formats. Extensible to additional languages and testing frameworks.
 - **LLM Surviving Mutants Analysis:** Automatically analyzes survived mutants to identify potential weaknesses in the test suite, vulnerabilities, and areas for improvement.
+- **Extreme Mutation Testing:** Leverages language agnostic [TreeSitter](https://tree-sitter.github.io/) parser to apply extreme mutations to the codebase without using LLMs. [Research](https://arxiv.org/abs/2103.08480) shows that this approach is effective at detecting pseudo-tested methods with significantly lower computational cost. Currently supports Python, Java, JavaScript, and Go. Check the [scheme files](/src/mutahunter/core/queries/) to see the supported operators. We welcome contributions to add more operators and languages.
 
 ## Recommended Mutation Testing Process
 
@@ -98,6 +101,20 @@ Check [Java Example](/examples/java_maven/) to see some interesting LLM-based mu
 - [Python FastAPI Example](/examples/python_fastapi/)
 
 Feel free to add more examples! ✨
+
+## Unit Test Generator: Enhancing Line and Mutation Coverage (WIP)
+
+This tool generates unit tests to increase both line and mutation coverage, inspired by papers:
+
+- [Automated Unit Test Improvement using Large Language Models at Meta](https://arxiv.org/abs/2402.09171):  
+  - Uses LLMs to identify and fill gaps in test coverage.
+- [Effective Test Generation Using Pre-trained Large Language Models and Mutation Testing](https://arxiv.org/abs/2308.16557):
+  - Generates tests that detect and kill code mutants, ensuring robustness.
+
+```bash
+Line coverage increased from 47.00% to 100.00%
+Mutation coverage increased from 92.86% to 92.86%
+```
 
 ## Mutant Report
 
