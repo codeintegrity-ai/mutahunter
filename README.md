@@ -1,7 +1,7 @@
 <div align="center">
   <h1>Mutahunter</h1>
 
-  Open-Source Language Agnostic LLM-based Mutation Testing for Automated Software Testing
+  Open-Source Language Agnostic Automatic Unit Test Generator + LLM-based Mutation Testing for Automated Software Testing
   
   [![GitHub license](https://img.shields.io/badge/License-AGPL_3.0-blue.svg)](https://github.com/yourcompany/mutahunter/blob/main/LICENSE)
   [![Discord](https://badgen.net/badge/icon/discord?icon=discord&label&color=purple)](https://discord.gg/S5u3RDMq)
@@ -22,19 +22,18 @@ We'd love to hear your feedback, suggestions, and any thoughts you have on mutat
 ## Table of Contents
 
 - [Features](#features)
-- [Recommended Mutation Testing Process](#recommended-mutation-testing-process)
-- [Getting Started](#getting-started)
-- [Examples](#examples)
 - [Unit Test Generator: Enhancing Line and Mutation Coverage (WIP)](#unit-test-generator-enhancing-line-and-mutation-coverage-wip)
+- [Getting Started with Mutation Testing](#getting-started-with-mutation-testing)
+- [Examples](#examples)
 - [LLM Survivng Mutant Analysis Report](#mutant-report)
 - [Examples](#examples)
 - [CI/CD Integration](#cicd-integration)
 
-Mutahunter uses LLM models to inject context-aware faults into your codebase. This AI-driven approach produces fewer equivalent mutants, mutants with higher fault detection potential, and those with higher coupling and semantic similarity to real faults, ensuring comprehensive and effective testing.
+Mutahunter can automtically generate unit tests to increase line and mutation coverage, leveraging Large Language Models (LLMs) to identify and fill gaps in test coverage. It uses LLM models to inject context-aware faults into your codebase. This AI-driven approach produces fewer equivalent mutants, mutants with higher fault detection potential, and those with higher coupling and semantic similarity to real faults, ensuring comprehensive and effective testing.
 
 ## Features
 
-- **Automatuic Test Generation:** Generates unit tests to increase line and mutation coverage, leveraging LLMs to identify and fill gaps in test coverage. See the [Unit Test Generator](#unit-test-generator-enhancing-line-and-mutation-coverage-wip) section for more details.
+- **Automatic Test Generation:** Generates unit tests to increase line and mutation coverage, leveraging LLMs to identify and fill gaps in test coverage. See the [Unit Test Generator](#unit-test-generator-enhancing-line-and-mutation-coverage-wip) section for more details.
 - **Language Agnostic:** Compatible with languages that provide coverage reports in Cobertura XML, Jacoco XML, and lcov formats. Extensible to additional languages and testing frameworks.
 - **LLM Context-aware Mutations:** Utilizes LLM models to generate context-aware mutants. [Research](https://arxiv.org/abs/2406.09843) indicates that LLM-generated mutants have higher fault detection potential, fewer equivalent mutants, and higher coupling and semantic similarity to real faults. It uses a map of your entire git repository to generate contextually relevant mutants using [aider's repomap](https://aider.chat/docs/repomap.html). Supports self-hosted LLMs, Anthropic, OpenAI, and any LLM models via [LiteLLM](https://github.com/BerriAI/litellm).
 - **Change-Based Testing:** Runs mutation tests on modified files and lines based on the latest commit or pull request changes, ensuring that only relevant parts of the code are tested.
@@ -53,7 +52,7 @@ We recommend running Mutahunter per test file. This approach ensures that the mu
 
 3. **LLM-Based Mutation Testing on Changed Files:** Inject context-aware mutants using LLMs on changed files during pull requests as the final line of defense. Use the `--modified-files-only` flag to focus on recent changes. In this way it will make the mutation testing significantly **faster** and **cost effective.**
 
-## Getting Started
+## Getting Started with Mutation Testing
 
 ```bash
 # Install Mutahunter package via GitHub. Python 3.11+ is required.
