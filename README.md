@@ -111,6 +111,11 @@ This tool generates unit tests to increase both line and mutation coverage, insp
   - Generates tests that detect and kill code mutants, ensuring robustness.
 
 ```bash
+## go to examples/java_maven
+## remove some tests from BankAccountTest.java
+
+mutahunter gen --test-command "mvn clean test" --code-coverage-report-path "target/site/jacoco/jacoco.xml" --test-file-path "src/test/java/BankAccountTest.java" --source-file-path "src/main/java/com/example/BankAccount.java" --coverage-type jacoco  --model "gpt-4o"
+
 Line coverage increased from 47.00% to 100.00%
 Mutation coverage increased from 92.86% to 92.86%
 ```
