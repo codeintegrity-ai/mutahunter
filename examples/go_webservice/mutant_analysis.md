@@ -1,27 +1,34 @@
 ### Vulnerable Code Areas
 **File:** `app.go`  
-**Location:** Multiple functions including `subtractHandler`, `multiplyHandler`, `isPalindromeHandler`, `daysUntilNewYearHandler`, and `echoHandler`.  
-**Description:** The surviving mutants indicate that the code lacks robust error handling for parameter conversions and edge cases, such as empty inputs and boundary conditions. For instance, the `subtractHandler` does not handle conversion errors, and the `multiplyHandler` incorrectly returns 0 when either number is 0 without proper context.
+**Location:** Multiple functions  
+**Description:** The following areas are vulnerable due to surviving mutants:
+1. **`welcomeHandler`**: The response key was altered from "message" to "msg", indicating a lack of strict key validation in tests.
+2. **`currentDateHandler`**: The response structure was changed to omit the "date" key, highlighting insufficient checks on response formats.
+3. **`divideHandler`**: The condition for division by zero was modified to allow division by zero, which could lead to runtime errors.
+4. **`sqrtHandler`**: The condition for negative numbers was weakened, allowing invalid inputs.
+5. **`daysUntilNewYearHandler`**: An off-by-one error was introduced, indicating a lack of thorough validation in date calculations.
+6. **`reverse`**: The loop condition was altered to create an infinite loop, showcasing potential flaws in logic handling.
 
 ### Test Case Gaps
-**File:** `app_test.go` (assumed)  
-**Location:** Various test methods for arithmetic operations and string manipulations.  
-**Reason:** Existing test cases likely do not cover scenarios such as:
-- Invalid or empty parameters (e.g., `subtractHandler` and `echoHandler`).
-- Edge cases like multiplying by zero or checking for palindromes with empty strings.
-- Leap year considerations in `daysUntilNewYearHandler`.
+**File:** `app_test.go`  
+**Location:** Various test methods  
+**Reason:** Existing tests likely do not cover:
+1. Response structure validation, leading to undetected key changes.
+2. Edge cases for division and square root operations, such as zero and negative inputs.
+3. Logical errors in date calculations, which require comprehensive boundary testing.
+4. Infinite loop scenarios that could arise from incorrect loop conditions.
 
 ### Improvement Recommendations
 **New Test Cases Needed:**
-1. **Test Method:** `testSubtractHandlerInvalidInput`
-   - **Description:** Validate behavior when non-integer inputs are provided.
-2. **Test Method:** `testMultiplyHandlerZeroInput`
-   - **Description:** Ensure that multiplication by zero is handled correctly and returns a meaningful response.
-3. **Test Method:** `testIsPalindromeHandlerEmptyString`
-   - **Description:** Check the response when an empty string is passed to the palindrome check.
-4. **Test Method:** `testDaysUntilNewYearHandlerLeapYear`
-   - **Description:** Test the calculation of days until New Year during a leap year to ensure accuracy.
-5. **Test Method:** `testEchoHandlerEmptyMessage`
-   - **Description:** Validate the response when an empty message is provided, ensuring proper error handling.
-
-By addressing these gaps, the robustness of the application can be significantly improved, ensuring better handling of edge cases and invalid inputs.
+1. **Test Method:** `testWelcomeHandlerResponseStructure`
+   - **Description:** Validate that the response contains the correct key ("message") and value.
+2. **Test Method:** `testCurrentDateHandlerResponse`
+   - **Description:** Ensure the response includes the "date" key with a valid date format.
+3. **Test Method:** `testDivideByZero`
+   - **Description:** Test division by zero to confirm proper error handling.
+4. **Test Method:** `testSqrtNegativeInput`
+   - **Description:** Check the response when a negative number is passed to the square root function.
+5. **Test Method:** `testDaysUntilNewYearCalculation`
+   - **Description:** Validate the calculation of days until New Year, ensuring no off-by-one errors.
+6. **Test Method:** `testReverseFunctionInfiniteLoop`
+   - **Description:** Test the reverse function with various inputs to ensure it does not enter an infinite loop.

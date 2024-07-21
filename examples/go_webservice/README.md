@@ -24,28 +24,6 @@ export OPENAI_API_KEY=your-key-goes-here
 mutahunter run --test-command "go test" --code-coverage-report-path "coverage.xml" --only-mutate-file-paths "app.go" --model "gpt-4o-mini"
 ```
 
-```bash
-2024-07-18 16:13:56,632 INFO: 📊 Overall Mutation Coverage 📊
-📈 Line Coverage: 97.00% 📈
-🎯 Mutation Coverage: 52.63% 🎯
-🦠 Total Mutants: 21 🦠
-🛡️ Survived Mutants: 9 🛡️
-🗡️ Killed Mutants: 10 🗡️
-🕒 Timeout Mutants: 0 🕒
-🔥 Compile Error Mutants: 2 🔥
-💰 Expected Cost: $0.00579 USD 💰
-2024-07-18 16:13:56,632 INFO: 📂 Detailed Mutation Coverage 📂
-📂 Source File: app.go 📂
-🎯 Mutation Coverage: 52.63% 🎯
-🦠 Total Mutants: 21 🦠
-🛡️ Survived Mutants: 9 🛡️
-🗡️ Killed Mutants: 10 🗡️
-🕒 Timeout Mutants: 0 🕒
-🔥 Compile Error Mutants: 2 🔥
-
-2024-07-18 16:13:59,928 INFO: Mutation Testing Ended. Took 121s
-```
-
 ### Surviving Mutant Analysis
 
 [Mutants](./mutants.json)

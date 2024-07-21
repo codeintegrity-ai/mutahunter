@@ -1,25 +1,25 @@
 ### Vulnerable Code Areas
 **File:** `src/main/java/com/example/BankAccount.java`  
-**Location:** Lines 28, 36, 39, 66  
-**Description:** The methods `deposit` and `withdraw` do not handle zero or negative amounts correctly. Specifically, the `withdraw` method ignores the overdraft limit if the withdrawal amount is less than the balance. Additionally, the `scheduleTransaction` method allows for scheduling transactions with zero days, which could lead to unintended immediate execution.
+**Location:** Lines 28, 36, 56, 66  
+**Description:** The methods `deposit`, `withdraw`, `executeBatchTransactions`, and `scheduleTransaction` contain vulnerabilities due to improper handling of negative values and null checks. Specifically, allowing negative deposits and withdrawals can lead to incorrect balance updates, while the lack of null checks for transaction arrays can cause `NullPointerExceptions`.
 
 ### Test Case Gaps
 **File:** `src/test/java/com/example/BankAccountTest.java`  
-**Location:** Test methods `testDeposit`, `testWithdraw`, and `testScheduleTransaction`  
-**Reason:** Existing test cases do not account for edge cases such as zero or negative deposit/withdrawal amounts. The tests also fail to validate the behavior when overdraft limits are ignored or when scheduling transactions for zero days.
+**Location:** Various test methods  
+**Reason:** Existing test cases do not account for edge cases involving negative amounts for deposits and withdrawals. Additionally, there are no tests to verify the behavior of the system when null arrays are passed to `executeBatchTransactions`, nor do they check for scheduling transactions with non-positive days.
 
 ### Improvement Recommendations
 **New Test Cases Needed:**
-1. **Test Method:** `testDepositZeroOrNegativeAmount`
-   - **Description:** Verify that depositing zero or negative amounts throws an `IllegalArgumentException`.
+1. **Test Method:** `testDepositNegativeAmount`
+   - **Description:** Verify that an `IllegalArgumentException` is thrown when attempting to deposit a negative amount.
    
-2. **Test Method:** `testWithdrawZeroOrNegativeAmount`
-   - **Description:** Ensure that attempting to withdraw zero or negative amounts results in an `IllegalArgumentException`.
+2. **Test Method:** `testWithdrawNegativeAmount`
+   - **Description:** Ensure that an `IllegalArgumentException` is thrown when attempting to withdraw a negative amount.
+   
+3. **Test Method:** `testExecuteBatchTransactionsWithNull`
+   - **Description:** Test the behavior of `executeBatchTransactions` when null arrays are passed for deposits and withdrawals, ensuring proper exception handling.
+   
+4. **Test Method:** `testScheduleTransactionWithNegativeDays`
+   - **Description:** Confirm that an `IllegalArgumentException` is thrown when scheduling a transaction with negative days.
 
-3. **Test Method:** `testWithdrawExceedingBalanceIgnoringOverdraft`
-   - **Description:** Test the scenario where a withdrawal exceeds the balance but is within the overdraft limit to confirm proper handling.
-
-4. **Test Method:** `testScheduleTransactionZeroDays`
-   - **Description:** Validate that scheduling a transaction for zero days raises an `IllegalArgumentException`.
-
-By addressing these gaps, the test suite will better cover critical edge cases, enhancing the robustness of the `BankAccount` class.
+By implementing these test cases, the code's robustness can be significantly improved, ensuring that it properly handles edge cases and maintains integrity in transaction processing.
