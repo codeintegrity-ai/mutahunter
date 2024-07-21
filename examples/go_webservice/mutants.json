@@ -4,20 +4,20 @@
         "source_path": "app.go",
         "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/1_app.go",
         "status": "KILLED",
-        "error_msg": "--- FAIL: TestRootEndpoint (0.00s)\n    app_test.go:21: \n        \tError Trace:\t/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/app_test.go:21\n        \tError:      \t\"{\\\"message\\\":\\\"Hello, you've reached the Go Gin server!\\\"}\" does not contain \"Welcome to the Go Gin application!\"\n        \tTest:       \tTestRootEndpoint",
-        "type": "Return Value Mutation",
-        "description": "Changed the response message to a different greeting.",
-        "udiff": "--- \n+++ \n@@ -28,7 +28,7 @@\n }\n\n \n\n func welcomeHandler(c *gin.Context) {\n\n-\tc.JSON(http.StatusOK, gin.H{\"message\": \"Welcome to the Go Gin application!\"})\n\n+ c.JSON(http.StatusOK, gin.H{\"message\": \"Hello, you've reached the Go Gin server!\"}) // Changed greeting message\n\n }\n\n \n\n func currentDateHandler(c *gin.Context) {\n"
+        "error_msg": "--- FAIL: TestRootEndpoint (0.00s)\npanic: runtime error: invalid memory address or nil pointer dereference [recovered]\n\tpanic: runtime error: invalid memory address or nil pointer dereference",
+        "type": "Alter Outputs",
+        "description": "Changed the return type of the SetupRouter function to nil, which will cause a runtime error when the router is expected to be used.",
+        "udiff": "--- \n+++ \n@@ -24,7 +24,7 @@\n \trouter.GET(\"/days-until-new-year\", daysUntilNewYearHandler)\n\n \trouter.GET(\"/echo/:message\", echoHandler)\n\n \n\n-\treturn router\n\n+ return nil // mutated to return nil instead of the router\n\n }\n\n \n\n func welcomeHandler(c *gin.Context) {\n"
     },
     {
         "id": "2",
         "source_path": "app.go",
         "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/2_app.go",
         "status": "KILLED",
-        "error_msg": "--- FAIL: TestRootEndpoint (0.00s)\n    app_test.go:20: \n        \tError Trace:\t/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/app_test.go:20\n        \tError:      \tNot equal: \n        \t            \texpected: 200\n        \t            \tactual  : 500\n        \tTest:       \tTestRootEndpoint",
-        "type": "Error Handling Mutation",
-        "description": "Introduced a potential error by changing the status code to 500.",
-        "udiff": "--- \n+++ \n@@ -28,7 +28,7 @@\n }\n\n \n\n func welcomeHandler(c *gin.Context) {\n\n-\tc.JSON(http.StatusOK, gin.H{\"message\": \"Welcome to the Go Gin application!\"})\n\n+ c.JSON(http.StatusInternalServerError, gin.H{\"message\": \"Welcome to the Go Gin application!\"}) // Changed status code to 500\n\n }\n\n \n\n func currentDateHandler(c *gin.Context) {\n"
+        "error_msg": "...\n        \t            \tactual  : 404\n        \tTest:       \tTestDivideByZeroEndpoint\n    app_test.go:43: \n        \tError Trace:\t/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/app_test.go:43\n        \tError:      \tInput ('404 page not found') needs to be valid json.\n        \t            \tJSON parsing error: 'invalid character 'p' after top-level value'\n        \tTest:       \tTestDivideByZeroEndpoint\n--- FAIL: TestDivideEndpoint (0.00s)\n    app_test.go:131: \n        \tError Trace:\t/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/app_test.go:131\n        \tError:      \tNot equal: \n        \t            \texpected: 200\n        \t            \tactual  : 404\n        \tTest:       \tTestDivideEndpoint\n    app_test.go:132: \n        \tError Trace:\t/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/app_test.go:132\n        \tError:      \tInput ('404 page not found') needs to be valid json.\n        \t            \tJSON parsing error: 'invalid character 'p' after top-level value'\n        \tTest:       \tTestDivideEndpoint",
+        "type": "Remove Code Blocks",
+        "description": "Removed the route for the '/divide/:num1/:num2' endpoint, which could lead to a missing functionality error.",
+        "udiff": "--- \n+++ \n@@ -17,7 +17,7 @@\n \trouter.GET(\"/add/:num1/:num2\", addHandler)\n\n \trouter.GET(\"/subtract/:num1/:num2\", subtractHandler)\n\n \trouter.GET(\"/multiply/:num1/:num2\", multiplyHandler)\n\n-\trouter.GET(\"/divide/:num1/:num2\", divideHandler)\n\n+ // router.GET(\"/divide/:num1/:num2\", divideHandler) // mutated to remove the division route\n\n \trouter.GET(\"/square/:number\", squareHandler)\n\n \trouter.GET(\"/sqrt/:number\", sqrtHandler)\n\n \trouter.GET(\"/is-palindrome/:text\", isPalindromeHandler)\n"
     },
     {
         "id": "3",
@@ -25,99 +25,99 @@
         "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/3_app.go",
         "status": "SURVIVED",
         "error_msg": "",
-        "type": "Response Structure Mutation",
-        "description": "Altered the response structure to include an additional field.",
-        "udiff": "--- \n+++ \n@@ -28,7 +28,7 @@\n }\n\n \n\n func welcomeHandler(c *gin.Context) {\n\n-\tc.JSON(http.StatusOK, gin.H{\"message\": \"Welcome to the Go Gin application!\"})\n\n+ c.JSON(http.StatusOK, gin.H{\"message\": \"Welcome to the Go Gin application!\", \"status\": \"success\"}) // Added status field\n\n }\n\n \n\n func currentDateHandler(c *gin.Context) {\n"
+        "type": "Alter Outputs",
+        "description": "Changed the response message to an incorrect format, simulating data corruption.",
+        "udiff": "--- \n+++ \n@@ -28,7 +28,7 @@\n }\n\n \n\n func welcomeHandler(c *gin.Context) {\n\n-\tc.JSON(http.StatusOK, gin.H{\"message\": \"Welcome to the Go Gin application!\"})\n\n+ c.JSON(http.StatusOK, gin.H{\"msg\": \"Welcome to the Go Gin application!\"}) // Changed key from \"message\" to \"msg\" to simulate data corruption.\n\n }\n\n \n\n func currentDateHandler(c *gin.Context) {\n"
     },
     {
         "id": "4",
         "source_path": "app.go",
         "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/4_app.go",
-        "status": "SURVIVED",
-        "error_msg": "",
-        "type": "Error Handling Mutation",
-        "description": "Added error handling for parameter conversion.",
-        "udiff": "--- \n+++ \n@@ -43,7 +43,16 @@\n }\n\n \n\n func subtractHandler(c *gin.Context) {\n\n-\tnum1, _ := strconv.Atoi(c.Param(\"num1\"))\n\n+ num1Str := c.Param(\"num1\")\n\n+if num1Str == \"\" {\n\n+\tc.JSON(http.StatusBadRequest, gin.H{\"error\": \"num1 is required\"})\n\n+\treturn\n\n+}\n\n+num1, err := strconv.Atoi(num1Str)\n\n+if err != nil {\n\n+\tc.JSON(http.StatusBadRequest, gin.H{\"error\": \"invalid num1\"})\n\n+\treturn\n\n+}\n\n \tnum2, _ := strconv.Atoi(c.Param(\"num2\"))\n\n \tresult := num1 - num2\n\n \tc.JSON(http.StatusOK, gin.H{\"result\": result})\n"
+        "status": "KILLED",
+        "error_msg": "--- FAIL: TestRootEndpoint (0.00s)\n    app_test.go:20: \n        \tError Trace:\t/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/app_test.go:20\n        \tError:      \tNot equal: \n        \t            \texpected: 200\n        \t            \tactual  : 500\n        \tTest:       \tTestRootEndpoint",
+        "type": "Modify Core Logic",
+        "description": "Introduced an incorrect HTTP status code to simulate a failure in response.",
+        "udiff": "--- \n+++ \n@@ -28,7 +28,7 @@\n }\n\n \n\n func welcomeHandler(c *gin.Context) {\n\n-\tc.JSON(http.StatusOK, gin.H{\"message\": \"Welcome to the Go Gin application!\"})\n\n+ c.JSON(http.StatusInternalServerError, gin.H{\"message\": \"Welcome to the Go Gin application!\"}) // Changed status code to InternalServerError to simulate failure.\n\n }\n\n \n\n func currentDateHandler(c *gin.Context) {\n"
     },
     {
         "id": "5",
         "source_path": "app.go",
         "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/5_app.go",
-        "status": "KILLED",
-        "error_msg": "--- FAIL: TestSubtractEndpoint (0.00s)\n    app_test.go:154: \n        \tError Trace:\t/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/app_test.go:154\n        \tError:      \tNot equal: \n        \t            \texpected: map[string]interface {}{\"result\":6}\n        \t            \tactual  : map[string]interface {}{\"result\":14}\n        \t            \t\n        \t            \tDiff:\n        \t            \t--- Expected\n        \t            \t+++ Actual\n        \t            \t@@ -1,3 +1,3 @@\n        \t            \t (map[string]interface {}) (len=1) {\n        \t            \t- (string) (len=6) \"result\": (float64) 6\n        \t            \t+ (string) (len=6) \"result\": (float64) 14\n        \t            \t }\n        \tTest:       \tTestSubtractEndpoint\nFAIL\nexit status 1\nFAIL\tgo_webservice\t0.215s",
-        "type": "Boundary Condition Mutation",
-        "description": "Changed the operation from subtraction to addition.",
-        "udiff": "--- \n+++ \n@@ -45,7 +45,7 @@\n func subtractHandler(c *gin.Context) {\n\n \tnum1, _ := strconv.Atoi(c.Param(\"num1\"))\n\n \tnum2, _ := strconv.Atoi(c.Param(\"num2\"))\n\n-\tresult := num1 - num2\n\n+ result := num1 + num2 // Mutation: Changed subtraction to addition\n\n \tc.JSON(http.StatusOK, gin.H{\"result\": result})\n\n }\n\n \n"
+        "status": "SURVIVED",
+        "error_msg": "",
+        "type": "Alter Outputs",
+        "description": "Changed the response structure to omit the 'date' key, leading to incomplete data in the JSON response.",
+        "udiff": "--- \n+++ \n@@ -32,7 +32,7 @@\n }\n\n \n\n func currentDateHandler(c *gin.Context) {\n\n-\tc.JSON(http.StatusOK, gin.H{\"date\": time.Now().Format(\"2006-01-02\")})\n\n+ c.JSON(http.StatusOK, gin.H{\"time\": time.Now().Format(\"2006-01-02\")}) // mutated response structure, missing date key\n\n }\n\n \n\n func addHandler(c *gin.Context) {\n"
     },
     {
         "id": "6",
         "source_path": "app.go",
         "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/6_app.go",
         "status": "KILLED",
-        "error_msg": "--- FAIL: TestSubtractEndpoint (0.00s)\n    app_test.go:154: \n        \tError Trace:\t/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/app_test.go:154\n        \tError:      \tNot equal: \n        \t            \texpected: map[string]interface {}{\"result\":6}\n        \t            \tactual  : map[string]interface {}{\"result\":-6}\n        \t            \t\n        \t            \tDiff:\n        \t            \t--- Expected\n        \t            \t+++ Actual\n        \t            \t@@ -1,3 +1,3 @@\n        \t            \t (map[string]interface {}) (len=1) {\n        \t            \t- (string) (len=6) \"result\": (float64) 6\n        \t            \t+ (string) (len=6) \"result\": (float64) -6\n        \t            \t }\n        \tTest:       \tTestSubtractEndpoint\nFAIL\nexit status 1\nFAIL\tgo_webservice\t0.223s",
-        "type": "Logical Mutation",
-        "description": "Inverted the result to return a negative value.",
-        "udiff": "--- \n+++ \n@@ -45,7 +45,7 @@\n func subtractHandler(c *gin.Context) {\n\n \tnum1, _ := strconv.Atoi(c.Param(\"num1\"))\n\n \tnum2, _ := strconv.Atoi(c.Param(\"num2\"))\n\n-\tresult := num1 - num2\n\n+ result := num2 - num1 // Mutation: Inverted the subtraction to return a negative result\n\n \tc.JSON(http.StatusOK, gin.H{\"result\": result})\n\n }\n\n \n"
+        "error_msg": "--- FAIL: TestCurrentDateEndpoint (0.00s)\n    app_test.go:64: \n        \tError Trace:\t/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/app_test.go:64\n        \tError:      \tNot equal: \n        \t            \texpected: 200\n        \t            \tactual  : 500\n        \tTest:       \tTestCurrentDateEndpoint\n    app_test.go:65: \n        \tError Trace:\t/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/app_test.go:65\n        \tError:      \t\"\" does not contain \"2024-07-21\"\n        \tTest:       \tTestCurrentDateEndpoint",
+        "type": "Simulate Failures",
+        "description": "Introduced a potential runtime error by calling a nil pointer dereference on the context.",
+        "udiff": "--- \n+++ \n@@ -32,7 +32,7 @@\n }\n\n \n\n func currentDateHandler(c *gin.Context) {\n\n-\tc.JSON(http.StatusOK, gin.H{\"date\": time.Now().Format(\"2006-01-02\")})\n\n+ c.JSON(http.StatusOK, gin.H{\"date\": c.Value(\"nonexistent\").(string)}) // potential nil pointer dereference\n\n }\n\n \n\n func addHandler(c *gin.Context) {\n"
     },
     {
         "id": "7",
         "source_path": "app.go",
         "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/7_app.go",
         "status": "KILLED",
-        "error_msg": "# go_webservice [go_webservice.test]\n./app.go:54:4: num1 declared and not used\n./app.go:59:12: undefined: num1\nFAIL\tgo_webservice [build failed]",
-        "type": "Error Handling Mutation",
-        "description": "Added error handling for Atoi conversion.",
-        "udiff": "--- \n+++ \n@@ -50,7 +50,11 @@\n }\n\n \n\n func multiplyHandler(c *gin.Context) {\n\n-\tnum1, _ := strconv.Atoi(c.Param(\"num1\"))\n\n+ num1Str := c.Param(\"num1\")\n\n+if num1, err := strconv.Atoi(num1Str); err != nil {\n\n+\tc.JSON(http.StatusBadRequest, gin.H{\"error\": \"Invalid number: \" + num1Str})\n\n+\treturn\n\n+}\n\n \tnum2, _ := strconv.Atoi(c.Param(\"num2\"))\n\n \tresult := num1 * num2\n\n \tc.JSON(http.StatusOK, gin.H{\"result\": result})\n"
+        "error_msg": "--- FAIL: TestAddEndpoint (0.00s)\n    app_test.go:54: \n        \tError Trace:\t/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/app_test.go:54\n        \tError:      \tNot equal: \n        \t            \texpected: map[string]interface {}{\"result\":7}\n        \t            \tactual  : map[string]interface {}{\"result\":-1}\n        \t            \t\n        \t            \tDiff:\n        \t            \t--- Expected\n        \t            \t+++ Actual\n        \t            \t@@ -1,3 +1,3 @@\n        \t            \t (map[string]interface {}) (len=1) {\n        \t            \t- (string) (len=6) \"result\": (float64) 7\n        \t            \t+ (string) (len=6) \"result\": (float64) -1\n        \t            \t }\n        \tTest:       \tTestAddEndpoint",
+        "type": "Modify Core Logic",
+        "description": "Changed the addition operation to subtraction, which alters the core logic of the function.",
+        "udiff": "--- \n+++ \n@@ -38,7 +38,7 @@\n func addHandler(c *gin.Context) {\n\n \tnum1, _ := strconv.Atoi(c.Param(\"num1\"))\n\n \tnum2, _ := strconv.Atoi(c.Param(\"num2\"))\n\n-\tresult := num1 + num2\n\n+ result := num1 - num2 // mutated addition to subtraction\n\n \tc.JSON(http.StatusOK, gin.H{\"result\": result})\n\n }\n\n \n"
     },
     {
         "id": "8",
         "source_path": "app.go",
         "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/8_app.go",
-        "status": "SURVIVED",
-        "error_msg": "",
-        "type": "Boundary Condition Mutation",
-        "description": "Changed multiplication to return 0 if either number is 0.",
-        "udiff": "--- \n+++ \n@@ -52,7 +52,10 @@\n func multiplyHandler(c *gin.Context) {\n\n \tnum1, _ := strconv.Atoi(c.Param(\"num1\"))\n\n \tnum2, _ := strconv.Atoi(c.Param(\"num2\"))\n\n-\tresult := num1 * num2\n\n+ result := 0\n\n+if num1 != 0 && num2 != 0 {\n\n+\tresult = num1 * num2\n\n+}\n\n \tc.JSON(http.StatusOK, gin.H{\"result\": result})\n\n }\n\n \n"
+        "status": "KILLED",
+        "error_msg": "--- FAIL: TestAddEndpoint (0.00s)\n    app_test.go:54: \n        \tError Trace:\t/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/app_test.go:54\n        \tError:      \tNot equal: \n        \t            \texpected: map[string]interface {}{\"result\":7}\n        \t            \tactual  : map[string]interface {}{\"wrong_key\":7}\n        \t            \t\n        \t            \tDiff:\n        \t            \t--- Expected\n        \t            \t+++ Actual\n        \t            \t@@ -1,3 +1,3 @@\n        \t            \t (map[string]interface {}) (len=1) {\n        \t            \t- (string) (len=6) \"result\": (float64) 7\n        \t            \t+ (string) (len=9) \"wrong_key\": (float64) 7\n        \t            \t }\n        \tTest:       \tTestAddEndpoint",
+        "type": "Alter Outputs",
+        "description": "Modified the JSON response to return a corrupted structure by omitting the 'result' key.",
+        "udiff": "--- \n+++ \n@@ -39,7 +39,7 @@\n \tnum1, _ := strconv.Atoi(c.Param(\"num1\"))\n\n \tnum2, _ := strconv.Atoi(c.Param(\"num2\"))\n\n \tresult := num1 + num2\n\n-\tc.JSON(http.StatusOK, gin.H{\"result\": result})\n\n+ c.JSON(http.StatusOK, gin.H{\"wrong_key\": result}) // mutated response structure\n\n }\n\n \n\n func subtractHandler(c *gin.Context) {\n"
     },
     {
         "id": "9",
         "source_path": "app.go",
         "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/9_app.go",
         "status": "KILLED",
-        "error_msg": "--- FAIL: TestMultiplyEndpoint (0.00s)\n    app_test.go:143: \n        \tError Trace:\t/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/app_test.go:143\n        \tError:      \tNot equal: \n        \t            \texpected: map[string]interface {}{\"result\":12}\n        \t            \tactual  : map[string]interface {}{\"result\":7}\n        \t            \t\n        \t            \tDiff:\n        \t            \t--- Expected\n        \t            \t+++ Actual\n        \t            \t@@ -1,3 +1,3 @@\n        \t            \t (map[string]interface {}) (len=1) {\n        \t            \t- (string) (len=6) \"result\": (float64) 12\n        \t            \t+ (string) (len=6) \"result\": (float64) 7\n        \t            \t }\n        \tTest:       \tTestMultiplyEndpoint",
-        "type": "Logical Mutation",
-        "description": "Changed multiplication to addition for testing purposes.",
-        "udiff": "--- \n+++ \n@@ -52,7 +52,7 @@\n func multiplyHandler(c *gin.Context) {\n\n \tnum1, _ := strconv.Atoi(c.Param(\"num1\"))\n\n \tnum2, _ := strconv.Atoi(c.Param(\"num2\"))\n\n-\tresult := num1 * num2\n\n+ result := num1 + num2 // Mutation: changed multiplication to addition\n\n \tc.JSON(http.StatusOK, gin.H{\"result\": result})\n\n }\n\n \n"
+        "error_msg": "--- FAIL: TestSubtractEndpoint (0.00s)\n    app_test.go:154: \n        \tError Trace:\t/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/app_test.go:154\n        \tError:      \tNot equal: \n        \t            \texpected: map[string]interface {}{\"result\":6}\n        \t            \tactual  : map[string]interface {}{\"result\":14}\n        \t            \t\n        \t            \tDiff:\n        \t            \t--- Expected\n        \t            \t+++ Actual\n        \t            \t@@ -1,3 +1,3 @@\n        \t            \t (map[string]interface {}) (len=1) {\n        \t            \t- (string) (len=6) \"result\": (float64) 6\n        \t            \t+ (string) (len=6) \"result\": (float64) 14\n        \t            \t }\n        \tTest:       \tTestSubtractEndpoint\nFAIL\nexit status 1\nFAIL\tgo_webservice\t0.243s",
+        "type": "Modify Core Logic",
+        "description": "Changed the subtraction operation to addition, altering the core logic of the handler.",
+        "udiff": "--- \n+++ \n@@ -45,7 +45,7 @@\n func subtractHandler(c *gin.Context) {\n\n \tnum1, _ := strconv.Atoi(c.Param(\"num1\"))\n\n \tnum2, _ := strconv.Atoi(c.Param(\"num2\"))\n\n-\tresult := num1 - num2\n\n+ result := num1 + num2 // mutated to addition instead of subtraction\n\n \tc.JSON(http.StatusOK, gin.H{\"result\": result})\n\n }\n\n \n"
     },
     {
         "id": "10",
         "source_path": "app.go",
         "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/10_app.go",
         "status": "KILLED",
-        "error_msg": "--- FAIL: TestIsPalindromeEndpoint (0.00s)\n    app_test.go:32: \n        \tError Trace:\t/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/app_test.go:32\n        \tError:      \tNot equal: \n        \t            \texpected: map[string]interface {}{\"is_palindrome\":true}\n        \t            \tactual  : map[string]interface {}{\"is_palindrome\":false}\n        \t            \t\n        \t            \tDiff:\n        \t            \t--- Expected\n        \t            \t+++ Actual\n        \t            \t@@ -1,3 +1,3 @@\n        \t            \t (map[string]interface {}) (len=1) {\n        \t            \t- (string) (len=13) \"is_palindrome\": (bool) true\n        \t            \t+ (string) (len=13) \"is_palindrome\": (bool) false\n        \t            \t }\n        \tTest:       \tTestIsPalindromeEndpoint",
-        "type": "Logical Mutation",
-        "description": "Inverted the condition to check if the text is not a palindrome.",
-        "udiff": "--- \n+++ \n@@ -85,7 +85,7 @@\n \n\n func isPalindromeHandler(c *gin.Context) {\n\n \ttext := c.Param(\"text\")\n\n-\tisPalindrome := text == reverse(text)\n\n+ isPalindrome := text != reverse(text) // Inverted the condition to check if the text is not a palindrome.\n\n \tc.JSON(http.StatusOK, gin.H{\"is_palindrome\": isPalindrome})\n\n }\n\n \n"
+        "error_msg": "--- FAIL: TestSubtractEndpoint (0.00s)\n    app_test.go:154: \n        \tError Trace:\t/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/app_test.go:154\n        \tError:      \tInput ('Result: 6') needs to be valid json.\n        \t            \tJSON parsing error: 'invalid character 'R' looking for beginning of value'\n        \tTest:       \tTestSubtractEndpoint\nFAIL\nexit status 1\nFAIL\tgo_webservice\t0.225s",
+        "type": "Alter Outputs",
+        "description": "Modified the response to return a string instead of the expected JSON object.",
+        "udiff": "--- \n+++ \n@@ -46,7 +46,7 @@\n \tnum1, _ := strconv.Atoi(c.Param(\"num1\"))\n\n \tnum2, _ := strconv.Atoi(c.Param(\"num2\"))\n\n \tresult := num1 - num2\n\n-\tc.JSON(http.StatusOK, gin.H{\"result\": result})\n\n+ c.String(http.StatusOK, \"Result: %d\", result) // changed to return a string instead of JSON\n\n }\n\n \n\n func multiplyHandler(c *gin.Context) {\n"
     },
     {
         "id": "11",
         "source_path": "app.go",
         "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/11_app.go",
-        "status": "SURVIVED",
-        "error_msg": "",
-        "type": "Error Handling Mutation",
-        "description": "Added a check for empty text to handle edge cases.",
-        "udiff": "--- \n+++ \n@@ -84,7 +84,11 @@\n }\n\n \n\n func isPalindromeHandler(c *gin.Context) {\n\n-\ttext := c.Param(\"text\")\n\n+ text := c.Param(\"text\")\n\n+\tif text == \"\" {\n\n+\t\tc.JSON(http.StatusBadRequest, gin.H{\"error\": \"Text cannot be empty\"})\n\n+\t\treturn\n\n+\t} // Added check for empty text.\n\n \tisPalindrome := text == reverse(text)\n\n \tc.JSON(http.StatusOK, gin.H{\"is_palindrome\": isPalindrome})\n\n }\n"
+        "status": "KILLED",
+        "error_msg": "--- FAIL: TestMultiplyEndpoint (0.00s)\n    app_test.go:143: \n        \tError Trace:\t/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/app_test.go:143\n        \tError:      \tNot equal: \n        \t            \texpected: map[string]interface {}{\"result\":12}\n        \t            \tactual  : map[string]interface {}{\"result\":7}\n        \t            \t\n        \t            \tDiff:\n        \t            \t--- Expected\n        \t            \t+++ Actual\n        \t            \t@@ -1,3 +1,3 @@\n        \t            \t (map[string]interface {}) (len=1) {\n        \t            \t- (string) (len=6) \"result\": (float64) 12\n        \t            \t+ (string) (len=6) \"result\": (float64) 7\n        \t            \t }\n        \tTest:       \tTestMultiplyEndpoint",
+        "type": "Modify Core Logic",
+        "description": "Changed multiplication to addition, altering the core logic of the function.",
+        "udiff": "--- \n+++ \n@@ -52,7 +52,7 @@\n func multiplyHandler(c *gin.Context) {\n\n \tnum1, _ := strconv.Atoi(c.Param(\"num1\"))\n\n \tnum2, _ := strconv.Atoi(c.Param(\"num2\"))\n\n-\tresult := num1 * num2\n\n+ result := num1 + num2 // mutated multiplication to addition\n\n \tc.JSON(http.StatusOK, gin.H{\"result\": result})\n\n }\n\n \n"
     },
     {
         "id": "12",
         "source_path": "app.go",
         "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/12_app.go",
         "status": "KILLED",
-        "error_msg": "--- FAIL: TestIsPalindromeEndpoint (0.00s)\n    app_test.go:32: \n        \tError Trace:\t/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/app_test.go:32\n        \tError:      \tNot equal: \n        \t            \texpected: map[string]interface {}{\"is_palindrome\":true}\n        \t            \tactual  : map[string]interface {}{\"is_palindrome\":true, \"original_text\":\"radar\"}\n        \t            \t\n        \t            \tDiff:\n        \t            \t--- Expected\n        \t            \t+++ Actual\n        \t            \t@@ -1,3 +1,4 @@\n        \t            \t-(map[string]interface {}) (len=1) {\n        \t            \t- (string) (len=13) \"is_palindrome\": (bool) true\n        \t            \t+(map[string]interface {}) (len=2) {\n        \t            \t+ (string) (len=13) \"is_palindrome\": (bool) true,\n        \t            \t+ (string) (len=13) \"original_text\": (string) (len=5) \"radar\"\n        \t            \t }\n        \tTest:       \tTestIsPalindromeEndpoint",
-        "type": "Response Mutation",
-        "description": "Changed the response structure to include the original text.",
-        "udiff": "--- \n+++ \n@@ -86,7 +86,7 @@\n func isPalindromeHandler(c *gin.Context) {\n\n \ttext := c.Param(\"text\")\n\n \tisPalindrome := text == reverse(text)\n\n-\tc.JSON(http.StatusOK, gin.H{\"is_palindrome\": isPalindrome})\n\n+ c.JSON(http.StatusOK, gin.H{\"is_palindrome\": isPalindrome, \"original_text\": text}) // Included original text in the response.\n\n }\n\n \n\n func daysUntilNewYearHandler(c *gin.Context) {\n"
+        "error_msg": "# go_webservice [go_webservice.test]\n./app.go:55:2: result declared and not used\nFAIL\tgo_webservice [build failed]",
+        "type": "Alter Outputs",
+        "description": "Changed the response structure to omit the 'result' key, leading to incomplete data.",
+        "udiff": "--- \n+++ \n@@ -53,7 +53,7 @@\n \tnum1, _ := strconv.Atoi(c.Param(\"num1\"))\n\n \tnum2, _ := strconv.Atoi(c.Param(\"num2\"))\n\n \tresult := num1 * num2\n\n-\tc.JSON(http.StatusOK, gin.H{\"result\": result})\n\n+ c.JSON(http.StatusOK, gin.H{}) // omitted result key in response\n\n }\n\n \n\n func divideHandler(c *gin.Context) {\n"
     },
     {
         "id": "13",
@@ -125,39 +125,39 @@
         "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/13_app.go",
         "status": "SURVIVED",
         "error_msg": "",
-        "type": "Boundary Condition Mutation",
-        "description": "Changed the calculation of days until New Year to account for leap years.",
-        "udiff": "--- \n+++ \n@@ -92,7 +92,7 @@\n func daysUntilNewYearHandler(c *gin.Context) {\n\n \ttoday := time.Now()\n\n \tnextNewYear := time.Date(today.Year()+1, 1, 1, 0, 0, 0, 0, time.UTC)\n\n-\tdaysUntilNewYear := nextNewYear.Sub(today).Hours() / 24\n\n+ daysUntilNewYear := nextNewYear.Sub(today).Hours() / 24 + 1 // Added 1 to account for leap year\n\n \tc.JSON(http.StatusOK, gin.H{\"days_until_new_year\": int(daysUntilNewYear)})\n\n }\n\n \n"
+        "type": "Modify Core Logic",
+        "description": "Changed the condition to check for division by zero to allow division by zero, which will cause an error.",
+        "udiff": "--- \n+++ \n@@ -59,7 +59,7 @@\n func divideHandler(c *gin.Context) {\n\n \tnum1, _ := strconv.Atoi(c.Param(\"num1\"))\n\n \tnum2, _ := strconv.Atoi(c.Param(\"num2\"))\n\n-\tif num2 == 0 {\n\n+ if num2 <= 0 { // Mutation: Allow division by zero or negative numbers\n\n \t\tc.JSON(http.StatusBadRequest, gin.H{\"error\": \"Cannot divide by zero\"})\n\n \t\treturn\n\n \t}\n"
     },
     {
         "id": "14",
         "source_path": "app.go",
-        "mutant_path": null,
-        "status": "COMPILE_ERROR",
-        "error_msg": "",
-        "type": "Error Handling Mutation",
-        "description": "Added a check to ensure the current date is not after New Year's Day.",
-        "udiff": ""
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/14_app.go",
+        "status": "KILLED",
+        "error_msg": "--- FAIL: TestDivideEndpoint (0.00s)\n    app_test.go:132: \n        \tError Trace:\t/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/app_test.go:132\n        \tError:      \tNot equal: \n        \t            \texpected: map[string]interface {}{\"result\":4}\n        \t            \tactual  : map[string]interface {}{\"\":4}\n        \t            \t\n        \t            \tDiff:\n        \t            \t--- Expected\n        \t            \t+++ Actual\n        \t            \t@@ -1,3 +1,3 @@\n        \t            \t (map[string]interface {}) (len=1) {\n        \t            \t- (string) (len=6) \"result\": (float64) 4\n        \t            \t+ (string) \"\": (float64) 4\n        \t            \t }\n        \tTest:       \tTestDivideEndpoint",
+        "type": "Alter Outputs",
+        "description": "Changed the response structure to omit the 'result' key, leading to incomplete data in the JSON response.",
+        "udiff": "--- \n+++ \n@@ -64,7 +64,7 @@\n \t\treturn\n\n \t}\n\n \tresult := float64(num1) / float64(num2)\n\n-\tc.JSON(http.StatusOK, gin.H{\"result\": result})\n\n+ c.JSON(http.StatusOK, gin.H{\"\": result}) // Mutation: Missing key in JSON response\n\n }\n\n \n\n func squareHandler(c *gin.Context) {\n"
     },
     {
         "id": "15",
         "source_path": "app.go",
         "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/15_app.go",
         "status": "KILLED",
-        "error_msg": "# go_webservice [go_webservice.test]\n./app.go:95:32: daysUntilNewYear declared and not used\n./app.go:96:57: undefined: daysUntilNewYear\nFAIL\tgo_webservice [build failed]",
-        "type": "Logical Mutation",
-        "description": "Changed the calculation to return days until the next New Year only if today is before New Year.",
-        "udiff": "--- \n+++ \n@@ -92,7 +92,7 @@\n func daysUntilNewYearHandler(c *gin.Context) {\n\n \ttoday := time.Now()\n\n \tnextNewYear := time.Date(today.Year()+1, 1, 1, 0, 0, 0, 0, time.UTC)\n\n-\tdaysUntilNewYear := nextNewYear.Sub(today).Hours() / 24\n\n+ if today.After(nextNewYear) { daysUntilNewYear := 0 } else { daysUntilNewYear := nextNewYear.Sub(today).Hours() / 24 } // Adjusted logic to handle past New Year\n\n \tc.JSON(http.StatusOK, gin.H{\"days_until_new_year\": int(daysUntilNewYear)})\n\n }\n\n \n"
+        "error_msg": "--- FAIL: TestSquareEndpoint (0.00s)\n    app_test.go:110: \n        \tError Trace:\t/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/app_test.go:110\n        \tError:      \tNot equal: \n        \t            \texpected: map[string]interface {}{\"result\":25}\n        \t            \tactual  : map[string]interface {}{\"result\":30}\n        \t            \t\n        \t            \tDiff:\n        \t            \t--- Expected\n        \t            \t+++ Actual\n        \t            \t@@ -1,3 +1,3 @@\n        \t            \t (map[string]interface {}) (len=1) {\n        \t            \t- (string) (len=6) \"result\": (float64) 25\n        \t            \t+ (string) (len=6) \"result\": (float64) 30\n        \t            \t }\n        \tTest:       \tTestSquareEndpoint",
+        "type": "Modify Core Logic",
+        "description": "Changed the calculation of the result to introduce an off-by-one error by using number * (number + 1).",
+        "udiff": "--- \n+++ \n@@ -69,7 +69,7 @@\n \n\n func squareHandler(c *gin.Context) {\n\n \tnumber, _ := strconv.Atoi(c.Param(\"number\"))\n\n-\tresult := number * number\n\n+ result := number * (number + 1) // Introduced off-by-one error in calculation.\n\n \tc.JSON(http.StatusOK, gin.H{\"result\": result})\n\n }\n\n \n"
     },
     {
         "id": "16",
         "source_path": "app.go",
         "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/16_app.go",
         "status": "KILLED",
-        "error_msg": "# go_webservice [go_webservice.test]\n./app.go:100:2: message declared and not used\nFAIL\tgo_webservice [build failed]",
-        "type": "Return Value Mutation",
-        "description": "Changed the response message to a static string instead of the dynamic message from parameters.",
-        "udiff": "--- \n+++ \n@@ -98,7 +98,7 @@\n \n\n func echoHandler(c *gin.Context) {\n\n \tmessage := c.Param(\"message\")\n\n-\tc.JSON(http.StatusOK, gin.H{\"message\": message})\n\n+ c.JSON(http.StatusOK, gin.H{\"message\": \"Static response\"}) // Mutation: Changed dynamic message to static response.\n\n }\n\n \n\n func reverse(s string) string {\n"
+        "error_msg": "--- FAIL: TestSquareEndpoint (0.00s)\n    app_test.go:110: \n        \tError Trace:\t/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/app_test.go:110\n        \tError:      \tNot equal: \n        \t            \texpected: map[string]interface {}{\"result\":25}\n        \t            \tactual  : map[string]interface {}{\"wrong_key\":25}\n        \t            \t\n        \t            \tDiff:\n        \t            \t--- Expected\n        \t            \t+++ Actual\n        \t            \t@@ -1,3 +1,3 @@\n        \t            \t (map[string]interface {}) (len=1) {\n        \t            \t- (string) (len=6) \"result\": (float64) 25\n        \t            \t+ (string) (len=9) \"wrong_key\": (float64) 25\n        \t            \t }\n        \tTest:       \tTestSquareEndpoint",
+        "type": "Alter Outputs",
+        "description": "Modified the JSON response to return a corrupted structure by omitting the 'result' key.",
+        "udiff": "--- \n+++ \n@@ -70,7 +70,7 @@\n func squareHandler(c *gin.Context) {\n\n \tnumber, _ := strconv.Atoi(c.Param(\"number\"))\n\n \tresult := number * number\n\n-\tc.JSON(http.StatusOK, gin.H{\"result\": result})\n\n+ c.JSON(http.StatusOK, gin.H{\"wrong_key\": result}) // Omitted the correct key in the response.\n\n }\n\n \n\n func sqrtHandler(c *gin.Context) {\n"
     },
     {
         "id": "17",
@@ -165,48 +165,98 @@
         "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/17_app.go",
         "status": "SURVIVED",
         "error_msg": "",
-        "type": "Parameter Mutation",
-        "description": "Changed the parameter retrieval method to use a default value if the parameter is not found.",
-        "udiff": "--- \n+++ \n@@ -97,7 +97,7 @@\n }\n\n \n\n func echoHandler(c *gin.Context) {\n\n-\tmessage := c.Param(\"message\")\n\n+ message := c.Param(\"message\"); if message == \"\" { message = \"default message\" } // Mutation: Added default value for missing parameter.\n\n \tc.JSON(http.StatusOK, gin.H{\"message\": message})\n\n }\n\n \n"
+        "type": "Conditional Statement Mutation",
+        "description": "Changed the condition to allow negative numbers, which will lead to incorrect behavior when calculating the square root.",
+        "udiff": "--- \n+++ \n@@ -75,7 +75,7 @@\n \n\n func sqrtHandler(c *gin.Context) {\n\n \tnumber, _ := strconv.ParseFloat(c.Param(\"number\"), 64)\n\n-\tif number < 0 {\n\n+ if number <= 0 { // mutated condition to allow negative numbers\n\n \t\tc.JSON(http.StatusBadRequest, gin.H{\"error\": \"Cannot take square root of a negative number\"})\n\n \t\treturn\n\n \t}\n"
     },
     {
         "id": "18",
         "source_path": "app.go",
         "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/18_app.go",
-        "status": "SURVIVED",
-        "error_msg": "",
-        "type": "Error Handling Mutation",
-        "description": "Added error handling to check if the parameter is empty and return an error response.",
-        "udiff": "--- \n+++ \n@@ -98,7 +98,7 @@\n \n\n func echoHandler(c *gin.Context) {\n\n \tmessage := c.Param(\"message\")\n\n-\tc.JSON(http.StatusOK, gin.H{\"message\": message})\n\n+ if message == \"\" { c.JSON(http.StatusBadRequest, gin.H{\"error\": \"Message parameter is required\"}) } else { c.JSON(http.StatusOK, gin.H{\"message\": message}) } // Mutation: Added error handling for empty message parameter.\n\n }\n\n \n\n func reverse(s string) string {\n"
+        "status": "KILLED",
+        "error_msg": "# go_webservice [go_webservice.test]\n./app.go:82:2: result declared and not used\nFAIL\tgo_webservice [build failed]",
+        "type": "Return Value Mutation",
+        "description": "Changed the return value to return a corrupted JSON response instead of the correct result.",
+        "udiff": "--- \n+++ \n@@ -80,7 +80,7 @@\n \t\treturn\n\n \t}\n\n \tresult := math.Sqrt(number)\n\n-\tc.JSON(http.StatusOK, gin.H{\"result\": result})\n\n+ c.JSON(http.StatusOK, gin.H{\"result\": \"corrupted data\"}) // mutated to return corrupted data\n\n }\n\n \n\n func isPalindromeHandler(c *gin.Context) {\n"
     },
     {
         "id": "19",
         "source_path": "app.go",
         "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/19_app.go",
-        "status": "SURVIVED",
-        "error_msg": "",
-        "type": "Logical Mutation",
-        "description": "Changed the loop condition to reverse the string only if it has more than one character.",
-        "udiff": "--- \n+++ \n@@ -103,7 +103,7 @@\n \n\n func reverse(s string) string {\n\n \trunes := []rune(s)\n\n-\tfor i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {\n\n+ for i, j := 0, len(runes)-1; i < j && len(runes) > 1; i, j = i+1, j-1 { // Mutation: Added length check\n\n \t\trunes[i], runes[j] = runes[j], runes[i]\n\n \t}\n\n \treturn string(runes)\n"
+        "status": "KILLED",
+        "error_msg": "--- FAIL: TestIsPalindromeEndpoint (0.00s)\n    app_test.go:32: \n        \tError Trace:\t/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/app_test.go:32\n        \tError:      \tNot equal: \n        \t            \texpected: map[string]interface {}{\"is_palindrome\":true}\n        \t            \tactual  : map[string]interface {}{\"is_palindrome\":false}\n        \t            \t\n        \t            \tDiff:\n        \t            \t--- Expected\n        \t            \t+++ Actual\n        \t            \t@@ -1,3 +1,3 @@\n        \t            \t (map[string]interface {}) (len=1) {\n        \t            \t- (string) (len=13) \"is_palindrome\": (bool) true\n        \t            \t+ (string) (len=13) \"is_palindrome\": (bool) false\n        \t            \t }\n        \tTest:       \tTestIsPalindromeEndpoint",
+        "type": "Modify Core Logic",
+        "description": "Changed the palindrome check condition to always return false, causing incorrect results.",
+        "udiff": "--- \n+++ \n@@ -85,7 +85,7 @@\n \n\n func isPalindromeHandler(c *gin.Context) {\n\n \ttext := c.Param(\"text\")\n\n-\tisPalindrome := text == reverse(text)\n\n+ isPalindrome := text != reverse(text) // Mutation: incorrect palindrome check condition\n\n \tc.JSON(http.StatusOK, gin.H{\"is_palindrome\": isPalindrome})\n\n }\n\n \n"
     },
     {
         "id": "20",
         "source_path": "app.go",
         "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/20_app.go",
-        "status": "SURVIVED",
-        "error_msg": "",
-        "type": "Return Value Mutation",
-        "description": "Changed the return value to return an empty string if the input is empty.",
-        "udiff": "--- \n+++ \n@@ -106,7 +106,8 @@\n \tfor i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {\n\n \t\trunes[i], runes[j] = runes[j], runes[i]\n\n \t}\n\n-\treturn string(runes)\n\n+ if len(s) == 0 { return \"\" } // Mutation: Added check for empty input\n\n+return string(runes)\n\n }\n\n \n\n func main() {\n"
+        "status": "KILLED",
+        "error_msg": "# go_webservice [go_webservice.test]\n./app.go:88:2: isPalindrome declared and not used\nFAIL\tgo_webservice [build failed]",
+        "type": "Alter Outputs",
+        "description": "Modified the JSON response to omit the 'is_palindrome' key, leading to incomplete data.",
+        "udiff": "--- \n+++ \n@@ -86,7 +86,7 @@\n func isPalindromeHandler(c *gin.Context) {\n\n \ttext := c.Param(\"text\")\n\n \tisPalindrome := text == reverse(text)\n\n-\tc.JSON(http.StatusOK, gin.H{\"is_palindrome\": isPalindrome})\n\n+ c.JSON(http.StatusOK, gin.H{}) // Mutation: missing is_palindrome key in response\n\n }\n\n \n\n func daysUntilNewYearHandler(c *gin.Context) {\n"
     },
     {
         "id": "21",
         "source_path": "app.go",
-        "mutant_path": null,
-        "status": "COMPILE_ERROR",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/21_app.go",
+        "status": "SURVIVED",
         "error_msg": "",
-        "type": "Variable Mutation",
-        "description": "Changed the variable name from 'runes' to 'chars' to test for variable name changes.",
-        "udiff": ""
+        "type": "Modify Core Logic",
+        "description": "Changed the calculation of days until New Year to introduce an off-by-one error.",
+        "udiff": "--- \n+++ \n@@ -92,7 +92,7 @@\n func daysUntilNewYearHandler(c *gin.Context) {\n\n \ttoday := time.Now()\n\n \tnextNewYear := time.Date(today.Year()+1, 1, 1, 0, 0, 0, 0, time.UTC)\n\n-\tdaysUntilNewYear := nextNewYear.Sub(today).Hours() / 24\n\n+ daysUntilNewYear := nextNewYear.Sub(today).Hours() / 24 + 1 // Off-by-one error introduced\n\n \tc.JSON(http.StatusOK, gin.H{\"days_until_new_year\": int(daysUntilNewYear)})\n\n }\n\n \n"
+    },
+    {
+        "id": "22",
+        "source_path": "app.go",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/22_app.go",
+        "status": "KILLED",
+        "error_msg": "# go_webservice [go_webservice.test]\n./app.go:95:2: daysUntilNewYear declared and not used\nFAIL\tgo_webservice [build failed]",
+        "type": "Alter Outputs",
+        "description": "Modified the JSON response to return a string instead of an integer for days until New Year.",
+        "udiff": "--- \n+++ \n@@ -93,7 +93,7 @@\n \ttoday := time.Now()\n\n \tnextNewYear := time.Date(today.Year()+1, 1, 1, 0, 0, 0, 0, time.UTC)\n\n \tdaysUntilNewYear := nextNewYear.Sub(today).Hours() / 24\n\n-\tc.JSON(http.StatusOK, gin.H{\"days_until_new_year\": int(daysUntilNewYear)})\n\n+ c.JSON(http.StatusOK, gin.H{\"days_until_new_year\": \"unknown\"}) // Changed to return a string instead of an integer\n\n }\n\n \n\n func echoHandler(c *gin.Context) {\n"
+    },
+    {
+        "id": "23",
+        "source_path": "app.go",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/23_app.go",
+        "status": "KILLED",
+        "error_msg": "--- FAIL: TestEchoEndpoint (0.00s)\n    app_test.go:76: \n        \tError Trace:\t/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/app_test.go:76\n        \tError:      \tNot equal: \n        \t            \texpected: map[string]interface {}{\"message\":\"hello\"}\n        \t            \tactual  : map[string]interface {}{\"\":\"hello\"}\n        \t            \t\n        \t            \tDiff:\n        \t            \t--- Expected\n        \t            \t+++ Actual\n        \t            \t@@ -1,3 +1,3 @@\n        \t            \t (map[string]interface {}) (len=1) {\n        \t            \t- (string) (len=7) \"message\": (string) (len=5) \"hello\"\n        \t            \t+ (string) \"\": (string) (len=5) \"hello\"\n        \t            \t }\n        \tTest:       \tTestEchoEndpoint",
+        "type": "Alter Outputs",
+        "description": "Changed the response structure to omit the 'message' key, leading to incomplete data in the JSON response.",
+        "udiff": "--- \n+++ \n@@ -98,7 +98,7 @@\n \n\n func echoHandler(c *gin.Context) {\n\n \tmessage := c.Param(\"message\")\n\n-\tc.JSON(http.StatusOK, gin.H{\"message\": message})\n\n+ c.JSON(http.StatusOK, gin.H{\"\": message}) // omitted key in JSON response\n\n }\n\n \n\n func reverse(s string) string {\n"
+    },
+    {
+        "id": "24",
+        "source_path": "app.go",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/24_app.go",
+        "status": "KILLED",
+        "error_msg": "--- FAIL: TestEchoEndpoint (0.00s)\n    app_test.go:76: \n        \tError Trace:\t/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/app_test.go:76\n        \tError:      \tNot equal: \n        \t            \texpected: map[string]interface {}{\"message\":\"hello\"}\n        \t            \tactual  : map[string]interface {}{\"message\":\"\"}\n        \t            \t\n        \t            \tDiff:\n        \t            \t--- Expected\n        \t            \t+++ Actual\n        \t            \t@@ -1,3 +1,3 @@\n        \t            \t (map[string]interface {}) (len=1) {\n        \t            \t- (string) (len=7) \"message\": (string) (len=5) \"hello\"\n        \t            \t+ (string) (len=7) \"message\": (string) \"\"\n        \t            \t }\n        \tTest:       \tTestEchoEndpoint",
+        "type": "Modify Data Handling",
+        "description": "Introduced a parsing error by attempting to retrieve a non-existent parameter, which will cause a nil value.",
+        "udiff": "--- \n+++ \n@@ -97,7 +97,7 @@\n }\n\n \n\n func echoHandler(c *gin.Context) {\n\n-\tmessage := c.Param(\"message\")\n\n+ message := c.Param(\"nonexistent\") // retrieving a non-existent parameter\n\n \tc.JSON(http.StatusOK, gin.H{\"message\": message})\n\n }\n\n \n"
+    },
+    {
+        "id": "25",
+        "source_path": "app.go",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/25_app.go",
+        "status": "SURVIVED",
+        "error_msg": "",
+        "type": "Modify Core Logic",
+        "description": "Changed the loop condition to cause an infinite loop.",
+        "udiff": "--- \n+++ \n@@ -103,7 +103,7 @@\n \n\n func reverse(s string) string {\n\n \trunes := []rune(s)\n\n-\tfor i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {\n\n+ for i, j := 0, len(runes)-1; i <= j; i, j = i+1, j-1 { // mutation: changed < to <= causing infinite loop\n\n \t\trunes[i], runes[j] = runes[j], runes[i]\n\n \t}\n\n \treturn string(runes)\n"
+    },
+    {
+        "id": "26",
+        "source_path": "app.go",
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/logs/_latest/mutants/26_app.go",
+        "status": "KILLED",
+        "error_msg": "--- FAIL: TestIsPalindromeEndpoint (0.00s)\n    app_test.go:32: \n        \tError Trace:\t/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/go_webservice/app_test.go:32\n        \tError:      \tNot equal: \n        \t            \texpected: map[string]interface {}{\"is_palindrome\":true}\n        \t            \tactual  : map[string]interface {}{\"is_palindrome\":false}\n        \t            \t\n        \t            \tDiff:\n        \t            \t--- Expected\n        \t            \t+++ Actual\n        \t            \t@@ -1,3 +1,3 @@\n        \t            \t (map[string]interface {}) (len=1) {\n        \t            \t- (string) (len=13) \"is_palindrome\": (bool) true\n        \t            \t+ (string) (len=13) \"is_palindrome\": (bool) false\n        \t            \t }\n        \tTest:       \tTestIsPalindromeEndpoint",
+        "type": "Alter Outputs",
+        "description": "Changed the return value to a corrupted string.",
+        "udiff": "--- \n+++ \n@@ -106,7 +106,7 @@\n \tfor i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {\n\n \t\trunes[i], runes[j] = runes[j], runes[i]\n\n \t}\n\n-\treturn string(runes)\n\n+ return \"corrupted_data\" // mutation: returning a hardcoded corrupted string instead of the reversed string\n\n }\n\n \n\n func main() {\n"
     }
 ]

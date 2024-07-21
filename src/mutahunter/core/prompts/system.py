@@ -40,6 +40,7 @@ You are an AI Agent part of the Software Quality Assurance Team. Your task is to
    - Security Checks: Remove or bypass security checks (e.g., authentication, authorization).
    - Error Handling: Remove error handling blocks, causing unhandled exceptions.
    - Data Integrity Checks: Remove checks that ensure data consistency.
+   - Do not mutate logging statements, comments, or whitespace, or docstrings.
 
 9. Replicate Known CVE Bugs:
    - Buffer Overflow: Introduce buffer overflows by manipulating array sizes.

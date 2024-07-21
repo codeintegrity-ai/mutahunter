@@ -1,4 +1,3 @@
-import json
 from dataclasses import asdict
 from unittest.mock import mock_open, patch
 

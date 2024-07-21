@@ -1,5 +1,4 @@
-import json
-
+import yaml
 from grep_ast import filename_to_lang
 from jinja2 import Template
 
@@ -52,7 +51,6 @@ class LLMMutationEngine:
             language=self.language,
             ast=repo_map_result,
             covered_lines=self.executed_lines,
-            example_output=self.prompt.example_output,
             function_block=function_block_with_line_num,
             maximum_num_of_mutants_per_function_block=2,
         )
@@ -66,7 +64,6 @@ class LLMMutationEngine:
         model_response, _, _ = self.router.generate_response(
             prompt=prompt, streaming=True
         )
-        # print("model_response", model_response)
         return model_response
 
     def generate(self):
@@ -77,8 +74,8 @@ class LLMMutationEngine:
         if not repo_map_result:
             logger.error("No repository map found.")
 
-        ai_reply = self.generate_mutant(repo_map_result)
-        mutation_info = self.extract_json_from_reply(ai_reply)
+        response = self.generate_mutant(repo_map_result)
+        mutation_info = self.extract_response(response)
         changes = mutation_info["changes"]
         original_lines = self.function_block_source_code.splitlines(keepends=True)
         for change in changes:
@@ -115,33 +112,28 @@ class LLMMutationEngine:
                 continue
         return changes
 
-    def extract_json_from_reply(self, ai_reply: str) -> dict:
+    def extract_response(self, response: str) -> dict:
         retries = 2
         for attempt in range(retries):
             try:
-                if "```json" in ai_reply:
-                    json_content = ai_reply.split("```json")[1].split("```")[0]
-                else:
-                    json_content = ai_reply.strip()
-
-                mutation_info = json.loads(json_content)
-                return mutation_info
-            except (IndexError, json.JSONDecodeError) as e:
-                logger.error(f"Error extracting JSON content: {e}")
+                response = response.strip().removeprefix("```yaml").rstrip("`")
+                data = yaml.safe_load(response)
+                return data
+            except Exception as e:
+                logger.error(f"Error extracting YAML content: {e}")
                 if attempt < retries - 1:
-                    logger.info(f"Retrying to extract JSON with retry {attempt + 1}...")
-                    json_content = self.fix_json_format(e, ai_reply)
-                    ai_reply = json_content
+                    logger.info(f"Retrying to extract YAML with retry {attempt + 1}...")
+                    response = self.fix_format(e, response)
                 else:
                     logger.error(
-                        f"Error extracting JSON content after {retries} attempts: {e}"
+                        f"Error extracting YAML content after {retries} attempts: {e}"
                     )
                     return {"changes": []}
 
-    def fix_json_format(self, error, json_content):
-        system_template = Template(SYSTEM_JSON_FIX).render()
-        user_template = Template(USER_JSON_FIX).render(
-            json_content=json_content,
+    def fix_format(self, error, content):
+        system_template = Template(SYSTEM_YAML_FIX).render()
+        user_template = Template(USER_YAML_FIX).render(
+            yaml_content=content,
             error=error,
         )
         prompt = {
@@ -154,17 +146,21 @@ class LLMMutationEngine:
         return model_response
 
 
-SYSTEM_JSON_FIX = """
-Based on the error message, the JSON content provided is not in the correct format. Please ensure the JSON content is in the correct format and try again.
+SYSTEM_YAML_FIX = """
+Based on the error message, the YAML content provided is not in the correct format. Please ensure the YAML content is in the correct format and try again.
 """
-USER_JSON_FIX = """
-JSON content:
-{{json_content}}
+
+USER_YAML_FIX = """
+YAML content:
+```yaml
+{{yaml_content}}
+```
 
 Error:
 {{error}}
 
-Output must be wrapped in triple backticks and in JSON format:
-```json
-...fix the json content here...
+Output must be wrapped in triple backticks and in YAML format:
+```yaml
+...fix the yaml content here...
+```
 """

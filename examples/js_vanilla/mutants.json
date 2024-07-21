@@ -5,19 +5,19 @@
         "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla/logs/_latest/mutants/1_ui.js",
         "status": "SURVIVED",
         "error_msg": "",
-        "type": "Variable Mutation",
-        "description": "Changed the variable name 'output' to 'result' to test the impact of variable renaming.",
-        "udiff": "--- \n+++ \n@@ -32,7 +32,7 @@\n   }\n\n \n\n   showRepos(repos) {\n\n-    let output = '';\n\n+    let result = ''; // Changed variable name from 'output' to 'result'\n\n \n\n     repos.forEach(function (repo) {\n\n       output += `\n"
+        "type": "Alter Outputs",
+        "description": "Changed the output structure by omitting the 'avatar_url' key, leading to incomplete user profile display.",
+        "udiff": "--- \n+++ \n@@ -7,7 +7,7 @@\n             <div class=\"card card-body mb-3\">\n\n                 <div class=\"row\">\n\n                     <div class=\"col-md-3\">\n\n-                        <img src=\"${user.avatar_url}\" alt=\"\" class=\"img-fluid mb-2\">\n\n+                        <img src=\"${user.avatar_url}\" alt=\"\" class=\"img-fluid mb-2\"> // Mutation: omitted avatar_url key\n\n                         <a href=\"${user.html_url}\" target=\"_blank\" class=\"btn btn-primary btn-block\"> View Profile</a>\n\n                     </div>\n\n                     <div class=\"col-md-9\">\n"
     },
     {
         "id": "2",
         "source_path": "ui.js",
-        "mutant_path": null,
-        "status": "COMPILE_ERROR",
-        "error_msg": "",
-        "type": "Logical Mutation",
-        "description": "Changed the condition to check if 'repos' is an array before proceeding to iterate over it.",
-        "udiff": ""
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla/logs/_latest/mutants/2_ui.js",
+        "status": "KILLED",
+        "error_msg": "\u23af\u23af\u23af\u23af\u23af\u23af\u23af Failed Tests 1 \u23af\u23af\u23af\u23af\u23af\u23af\u23af\n\n FAIL  ui.test.js > UI Class > should show profile with user data\nAssertionError: expected '\\n            <div class=\"card card-b\u2026' to contain 'Public Repos: 10'\n\n- Expected\n+ Received\n\n- Public Repos: 10\n+\n+             <div class=\"card card-body mb-3\">\n+                 <div class=\"row\">\n+                     <div class=\"col-md-3\">\n+                         <img src=\"https://example.com/avatar.jpg\" alt=\"\" class=\"img-fluid mb-2\">\n+                         <a href=\"https://example.com\" target=\"_blank\" class=\"btn btn-primary btn-block\"> View Profile</a>\n+                     </div>\n+                     <div class=\"col-md-9\">\n+                         <span class=\"badge badge-primary\"> Public Repos: 11</span> // Mutation: off-by-one error in public repos count\n+                         <span class=\"badge badge-secondary\"> Public Gists: 5</span>\n+                         <span class=\"badge badge-success\"> Followers: 100</span>\n+                         <span class=\"badge badge-info\"> Following: 50</span>\n+                         <br> <br>\n+                         <ul class=\"list-group\">\n+                             <li class=\"list-group-item\">Company : Example Inc.</li>\n+                             <li class=\"list-group-item\">Website : https://blog.example.com</li>\n+                             <li class=\"list-group-item\">Location : Earth</li>\n+                             <li class=\"list-group-item\">Member Since : 2020-01-01</li>\n+                         </ul>\n+                     </div>\n+                 </div>\n+             </div>\n+             <h3 class=\"page-heading mb-3\"> Latest Repos</h3>\n+             <div id=\"repos\"></div>\n+             \n+         \n\n \u276f ui.test.js:63:38\n     61|     expect(profileElement.innerHTML).toContain('https://example.com/av\u2026\n     62|     expect(profileElement.innerHTML).toContain('https://example.com');\n     63|     expect(profileElement.innerHTML).toContain('Public Repos: 10');\n       |                                      ^\n     64|     expect(profileElement.innerHTML).toContain('Public Gists: 5');\n     65|     expect(profileElement.innerHTML).toContain('Followers: 100');\n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af[1/1]\u23af\n\n\n> js-vanilla-example@1.0.0 test\n> vitest run\n\n\n RUN  v1.6.0 /Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla\n\n \u276f ui.test.js  (6 tests | 1 failed) 50ms\n   \u276f ui.test.js > UI Class > should show profile with user data\n     \u2192 expected '\\n            <div class=\"card card-b\u2026' to contain 'Public Repos: 10'\n\n Test Files  1 failed (1)\n      Tests  1 failed | 5 passed (6)\n   Start at  00:05:20\n   Duration  376ms (transform 14ms, setup 0ms, collect 14ms, tests 50ms, environment 190ms, prepare 43ms)",
+        "type": "Modify Core Logic",
+        "description": "Introduced an off-by-one error in the public repos count by adding 1 to the displayed value.",
+        "udiff": "--- \n+++ \n@@ -11,7 +11,7 @@\n                         <a href=\"${user.html_url}\" target=\"_blank\" class=\"btn btn-primary btn-block\"> View Profile</a>\n\n                     </div>\n\n                     <div class=\"col-md-9\">\n\n-                        <span class=\"badge badge-primary\"> Public Repos: ${user.public_repos}</span>\n\n+                        <span class=\"badge badge-primary\"> Public Repos: ${user.public_repos + 1}</span> // Mutation: off-by-one error in public repos count\n\n                         <span class=\"badge badge-secondary\"> Public Gists: ${user.public_gists}</span>\n\n                         <span class=\"badge badge-success\"> Followers: ${user.followers}</span>\n\n                         <span class=\"badge badge-info\"> Following: ${user.following}</span>\n"
     },
     {
         "id": "3",
@@ -25,98 +25,78 @@
         "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla/logs/_latest/mutants/3_ui.js",
         "status": "SURVIVED",
         "error_msg": "",
-        "type": "Error Handling Mutation",
-        "description": "Added a fallback for when 'repo.description' is undefined to prevent potential runtime errors.",
-        "udiff": "--- \n+++ \n@@ -40,7 +40,7 @@\n                 <div class=\"row\">\n\n                     <div class=\"col-sm-6\">\n\n                         <a href=\"${repo.html_url}\" target=\"_blank\">${repo.name}</a>\n\n-                        <p class=\"pt-2\">${repo.description}</p>\n\n+                        <p class=\"pt-2\">${repo.description || 'No description available'}</p> // Added fallback for undefined description\n\n                     </div>\n\n                     <div class=\"col-sm-6\">\n\n                         <span class=\"badge badge-primary\"> Starts: ${repo.stargazers_count}</span>\n"
+        "type": "Alter Outputs",
+        "description": "Changed the output structure by introducing a typo in the key 'forms_count', which should be 'forks_count'. This will lead to incorrect data being displayed.",
+        "udiff": "--- \n+++ \n@@ -45,7 +45,7 @@\n                     <div class=\"col-sm-6\">\n\n                         <span class=\"badge badge-primary\"> Starts: ${repo.stargazers_count}</span>\n\n                         <span class=\"badge badge-info\"> Watchers: ${repo.watchers_count}</span>\n\n-                        <span class=\"badge badge-light\"> Forks: ${repo.forms_count}</span>\n\n+                        <span class=\"badge badge-light\"> Forks: ${repo.forms_count}</span> // Mutation: Incorrect key used for forks count\n\n                     </div>\n\n                 </div>\n\n             </div>            \n"
     },
     {
         "id": "4",
         "source_path": "ui.js",
-        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla/logs/_latest/mutants/4_ui.js",
-        "status": "SURVIVED",
+        "mutant_path": null,
+        "status": "COMPILE_ERROR",
         "error_msg": "",
-        "type": "Mutation",
-        "description": "Changed the timeout duration to 1000 milliseconds to test the effect of a shorter alert display time.",
-        "udiff": "--- \n+++ \n@@ -66,7 +66,7 @@\n \n\n     setTimeout(() => {\n\n       this.clearAlert();\n\n-    }, 2000);\n\n+    }, 1000); // Mutation: Changed timeout duration to 1000 milliseconds.\n\n   }\n\n \n\n   clearAlert() {\n"
+        "type": "Modify Core Logic",
+        "description": "Altered the loop logic to cause an infinite loop by replacing the forEach with a while loop that never terminates.",
+        "udiff": ""
     },
     {
         "id": "5",
         "source_path": "ui.js",
-        "mutant_path": null,
-        "status": "COMPILE_ERROR",
-        "error_msg": "",
-        "type": "Mutation",
-        "description": "Added a check to ensure the message is not empty before creating the alert.",
-        "udiff": ""
+        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla/logs/_latest/mutants/5_ui.js",
+        "status": "KILLED",
+        "error_msg": "\u23af\u23af\u23af\u23af\u23af\u23af\u23af Failed Tests 1 \u23af\u23af\u23af\u23af\u23af\u23af\u23af\n\n FAIL  ui.test.js > UI Class > should show alert message\nTypeError: Cannot read properties of null (reading 'textContent')\n \u276f ui.test.js:43:25\n     41|     const alertElement = document.querySelector('.alert.alert-danger');\n     42|     expect(alertElement).toBeDefined();\n     43|     expect(alertElement.textContent).toBe(message);\n       |                         ^\n     44|   });\n     45| \n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af[1/1]\u23af\n\n\n> js-vanilla-example@1.0.0 test\n> vitest run\n\n\n RUN  v1.6.0 /Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla\n\n \u276f ui.test.js  (6 tests | 1 failed) 45ms\n   \u276f ui.test.js > UI Class > should show alert message\n     \u2192 Cannot read properties of null (reading 'textContent')\n\n Test Files  1 failed (1)\n      Tests  1 failed | 5 passed (6)\n   Start at  00:05:29\n   Duration  353ms (transform 14ms, setup 0ms, collect 14ms, tests 45ms, environment 172ms, prepare 38ms)",
+        "type": "Alter Outputs",
+        "description": "Changed the expected behavior of the function by returning null instead of creating an alert.",
+        "udiff": "--- \n+++ \n@@ -57,7 +57,7 @@\n \n\n   showAlert(message, className) {\n\n     this.clearAlert();\n\n-    const div = document.createElement('div');\n\n+    return null; // Mutation: Returning null instead of creating an alert div.\n\n     div.className = className;\n\n     div.appendChild(document.createTextNode(message));\n\n     const container = document.querySelector('.searchContainer');\n"
     },
     {
         "id": "6",
         "source_path": "ui.js",
         "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla/logs/_latest/mutants/6_ui.js",
         "status": "KILLED",
-        "error_msg": "\u23af\u23af\u23af\u23af\u23af\u23af\u23af Failed Tests 1 \u23af\u23af\u23af\u23af\u23af\u23af\u23af\n\n FAIL  ui.test.js > UI Class > should show alert message\nTypeError: Cannot read properties of null (reading 'textContent')\n \u276f ui.test.js:43:25\n     41|     const alertElement = document.querySelector('.alert.alert-danger');\n     42|     expect(alertElement).toBeDefined();\n     43|     expect(alertElement.textContent).toBe(message);\n       |                         ^\n     44|   });\n     45| \n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af[1/1]\u23af\n\n\n> js-vanilla-example@1.0.0 test\n> vitest run\n\n\n RUN  v1.6.0 /Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla\n\n \u276f ui.test.js  (6 tests | 1 failed) 44ms\n   \u276f ui.test.js > UI Class > should show alert message\n     \u2192 Cannot read properties of null (reading 'textContent')\n\n Test Files  1 failed (1)\n      Tests  1 failed | 5 passed (6)\n   Start at  16:15:47\n   Duration  363ms (transform 15ms, setup 0ms, collect 14ms, tests 44ms, environment 179ms, prepare 45ms)",
-        "type": "Mutation",
-        "description": "Changed the class name of the alert div to 'alert-warning' to test different alert styles.",
-        "udiff": "--- \n+++ \n@@ -58,7 +58,7 @@\n   showAlert(message, className) {\n\n     this.clearAlert();\n\n     const div = document.createElement('div');\n\n-    div.className = className;\n\n+    div.className = 'alert-warning'; // Mutation: Changed class name to 'alert-warning'.\n\n     div.appendChild(document.createTextNode(message));\n\n     const container = document.querySelector('.searchContainer');\n\n     const search = document.querySelector('.search');\n"
+        "error_msg": "\u23af\u23af\u23af\u23af\u23af\u23af\u23af Failed Tests 2 \u23af\u23af\u23af\u23af\u23af\u23af\u23af\n\n FAIL  ui.test.js > UI Class > should show alert message\nTypeError: Cannot read properties of undefined (reading 'insertBefore')\n \u276f UI.showAlert ui.js:65:15\n     63|     const container = undefined; // Mutation: Simulating a failure by \u2026\n     64|     const search = document.querySelector('.search');\n     65|     container.insertBefore(div, search);\n       |               ^\n     66| \n     67|     setTimeout(() => {\n \u276f ui.test.js:40:8\n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af[1/2]\u23af\n\n FAIL  ui.test.js > UI Class > should set timeout to clear alert\nTypeError: Cannot read properties of undefined (reading 'insertBefore')\n \u276f UI.showAlert ui.js:65:15\n     63|     const container = undefined; // Mutation: Simulating a failure by \u2026\n     64|     const search = document.querySelector('.search');\n     65|     container.insertBefore(div, search);\n       |               ^\n     66| \n     67|     setTimeout(() => {\n \u276f ui.test.js:77:8\n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af[2/2]\u23af\n\n\n> js-vanilla-example@1.0.0 test\n> vitest run\n\n\n RUN  v1.6.0 /Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla\n\n \u276f ui.test.js  (6 tests | 2 failed) 44ms\n   \u276f ui.test.js > UI Class > should show alert message\n     \u2192 Cannot read properties of undefined (reading 'insertBefore')\n   \u276f ui.test.js > UI Class > should set timeout to clear alert\n     \u2192 Cannot read properties of undefined (reading 'insertBefore')\n\n Test Files  1 failed (1)\n      Tests  2 failed | 4 passed (6)\n   Start at  00:05:30\n   Duration  357ms (transform 14ms, setup 0ms, collect 14ms, tests 44ms, environment 179ms, prepare 38ms)",
+        "type": "Simulate Failures",
+        "description": "Introduced a runtime exception by attempting to access a property of an undefined variable.",
+        "udiff": "--- \n+++ \n@@ -60,7 +60,7 @@\n     const div = document.createElement('div');\n\n     div.className = className;\n\n     div.appendChild(document.createTextNode(message));\n\n-    const container = document.querySelector('.searchContainer');\n\n+    const container = undefined; // Mutation: Simulating a failure by setting container to undefined.\n\n     const search = document.querySelector('.search');\n\n     container.insertBefore(div, search);\n\n \n"
     },
     {
         "id": "7",
         "source_path": "ui.js",
-        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla/logs/_latest/mutants/7_ui.js",
-        "status": "SURVIVED",
+        "mutant_path": null,
+        "status": "COMPILE_ERROR",
         "error_msg": "",
-        "type": "Logical Operator Mutation",
-        "description": "Changed the condition to check if currentAlert is not null or undefined.",
-        "udiff": "--- \n+++ \n@@ -71,7 +71,7 @@\n \n\n   clearAlert() {\n\n     const currentAlert = document.querySelector('.alert');\n\n-    if (currentAlert) {\n\n+    if (currentAlert !== null && currentAlert !== undefined) { // Mutation: Explicit null and undefined check\n\n       currentAlert.remove();\n\n     }\n\n   }\n"
+        "type": "Remove Code Block",
+        "description": "Removed the check for currentAlert, causing potential unhandled exceptions if clearAlert is called when no alert exists.",
+        "udiff": ""
     },
     {
         "id": "8",
         "source_path": "ui.js",
         "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla/logs/_latest/mutants/8_ui.js",
-        "status": "SURVIVED",
-        "error_msg": "",
-        "type": "Return Statement Mutation",
-        "description": "Added a return statement to indicate the function's completion.",
-        "udiff": "--- \n+++ \n@@ -72,7 +72,7 @@\n   clearAlert() {\n\n     const currentAlert = document.querySelector('.alert');\n\n     if (currentAlert) {\n\n-      currentAlert.remove();\n\n+      currentAlert.remove(); return; // Mutation: Added return statement for clarity\n\n     }\n\n   }\n\n \n"
+        "status": "KILLED",
+        "error_msg": "\u23af\u23af\u23af\u23af\u23af\u23af\u23af Failed Tests 2 \u23af\u23af\u23af\u23af\u23af\u23af\u23af\n\n FAIL  ui.test.js > UI Class > should set timeout to clear alert\nTypeError: currentAlert.nonExistentMethod is not a function\n \u276f UI.clearAlert ui.js:75:20\n     73|     const currentAlert = document.querySelector('.alert');\n     74|     if (currentAlert) {\n     75|       currentAlert.nonExistentMethod(); // Mutation: Introduced TypeEr\u2026\n       |                    ^\n     76|     }\n     77|   }\n \u276f ui.js:68:12\n \u276f ui.test.js:79:8\n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af[1/2]\u23af\n\n FAIL  ui.test.js > UI Class > should clear existing alert\nTypeError: currentAlert.nonExistentMethod is not a function\n \u276f UI.clearAlert ui.js:75:20\n     73|     const currentAlert = document.querySelector('.alert');\n     74|     if (currentAlert) {\n     75|       currentAlert.nonExistentMethod(); // Mutation: Introduced TypeEr\u2026\n       |                    ^\n     76|     }\n     77|   }\n \u276f ui.test.js:89:8\n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af[2/2]\u23af\n\n\n> js-vanilla-example@1.0.0 test\n> vitest run\n\n\n RUN  v1.6.0 /Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla\n\n \u276f ui.test.js  (6 tests | 2 failed) 46ms\n   \u276f ui.test.js > UI Class > should set timeout to clear alert\n     \u2192 currentAlert.nonExistentMethod is not a function\n   \u276f ui.test.js > UI Class > should clear existing alert\n     \u2192 currentAlert.nonExistentMethod is not a function\n\n Test Files  1 failed (1)\n      Tests  2 failed | 4 passed (6)\n   Start at  00:05:34\n   Duration  358ms (transform 14ms, setup 0ms, collect 14ms, tests 46ms, environment 176ms, prepare 38ms)",
+        "type": "Exception Injection",
+        "description": "Introduced a runtime exception by modifying the remove method call to a non-existent method, causing a TypeError.",
+        "udiff": "--- \n+++ \n@@ -72,7 +72,7 @@\n   clearAlert() {\n\n     const currentAlert = document.querySelector('.alert');\n\n     if (currentAlert) {\n\n-      currentAlert.remove();\n\n+      currentAlert.nonExistentMethod(); // Mutation: Introduced TypeError by calling a non-existent method\n\n     }\n\n   }\n\n \n"
     },
     {
         "id": "9",
         "source_path": "ui.js",
         "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla/logs/_latest/mutants/9_ui.js",
-        "status": "SURVIVED",
-        "error_msg": "",
-        "type": "Error Handling Mutation",
-        "description": "Introduced a try-catch block to handle potential errors during removal.",
-        "udiff": "--- \n+++ \n@@ -72,7 +72,7 @@\n   clearAlert() {\n\n     const currentAlert = document.querySelector('.alert');\n\n     if (currentAlert) {\n\n-      currentAlert.remove();\n\n+      try { currentAlert.remove(); } catch (error) { console.error('Error removing alert:', error); } // Mutation: Added error handling\n\n     }\n\n   }\n\n \n"
+        "status": "KILLED",
+        "error_msg": "\u23af\u23af\u23af\u23af\u23af\u23af\u23af Failed Tests 1 \u23af\u23af\u23af\u23af\u23af\u23af\u23af\n\n FAIL  ui.test.js > UI Class > should clear profile element\nAssertionError: expected 'CORRUPTED DATA' to be '' // Object.is equality\n\n- Expected\n+ Received\n\n+ CORRUPTED DATA\n\n \u276f ui.test.js:33:38\n     31|     profileElement.innerHTML = '<div>Profile Content</div>';\n     32|     ui.clearProfile();\n     33|     expect(profileElement.innerHTML).toBe('');\n       |                                      ^\n     34|   });\n     35| \n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af[1/1]\u23af\n\n\n> js-vanilla-example@1.0.0 test\n> vitest run\n\n\n RUN  v1.6.0 /Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla\n\n \u276f ui.test.js  (6 tests | 1 failed) 51ms\n   \u276f ui.test.js > UI Class > should clear profile element\n     \u2192 expected 'CORRUPTED DATA' to be '' // Object.is equality\n\n Test Files  1 failed (1)\n      Tests  1 failed | 5 passed (6)\n   Start at  00:05:40\n   Duration  387ms (transform 14ms, setup 0ms, collect 40ms, tests 51ms, environment 169ms, prepare 37ms)",
+        "type": "Modify Core Logic",
+        "description": "Changed the logic to clear the profile by setting it to a corrupted value instead of an empty string.",
+        "udiff": "--- \n+++ \n@@ -77,6 +77,6 @@\n   }\n\n \n\n   clearProfile() {\n\n-    this.profile.innerHTML = '';\n\n+    this.profile.innerHTML = 'CORRUPTED DATA'; // Mutation: set to corrupted data instead of empty string\n\n   }\n\n }\n"
     },
     {
         "id": "10",
         "source_path": "ui.js",
         "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla/logs/_latest/mutants/10_ui.js",
-        "status": "SURVIVED",
-        "error_msg": "",
-        "type": "Mutation",
-        "description": "Changed the innerHTML assignment to null instead of an empty string.",
-        "udiff": "--- \n+++ \n@@ -77,6 +77,6 @@\n   }\n\n \n\n   clearProfile() {\n\n-    this.profile.innerHTML = '';\n\n+    this.profile.innerHTML = null; // Mutation: Changed to null instead of an empty string.\n\n   }\n\n }\n"
-    },
-    {
-        "id": "11",
-        "source_path": "ui.js",
-        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla/logs/_latest/mutants/11_ui.js",
-        "status": "SURVIVED",
-        "error_msg": "",
-        "type": "Mutation",
-        "description": "Added a console log to indicate that the profile is being cleared.",
-        "udiff": "--- \n+++ \n@@ -77,6 +77,6 @@\n   }\n\n \n\n   clearProfile() {\n\n-    this.profile.innerHTML = '';\n\n+    console.log('Clearing profile...'); this.profile.innerHTML = ''; // Mutation: Added logging for clarity.\n\n   }\n\n }\n"
-    },
-    {
-        "id": "12",
-        "source_path": "ui.js",
-        "mutant_path": "/Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla/logs/_latest/mutants/12_ui.js",
-        "status": "SURVIVED",
-        "error_msg": "",
-        "type": "Mutation",
-        "description": "Introduced a condition to check if profile exists before clearing.",
-        "udiff": "--- \n+++ \n@@ -77,6 +77,6 @@\n   }\n\n \n\n   clearProfile() {\n\n-    this.profile.innerHTML = '';\n\n+    if (this.profile) { this.profile.innerHTML = ''; } // Mutation: Added check for profile existence.\n\n   }\n\n }\n"
+        "status": "KILLED",
+        "error_msg": "\u23af\u23af\u23af\u23af\u23af\u23af\u23af Failed Tests 1 \u23af\u23af\u23af\u23af\u23af\u23af\u23af\n\n FAIL  ui.test.js > UI Class > should clear profile element\nTypeError: Cannot read properties of undefined (reading 'property')\n \u276f UI.clearProfile ui.js:80:40\n     78| \n     79|   clearProfile() {\n     80|     this.profile.innerHTML = undefined.property; // Mutation: causes a\u2026\n       |                                        ^\n     81|   }\n     82| }\n \u276f ui.test.js:32:8\n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af[1/1]\u23af\n\n\n> js-vanilla-example@1.0.0 test\n> vitest run\n\n\n RUN  v1.6.0 /Users/taikorind/Documents/personal/codeintegrity/mutahunter/examples/js_vanilla\n\n \u276f ui.test.js  (6 tests | 1 failed) 50ms\n   \u276f ui.test.js > UI Class > should clear profile element\n     \u2192 Cannot read properties of undefined (reading 'property')\n\n Test Files  1 failed (1)\n      Tests  1 failed | 5 passed (6)\n   Start at  00:05:41\n   Duration  385ms (transform 14ms, setup 0ms, collect 15ms, tests 50ms, environment 189ms, prepare 41ms)",
+        "type": "Simulate Failures",
+        "description": "Introduced a runtime exception by attempting to access a property of an undefined object.",
+        "udiff": "--- \n+++ \n@@ -77,6 +77,6 @@\n   }\n\n \n\n   clearProfile() {\n\n-    this.profile.innerHTML = '';\n\n+    this.profile.innerHTML = undefined.property; // Mutation: causes a runtime error\n\n   }\n\n }\n"
     }
 ]
