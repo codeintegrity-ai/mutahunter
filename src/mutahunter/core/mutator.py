@@ -4,9 +4,10 @@ import subprocess
 import time
 from typing import Any, Dict, List
 
+from grep_ast import filename_to_lang
 from jinja2 import Template
 from tqdm import tqdm
-from grep_ast import filename_to_lang
+
 from mutahunter.core.analyzer import Analyzer
 from mutahunter.core.coverage_processor import CoverageProcessor
 from mutahunter.core.entities.config import MutatorConfig
