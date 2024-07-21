@@ -23,8 +23,8 @@ def parse_arguments():
     main_parser.add_argument(
         "--model",
         type=str,
-        default="gpt-3.5-turbo",
-        help="The LLM model to use for mutation generation. Default is 'gpt-3.5-turbo'.",
+        default="gpt-4o-mini",
+        help="The LLM model to use for mutation generation. Default is 'gpt-4o-mini'.",
     )
     main_parser.add_argument(
         "--api-base",
