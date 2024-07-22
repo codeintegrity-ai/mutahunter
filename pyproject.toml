@@ -15,7 +15,7 @@ dependencies = [
     'pygments==2.18.0',
     'networkx==3.3',
     'jinja2==3.1.4',
-    'litellm==1.41.21',
+    'litellm==1.41.25',
     "numpy==2.0.0",
     "scipy==1.14.0",
 ]
