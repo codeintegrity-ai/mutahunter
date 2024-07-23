@@ -29,7 +29,7 @@ We'd love to hear your feedback, suggestions, and any thoughts you have on mutat
 - [Examples](#examples)
 - [CI/CD Integration](#cicd-integration)
 
-Mutahunter can automtically generate unit tests to increase line and mutation coverage, leveraging Large Language Models (LLMs) to identify and fill gaps in test coverage. It uses LLM models to inject context-aware faults into your codebase. This AI-driven approach produces fewer equivalent mutants, mutants with higher fault detection potential, and those with higher coupling and semantic similarity to real faults, ensuring comprehensive and effective testing.
+Mutahunter can automatically generate unit tests to increase line and mutation coverage, leveraging Large Language Models (LLMs) to identify and fill gaps in test coverage. It uses LLM models to inject context-aware faults into your codebase. This AI-driven approach produces fewer equivalent mutants, mutants with higher fault detection potential, and those with higher coupling and semantic similarity to real faults, ensuring comprehensive and effective testing.
 
 ## Features
 
