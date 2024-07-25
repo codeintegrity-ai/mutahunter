@@ -15,7 +15,7 @@ from mutahunter.core.entities.mutant import Mutant
 from mutahunter.core.error_parser import extract_error_message
 from mutahunter.core.llm_mutation_engine import LLMMutationEngine
 from mutahunter.core.logger import logger
-from mutahunter.core.prompts.user import MUTANT_ANALYSIS
+from mutahunter.core.prompts.mutant_generator import MUTANT_ANALYSIS
 from mutahunter.core.report import MutantReport
 from mutahunter.core.router import LLMRouter
 from mutahunter.core.runner import TestRunner
@@ -309,7 +309,7 @@ class Mutator:
         ):
             with open(mutant_path, "wb") as f:
                 f.write(modified_byte_code)
-            self.logger.info(f"Mutant file prepared: {mutant_path}")
+            self.logger.debug(f"Mutant file prepared: {mutant_path}")
             return mutant_path
         else:
             self.logger.error(
@@ -322,7 +322,7 @@ class Mutator:
         Runs the test command on the given parameters.
         """
         self.logger.info(
-            f"Running test command: {params['test_command']} for mutant file: {params['replacement_module_path']}"
+            f"'{params['test_command']}' - '{params['replacement_module_path']}'"
         )
         return self.test_runner.run_test(params)
 

@@ -2,23 +2,23 @@ import json
 import os
 import shutil
 import subprocess
+from dataclasses import asdict
 
+import yaml
 from grep_ast import filename_to_lang
 from jinja2 import Template
-from mutahunter.core.entities.config import MutatorConfig
-from mutahunter.core.mutator import Mutator
-from mutahunter.core.runner import TestRunner
 
 from mutahunter.core.analyzer import Analyzer
 from mutahunter.core.coverage_processor import CoverageProcessor
-from mutahunter.core.entities.config import UnittestGeneratorConfig
+from mutahunter.core.entities.config import MutatorConfig, UnittestGeneratorConfig
 from mutahunter.core.error_parser import extract_error_message
-from mutahunter.core.prompts.user import (
+from mutahunter.core.mutator import Mutator
+from mutahunter.core.prompts.unittest_generator import (
     FAILED_TESTS_TEXT,
-    MUTATION_TEST_PROMPT,
+    LINE_COV_UNITTEST_GENERATOR_USER_PROMPT,
+    MUTATION_COV_UNITTEST_GENERATOR_USER_PROMPT,
     MUTATION_WEAK_TESTS_TEXT,
     REPORT_PROMPT,
-    TEST_GEN_USER_PROMPT,
 )
 from mutahunter.core.router import LLMRouter
 from mutahunter.core.runner import TestRunner
@@ -67,51 +67,24 @@ class UnittestGenerator:
             response = self.generate_unittests()
             self._process_generated_unittests(response)
 
+        # NOTE:// Run mutation testing
         self.mutator.run()
 
-        # read mutations
-        with open("logs/_latest/mutants.json", "r") as f:
-            self.mutants = json.load(f)
-
-        timeout_mutants = [
-            mutant for mutant in self.mutants if mutant["status"] == "TIMEOUT"
-        ]
-        killed_mutants = [
-            mutant for mutant in self.mutants if mutant["status"] == "KILLED"
-        ]
-        compiled_error_mutants = [
-            mutant for mutant in self.mutants if mutant["status"] == "COMPILE_ERROR"
-        ]
-        self.current_mutationn_coverage = len(killed_mutants) / (
-            len(self.mutants) - len(compiled_error_mutants) - len(timeout_mutants)
-        )
-        initial_mutation_coverage_rate = self.current_mutationn_coverage
-        print("Mutation coverage rate", self.current_mutationn_coverage)
-
         current_attempt_for_mutation = 0
+        prev_mutation_coverage_rate = self.mutator.mutant_report.mutation_coverage_rate
         self.failed_unittests = []
 
         while (
-            self.current_mutationn_coverage < self.config.target_mutation_coverage_rate
+            prev_mutation_coverage_rate < self.config.target_mutation_coverage_rate
             and current_attempt_for_mutation < self.config.max_attempts
         ):
             current_attempt_for_mutation += 1
             response = self.generate_unittests_for_mutants()
             self._process_generated_unittests_for_mutation(response)
+            self.mutator.mutant_report.generate_report(
+                self.mutator.mutants, 0, self.coverage_processor.line_coverage_rate
+            )
 
-        print("LINE COVERAGE", self.coverage_processor.line_coverage_rate)
-        print("MUTATION COVERAGE", self.current_mutationn_coverage)
-
-        # Based on the failed unittests and the survived mutants generate a report on a potential bug in the code.
-
-        # get updated survived mutants
-
-        survived_mutants = [
-            mutant for mutant in self.mutants if mutant["status"] == "SURVIVED"
-        ]
-        # write updated surived mutants to file
-        with open("logs/_latest/survived_mutants.json", "w") as f:
-            json.dump(survived_mutants, f, indent=2)
         with open(self.config.source_file_path, "r") as f:
             source_code = f.read()
         with open(self.config.test_file_path, "r") as f:
@@ -124,11 +97,19 @@ class UnittestGenerator:
             test_file=self.config.test_file_path,
             test_code=test_code,
             failed_tests=json.dumps(self.failed_unittests[:-5], indent=2),
-            survived_mutants=json.dumps(survived_mutants, indent=2),
+            survived_mutants=json.dumps(
+                [
+                    asdict(mutant)
+                    for mutant in self.mutator.mutants
+                    if mutant.status == "SURVIVED"
+                ],
+                indent=2,
+            ),
         )
         response, _, _ = self.router.generate_response(
-            prompt={"system": "", "user": user_template}, streaming=True
+            prompt={"system": "", "user": user_template}, streaming=False
         )
+
         with open("logs/_latest/report.md", "w") as f:
             f.write(response)
 
@@ -136,7 +117,7 @@ class UnittestGenerator:
             f"Line coverage increased from {initial_line_coverage_rate*100:.2f}% to {self.coverage_processor.line_coverage_rate*100:.2f}%"
         )
         print(
-            f"Mutation coverage increased from {initial_mutation_coverage_rate*100:.2f}% to {self.current_mutationn_coverage*100:.2f}%"
+            f"Mutation coverage increased from {prev_mutation_coverage_rate*100:.2f}% to {self.mutator.mutant_report.mutation_coverage_rate*100:.2f}%"
         )
 
     def generate_unittests(self):
@@ -148,7 +129,7 @@ class UnittestGenerator:
             lines_to_cover = self.coverage_processor.file_lines_not_executed.get(
                 self.config.source_file_path, []
             )
-            user_template = Template(TEST_GEN_USER_PROMPT).render(
+            user_template = Template(LINE_COV_UNITTEST_GENERATOR_USER_PROMPT).render(
                 language=language,
                 source_file_numbered=source_code_with_lines,
                 source_file_name=self.config.source_file_path,
@@ -168,7 +149,8 @@ class UnittestGenerator:
             response, _, _ = self.router.generate_response(
                 prompt={"system": "", "user": user_template}, streaming=True
             )
-            return self._extract_json(response)
+            otuput = self.extract_response(response)
+            return otuput
         except Exception as e:
             raise
 
@@ -235,25 +217,20 @@ class UnittestGenerator:
                 text=True,
                 cwd=os.getcwd(),
             )
-            print("Test result", result)
             if result.returncode == 0:
-                print("Test passed")
                 prev_line_coverage_rate = self.coverage_processor.line_coverage_rate
                 self.coverage_processor.parse_coverage_report()
 
                 if check_line_coverage:
-                    print("checking line coverage")
                     if self.check_line_coverage_increase(prev_line_coverage_rate):
                         return True
                 if check_mutantation_coverage:
-                    print("checking mutation coverage")
                     if self.check_mutant_coverage_increase(
                         generated_unittest, test_code
                     ):
                         return True
             else:
                 print("Test failed")
-                print("test code", test_code)
                 self._handle_failed_test(result, test_code)
         except Exception as e:
             print(f"Failed to validate unittest: {e}")
@@ -273,13 +250,10 @@ class UnittestGenerator:
 
     def check_mutant_coverage_increase(self, generated_unittest, test_code):
         runner = TestRunner(test_command=self.config.test_command)
-        survived_mutants = [
-            mutant for mutant in self.mutants if mutant["status"] == "SURVIVED"
-        ]
-        for mutant in survived_mutants:
+        for mutant in self.mutator.mutants:
             if (
-                mutant["id"] == generated_unittest["mutant_id"]
-                and mutant["status"] == "SURVIVED"
+                mutant.id == generated_unittest["mutant_id"]
+                and mutant.status == "SURVIVED"
             ):
                 result = runner.run_test(
                     {
@@ -289,9 +263,7 @@ class UnittestGenerator:
                     }
                 )
                 if result.returncode == 0:
-                    print("Mutant failed to be killed!")
-                    with open("weaktests.txt", "+a") as f:
-                        f.write(test_code)
+                    print("Mutation coverage did not increase")
                     self.weak_unittests.append(
                         {
                             "code": test_code,
@@ -299,25 +271,11 @@ class UnittestGenerator:
                         }
                     )
                 else:
-                    print("Mutant Successfully Killed")
-                    mutant["status"] = "KILLED"
+                    print("Mutation coverage increased!")
+                    mutant.status = "KILLED"
                     with open("logs/_latest/golden_tests.txt", "a") as f:
                         f.write(test_code)
                     return True
-
-        timeout_mutants = [
-            mutant for mutant in self.mutants if mutant["status"] == "TIMEOUT"
-        ]
-        killed_mutants = [
-            mutant for mutant in self.mutants if mutant["status"] == "KILLED"
-        ]
-        compiled_error_mutants = [
-            mutant for mutant in self.mutants if mutant["status"] == "COMPILE_ERROR"
-        ]
-        self.current_mutationn_coverage = len(killed_mutants) / (
-            len(self.mutants) - len(compiled_error_mutants) - len(timeout_mutants)
-        )
-        print("Mutation coverage rate", self.current_mutationn_coverage)
         return False
 
     def _handle_failed_test(self, result, test_code):
@@ -326,22 +284,25 @@ class UnittestGenerator:
         self.failed_unittests.append({"code": test_code, "error_message": error_msg})
 
     def generate_unittests_for_mutants(self) -> None:
-        survived_mutants = [
-            mutant for mutant in self.mutants if mutant["status"] == "SURVIVED"
-        ]
-
         source_code = FileUtils.read_file(self.config.source_file_path)
         language = filename_to_lang(self.config.source_file_path)
 
-        user_template = Template(MUTATION_TEST_PROMPT).render(
+        user_template = Template(MUTATION_COV_UNITTEST_GENERATOR_USER_PROMPT).render(
             language=language,
             line_coverage=self.coverage_processor.line_coverage_rate * 100,
-            mutation_coverage=self.current_mutationn_coverage * 100,
+            mutation_coverage=self.mutator.mutant_report.mutation_coverage_rate * 100,
             source_file_name=self.config.source_file_path,
             source_code=source_code,
             test_file_name=self.config.test_file_path,
             test_file=FileUtils.read_file(self.config.test_file_path),
-            survived_mutants=json.dumps(survived_mutants, indent=2),
+            survived_mutants=json.dumps(
+                [
+                    asdict(mutant)
+                    for mutant in self.mutator.mutants
+                    if mutant.status == "SURVIVED"
+                ],
+                indent=2,
+            ),
             weak_tests_section=(
                 Template(MUTATION_WEAK_TESTS_TEXT).render(
                     weak_tests=f"{json.dumps(self.weak_unittests[:-5], indent=2)}"
@@ -361,7 +322,7 @@ class UnittestGenerator:
             prompt={"system": "", "user": user_template}, streaming=True
         )
 
-        resp = self._extract_json(response)
+        resp = self.extract_response(response)
         return resp
 
     def _process_generated_unittests_for_mutation(self, response) -> None:
@@ -379,13 +340,33 @@ class UnittestGenerator:
     def _number_lines(code: str) -> str:
         return "\n".join(f"{i + 1} {line}" for i, line in enumerate(code.splitlines()))
 
-    @staticmethod
-    def _extract_json(text: str) -> dict:
-        if "```json" in text:
-            json_content = text.split("```json")[1].split("```")[0]
-        else:
-            json_content = text.strip()
-        return json.loads(json_content, strict=False)
+    def extract_response(self, response: str) -> dict:
+        retries = 2
+        for attempt in range(retries):
+            try:
+                response = response.strip().removeprefix("```yaml").rstrip("`")
+                data = yaml.safe_load(response)
+                return data
+            except Exception as e:
+                if attempt < retries - 1:
+                    response = self.fix_format(e, response)
+                else:
+                    return {"new_tests": []}
+
+    def fix_format(self, error, content):
+        system_template = Template(SYSTEM_YAML_FIX).render()
+        user_template = Template(USER_YAML_FIX).render(
+            yaml_content=content,
+            error=error,
+        )
+        prompt = {
+            "system": system_template,
+            "user": user_template,
+        }
+        model_response, _, _ = self.router.generate_response(
+            prompt=prompt, streaming=True
+        )
+        return model_response
 
     @staticmethod
     def _reset_indentation(code: str) -> str:
@@ -423,7 +404,6 @@ class FileUtils:
         backup_path = f"{file_path}.bak"
         try:
             shutil.copyfile(file_path, backup_path)
-            print(f"Backup file created at {backup_path}")
         except Exception as e:
             print(f"Failed to create backup file for {file_path}: {e}")
             raise
@@ -456,12 +436,21 @@ class FileUtils:
             raise
 
 
-class SubprocessUtils:
-    @staticmethod
-    def run_command(command: str) -> subprocess.CompletedProcess:
-        try:
-            result = subprocess.run(command.split(), capture_output=True, text=True)
-            return result
-        except Exception as e:
-            print(f"Failed to run command {command}: {e}")
-            raise
+SYSTEM_YAML_FIX = """
+Based on the error message, the YAML content provided is not in the correct format. Please ensure the YAML content is in the correct format and try again.
+"""
+
+USER_YAML_FIX = """
+YAML content:
+```yaml
+{{yaml_content}}
+```
+
+Error:
+{{error}}
+
+Output must be wrapped in triple backticks and in YAML format:
+```yaml
+...fix the yaml content here...
+```
+"""
