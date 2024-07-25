@@ -258,7 +258,7 @@ class UnittestGenerator:
                 result = runner.run_test(
                     {
                         "module_path": self.config.source_file_path,
-                        "replacement_module_path": mutant["mutant_path"],
+                        "replacement_module_path": mutant.mutant_path,
                         "test_command": self.config.test_command,
                     }
                 )
@@ -267,14 +267,14 @@ class UnittestGenerator:
                     self.weak_unittests.append(
                         {
                             "code": test_code,
-                            "survived_mutant_id": f"Mutant {mutant['id']} not killed",
+                            "survived_mutant_id": f"Mutant {mutant.id} not killed",
                         }
                     )
                 else:
                     print("Mutation coverage increased!")
                     mutant.status = "KILLED"
-                    with open("logs/_latest/golden_tests.txt", "a") as f:
-                        f.write(test_code)
+                    # with open("logs/_latest/golden_tests.txt", "a") as f:
+                    #     f.write(test_code)
                     return True
         return False
 

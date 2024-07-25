@@ -19,4 +19,5 @@ mutahunter run --test-command "npm run test" --code-coverage-report-path "covera
 ### Surviving Mutant Analysis
 
 [Mutants](./mutants.json)
+
 [Report](./mutant_analysis.md)

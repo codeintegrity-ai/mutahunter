@@ -29,4 +29,5 @@ mutahunter gen --test-command "mvn test" --code-coverage-report-path "target/sit
 ### Surviving Mutant Analysis
 
 [Mutants](./mutants.json)
+
 [Report](./mutant_analysis.md)

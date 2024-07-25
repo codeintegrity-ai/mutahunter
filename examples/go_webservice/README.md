@@ -27,4 +27,5 @@ mutahunter run --test-command "go test" --code-coverage-report-path "coverage.xm
 ### Surviving Mutant Analysis
 
 [Mutants](./mutants.json)
+
 [Report](./mutant_analysis.md)
