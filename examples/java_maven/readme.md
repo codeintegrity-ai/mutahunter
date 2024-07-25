@@ -23,7 +23,7 @@ mutahunter run --test-command "mvn test" --code-coverage-report-path "target/sit
 
 ```bash
 # remove some tests
-mutahunter gen --test-command "mvn test" --code-coverage-report-path "target/site/jacoco/jacoco.xml" --test-file-path "src/test/java/BankAccountTest.java" --source-file-path "src/main/java/com/example/BankAccount.java" --coverage-type jacoco  --model "gpt-4o-mini"
+mutahunter gen --test-command "mvn clean test" --code-coverage-report-path "target/site/jacoco/jacoco.xml" --test-file-path "src/test/java/BankAccountTest.java" --source-file-path "src/main/java/com/example/BankAccount.java" --coverage-type jacoco  --model "gpt-4o-mini"
 ```
 
 ### Surviving Mutant Analysis
