@@ -127,7 +127,7 @@ class Analyzer:
         with open(file_path, "rb") as f:
             return f.read()
 
-    def check_syntax(self, source_file_path: str, source_code: str) -> bool:
+    def check_syntax(self, source_file_path: str, src_code: str) -> bool:
         """
         Checks the syntax of the provided source code.
 
@@ -139,7 +139,7 @@ class Analyzer:
         """
         lang = filename_to_lang(source_file_path)
         parser = get_parser(lang)
-        tree = parser.parse(bytes(source_code, "utf8"))
+        tree = parser.parse(bytes(src_code, "utf8"))
         return not tree.root_node.has_error
 
     def find_method_blocks_nodes(

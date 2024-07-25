@@ -14,16 +14,12 @@ class LLMMutationEngine:
         executed_lines,
         cov_files,
         source_file_path,  # file_path for the source code
-        start_byte,
-        end_byte,
         router,
     ):
         self.model = model
         self.executed_lines = executed_lines
         self.cov_files = cov_files
         self.source_file_path = source_file_path
-        self.start_byte = start_byte
-        self.end_byte = end_byte
         self.router = router
         self.repo_map = RepoMap(model=self.model)
         self.language = filename_to_lang(self.source_file_path)
@@ -32,9 +28,9 @@ class LLMMutationEngine:
         self.function_block_source_code = self.get_function_block_source_code()
 
     def get_function_block_source_code(self):
-        with open(self.source_file_path, "rb") as f:
+        with open(self.source_file_path, "r") as f:
             src_code = f.read()
-        return src_code[self.start_byte : self.end_byte].decode("utf-8")
+        return src_code
 
     def generate_mutant(self, repo_map_result):
         # add line number for each line of code
@@ -58,6 +54,11 @@ class LLMMutationEngine:
             "system": system_template,
             "user": user_template,
         }
+
+        with open("system_template.txt", "w") as f:
+            f.write(system_template)
+        with open("user_template.txt", "w") as f:
+            f.write(user_template)
         # print("system_template:", system_template)
         # print("user_template:", user_template)
 
@@ -75,42 +76,8 @@ class LLMMutationEngine:
             logger.error("No repository map found.")
 
         response = self.generate_mutant(repo_map_result)
-        mutation_info = self.extract_response(response)
-        changes = mutation_info["changes"]
-        original_lines = self.function_block_source_code.splitlines(keepends=True)
-        for change in changes:
-            original_line = change["original_line"]
-            mutated_line = change["mutated_line"]
-
-            for i, line in enumerate(original_lines):
-                # print("line: ---->", line.lstrip().rstrip())
-                # print("original_line: ---->", original_line.lstrip().rstrip())
-                # print(
-                #     "check: ---->",
-                #     line.lstrip().rstrip() == original_line.lstrip().rstrip(),
-                # )
-                # print("\n")
-                if line.lstrip().rstrip() == original_line.lstrip().rstrip():
-                    # print("FOUND SAME LINE")
-                    # print("original_lines[i]: ---->", original_lines[i])
-                    # print("line: ---->", line)
-                    # print("mutated_line: ---->", mutated_line)
-                    # original_lines[i] = mutated_line + "\n"
-                    # dont modify the original lines
-                    temp_lines = original_lines.copy()
-                    # check if the temp_lines[i] ends with a newline character
-                    # get indentation of the original line
-                    indentation_space = len(temp_lines[i]) - len(temp_lines[i].lstrip())
-                    # add the indentation to the mutated line after lstripping
-                    mutated_line = " " * indentation_space + mutated_line.lstrip()
-                    temp_lines[i] = mutated_line + "\n"
-                    # updated change dict
-                    change["mutant_code"] = "".join(temp_lines)
-                    break
-            else:
-                logger.error(f"Could not apply mutation. Skipping mutation.")
-                continue
-        return changes
+        response = self.extract_response(response)
+        return response
 
     def extract_response(self, response: str) -> dict:
         retries = 2

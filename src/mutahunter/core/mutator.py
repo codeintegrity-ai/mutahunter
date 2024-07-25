@@ -48,38 +48,48 @@ class LLMBasedMutation(MutationStrategy):
         """
         Generates mutations for a single file based on the executed lines.
         """
-        covered_function_blocks, covered_function_block_executed_lines = (
-            hunter.analyzer.get_covered_function_blocks(
-                executed_lines=executed_lines,
-                source_file_path=file_path,
-            )
+        engine = LLMMutationEngine(
+            model=hunter.config.model,
+            executed_lines=hunter.coverage_processor.file_lines_executed[file_path],
+            cov_files=list(hunter.coverage_processor.file_lines_executed.keys()),
+            source_file_path=file_path,
+            router=hunter.router,
         )
+        for mutant_data in engine.generate()["changes"]:
+            hunter.process_mutant(mutant_data, file_path)
 
-        hunter.logger.info(
-            f"Total function blocks to mutate for {file_path}: {len(covered_function_blocks)}"
-        )
-        if not covered_function_blocks:
-            return
+        # covered_function_blocks, covered_function_block_executed_lines = (
+        #     hunter.analyzer.get_covered_function_blocks(
+        #         executed_lines=executed_lines,
+        #         source_file_path=file_path,
+        #     )
+        # )
 
-        for function_block, executed_lines in zip(
-            covered_function_blocks, covered_function_block_executed_lines
-        ):
-            start_byte = function_block.start_byte
-            end_byte = function_block.end_byte
+        # hunter.logger.info(
+        #     f"Total function blocks to mutate for {file_path}: {len(covered_function_blocks)}"
+        # )
+        # if not covered_function_blocks:
+        #     return
 
-            engine = LLMMutationEngine(
-                model=hunter.config.model,
-                executed_lines=executed_lines,
-                cov_files=list(hunter.coverage_processor.file_lines_executed.keys()),
-                source_file_path=file_path,
-                start_byte=start_byte,
-                end_byte=end_byte,
-                router=hunter.router,
-            )
-            for mutant_data in engine.generate():
-                if "mutant_code" not in mutant_data:
-                    continue
-                hunter.process_mutant(mutant_data, file_path, start_byte, end_byte)
+        # for function_block, executed_lines in zip(
+        #     covered_function_blocks, covered_function_block_executed_lines
+        # ):
+        #     start_byte = function_block.start_byte
+        #     end_byte = function_block.end_byte
+
+        #     engine = LLMMutationEngine(
+        #         model=hunter.config.model,
+        #         executed_lines=hunter.coverage_processor.file_lines_executed[file_path],
+        #         cov_files=list(hunter.coverage_processor.file_lines_executed.keys()),
+        #         source_file_path=file_path,
+        #         start_byte=start_byte,
+        #         end_byte=end_byte,
+        #         router=hunter.router,
+        #     )
+        #     for mutant_data in engine.generate():
+        #         if "mutant_code" not in mutant_data:
+        #             continue
+        #         hunter.process_mutant(mutant_data, file_path, start_byte, end_byte)
 
 
 class ExtremeMutation(MutationStrategy):
@@ -191,7 +201,7 @@ class Mutator:
         self.logger.info("Running mutation testing on the entire codebase.")
         all_covered_files = self.coverage_processor.file_lines_executed.keys()
         self.logger.info(
-            f"Generating mutations for {len(all_covered_files)} covered files."
+            f"Discovered {len(all_covered_files)} covered files by line coverage."
         )
 
         for covered_file_path in tqdm(all_covered_files):
@@ -240,8 +250,6 @@ class Mutator:
         self,
         mutant_data: Dict[str, Any],
         source_file_path: str,
-        start_byte: int,
-        end_byte: int,
     ) -> None:
         """
         Processes a single mutant data dictionary.
@@ -249,12 +257,14 @@ class Mutator:
         mutant = Mutant(
             id=str(len(self.mutants) + 1),
             source_path=source_file_path,
+            function_name=mutant_data["function_name"],
+            line_number=mutant_data["line_number"],
             type=mutant_data["type"],
             description=mutant_data["description"],
+            original_line=mutant_data["original_line"],
+            mutated_line=mutant_data["mutated_line"],
         )
-        mutant_path = self.prepare_mutant_file(
-            mutant, start_byte, end_byte, mutant_code=mutant_data["mutant_code"]
-        )
+        mutant_path = self.prepare_mutant_file(mutant)
 
         if mutant_path:  # Only run tests if the mutant file is prepared successfully
             mutant.mutant_path = mutant_path
@@ -282,9 +292,7 @@ class Mutator:
         diff_lines = list(diff)
         return diff_lines
 
-    def prepare_mutant_file(
-        self, mutant: Mutant, start_byte: int, end_byte: int, mutant_code: str
-    ) -> str:
+    def prepare_mutant_file(self, mutant: Mutant) -> str:
         """
         Prepares the mutant file for testing.
         """
@@ -294,21 +302,35 @@ class Mutator:
         )
         self.logger.debug(f"Preparing mutant file: {mutant_path}")
 
-        with open(mutant.source_path, "rb") as f:
+        with open(mutant.source_path, "r") as f:
             source_code = f.read()
 
-        modified_byte_code = (
-            source_code[:start_byte]
-            + bytes(mutant_code, "utf-8")
-            + source_code[end_byte:]
-        )
+        original_lines = source_code.splitlines(keepends=True)
+        original_line = mutant.original_line
+        mutated_line = mutant.mutated_line
 
+        for i, line in enumerate(original_lines):
+            if line.lstrip().rstrip() == original_line.lstrip().rstrip():
+                print("found original line", i, line)
+                # check if the temp_lines[i] ends with a newline character
+                # get indentation of the original line
+                indentation_space = len(original_lines[i]) - len(
+                    original_lines[i].lstrip()
+                )
+                # add the indentation to the mutated line after lstripping
+                mutated_line = " " * indentation_space + mutated_line.lstrip()
+                original_lines[i] = mutated_line
+                break
+
+        src_code = "".join(original_lines)
+        with open("./temp.py", "w") as f:
+            f.write("".join(original_lines))
         if self.analyzer.check_syntax(
             source_file_path=mutant.source_path,
-            source_code=modified_byte_code.decode("utf-8"),
+            src_code=src_code,
         ):
-            with open(mutant_path, "wb") as f:
-                f.write(modified_byte_code)
+            with open(mutant_path, "w") as f:
+                f.write(src_code)
             self.logger.debug(f"Mutant file prepared: {mutant_path}")
             return mutant_path
         else:
