@@ -1,6 +1,6 @@
 import time
 
-from litellm import completion, completion_cost, litellm, success_callback
+from litellm import completion, litellm
 
 
 class LLMRouter:
@@ -12,8 +12,6 @@ class LLMRouter:
         self.api_base = api_base
         self.total_cost = 0
         litellm.success_callback = [self.track_cost_callback]
-
-        # track_cost_callback
 
     def track_cost_callback(
         self,
@@ -87,7 +85,7 @@ class LLMRouter:
             "messages": messages,
             "max_tokens": max_tokens,
             "stream": streaming,
-            "temperature": 0.1,
+            "temperature": 0.0,
         }
         if (
             "ollama" in self.model

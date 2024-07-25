@@ -57,6 +57,16 @@ class MutantReport:
         report_data = self._compute_summary_data(mutants)
         summary_text = self._format_summary(report_data, total_cost, line_rate)
         self._log_and_write(summary_text)
+        self.killed_mutants = report_data["killed_mutants"]
+        self.survived_mutants = report_data["survived_mutants"]
+        self.timeout_mutants = report_data["timeout_mutants"]
+        self.compile_error_mutants = report_data["compile_error_mutants"]
+        self.total_mutants = report_data["total_mutants"]
+        self.mutation_coverage_rate = (
+            float(report_data["mutation_coverage"].replace("%", "")) / 100
+        )
+
+        self.valid_mutants = report_data["valid_mutants"]
 
     def _compute_summary_data(self, mutants: List[dict]) -> dict:
         """

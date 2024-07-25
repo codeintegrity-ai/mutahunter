@@ -2,8 +2,7 @@
 Module for generating prompts based on the programming language.
 """
 
-from mutahunter.core.prompts.system import SYSTEM_PROMPT
-from mutahunter.core.prompts.user import USER_PROMPT
+from mutahunter.core.prompts.mutant_generator import SYSTEM_PROMPT, USER_PROMPT
 
 
 class PromptFactory:

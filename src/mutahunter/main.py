@@ -1,7 +1,8 @@
 import argparse
 import sys
 
-from mutahunter.core.entities.config import MutatorConfig, UnittestGeneratorConfig
+from mutahunter.core.entities.config import (MutatorConfig,
+                                             UnittestGeneratorConfig)
 from mutahunter.core.logger import logger
 from mutahunter.core.mutator import Mutator
 from mutahunter.core.unittest_generator import UnittestGenerator
