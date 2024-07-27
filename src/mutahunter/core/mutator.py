@@ -2,11 +2,12 @@ import difflib
 import os
 import subprocess
 import time
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from grep_ast import filename_to_lang
 from jinja2 import Template
 from tqdm import tqdm
+import random
 
 from mutahunter.core.analyzer import Analyzer
 from mutahunter.core.coverage_processor import CoverageProcessor
@@ -34,14 +35,7 @@ TEST_FILE_PATTERNS = [
 from typing import List
 
 
-class MutationStrategy:
-    def generate_mutations(
-        self, hunter: "Mutator", file_path: str, executed_lines: List[int]
-    ):
-        raise NotImplementedError("Must implement generate_mutations method")
-
-
-class LLMBasedMutation(MutationStrategy):
+class LLMBasedMutation:
     def generate_mutations(
         self, hunter: "Mutator", file_path: str, executed_lines: List[int]
     ):
@@ -55,69 +49,8 @@ class LLMBasedMutation(MutationStrategy):
             source_file_path=file_path,
             router=hunter.router,
         )
-        for mutant_data in engine.generate()["changes"]:
-            hunter.process_mutant(mutant_data, file_path)
-
-        # covered_function_blocks, covered_function_block_executed_lines = (
-        #     hunter.analyzer.get_covered_function_blocks(
-        #         executed_lines=executed_lines,
-        #         source_file_path=file_path,
-        #     )
-        # )
-
-        # hunter.logger.info(
-        #     f"Total function blocks to mutate for {file_path}: {len(covered_function_blocks)}"
-        # )
-        # if not covered_function_blocks:
-        #     return
-
-        # for function_block, executed_lines in zip(
-        #     covered_function_blocks, covered_function_block_executed_lines
-        # ):
-        #     start_byte = function_block.start_byte
-        #     end_byte = function_block.end_byte
-
-        #     engine = LLMMutationEngine(
-        #         model=hunter.config.model,
-        #         executed_lines=hunter.coverage_processor.file_lines_executed[file_path],
-        #         cov_files=list(hunter.coverage_processor.file_lines_executed.keys()),
-        #         source_file_path=file_path,
-        #         start_byte=start_byte,
-        #         end_byte=end_byte,
-        #         router=hunter.router,
-        #     )
-        #     for mutant_data in engine.generate():
-        #         if "mutant_code" not in mutant_data:
-        #             continue
-        #         hunter.process_mutant(mutant_data, file_path, start_byte, end_byte)
-
-
-class ExtremeMutation(MutationStrategy):
-    def generate_mutations(self, hunter, file_path: str, executed_lines: List[int]):
-        hunter.logger.info(f"Generating extreme mutations for file: {file_path}")
-        covered_method_blocks, covered_method_lines = (
-            hunter.analyzer.get_covered_method_blocks(
-                executed_lines=executed_lines,
-                source_file_path=file_path,
-            )
-        )
-
-        if not covered_method_blocks:
-            return
-
-        with open(file_path, "rb") as f:
-            src_code = f.read()
-
-        for method_block, _ in zip(covered_method_blocks, covered_method_lines):
-            start_byte = method_block.start_byte
-            end_byte = method_block.end_byte
-            removed_code = src_code[start_byte:end_byte].decode("utf-8")
-            mutant_data = {
-                "mutant_code": "",
-                "type": "",
-                "description": f"Extreme Mutation: Removed code block: {removed_code}",
-            }
-            hunter.process_mutant(mutant_data, file_path, start_byte, end_byte)
+        mutations = engine.generate()["mutants"]
+        return mutations
 
 
 class Mutator:
@@ -133,13 +66,7 @@ class Mutator:
         self.mutant_report = MutantReport(extreme=self.config.extreme)
         self.test_runner = TestRunner(test_command=self.config.test_command)
         self.router = LLMRouter(model=self.config.model, api_base=self.config.api_base)
-        self.mutation_strategy = self._select_mutation_strategy()
-
-    def _select_mutation_strategy(self) -> MutationStrategy:
-        if self.config.extreme:
-            return ExtremeMutation()
-        else:
-            return LLMBasedMutation()
+        self.mutation_strategy = LLMBasedMutation()
 
     def run(self) -> None:
         """
@@ -200,27 +127,21 @@ class Mutator:
     def run_mutation_testing(self) -> None:
         self.logger.info("Running mutation testing on the entire codebase.")
         all_covered_files = self.coverage_processor.file_lines_executed.keys()
-        self.logger.info(
-            f"Discovered {len(all_covered_files)} covered files by line coverage."
-        )
 
         for covered_file_path in tqdm(all_covered_files):
             if self.should_skip_file(covered_file_path):
-                self.logger.debug(f"Skipping file: {covered_file_path}")
                 continue
+
             executed_lines = self.coverage_processor.file_lines_executed[
                 covered_file_path
             ]
             if not executed_lines:
-                self.logger.debug(
-                    f"No executed lines found in file: {covered_file_path}"
-                )
                 continue
-            self.mutation_strategy.generate_mutations(
-                self,
-                file_path=covered_file_path,
-                executed_lines=executed_lines,
+
+            mutations = self.mutation_strategy.generate_mutations(
+                self, file_path=covered_file_path, executed_lines=executed_lines
             )
+            self.process_mutations(mutations, covered_file_path)
 
     def run_mutation_testing_on_modified_files(self) -> None:
         """
@@ -246,98 +167,74 @@ class Mutator:
                 self, file_path=file_path, executed_lines=modified_lines
             )
 
-    def process_mutant(
-        self,
-        mutant_data: Dict[str, Any],
-        source_file_path: str,
+    def process_mutations(
+        self, mutations: List[Dict[str, Any]], source_file_path: str
     ) -> None:
-        """
-        Processes a single mutant data dictionary.
-        """
-        mutant = Mutant(
-            id=str(len(self.mutants) + 1),
+        for mutant_data in mutations:
+            mutant = self.create_mutant(mutant_data, source_file_path)
+            mutant_path = self.prepare_mutant_file(
+                mutant.id, mutant_data, source_file_path
+            )
+
+            if mutant_path:
+                self.test_mutant(mutant, mutant_path, source_file_path)
+            else:
+                mutant.status = "COMPILE_ERROR"
+
+            self.mutants.append(mutant)
+
+    def create_mutant(
+        self, mutant_data: Dict[str, Any], source_file_path: str
+    ) -> Mutant:
+        return Mutant(
+            id=len(self.mutants) + 1,
             source_path=source_file_path,
             function_name=mutant_data["function_name"],
-            line_number=mutant_data["line_number"],
+            line_number=[mutant_data["line_number"]],
             type=mutant_data["type"],
             description=mutant_data["description"],
-            original_line=mutant_data["original_line"],
-            mutated_line=mutant_data["mutated_line"],
+            original_line=[mutant_data["original_line"]],
+            mutated_line=[mutant_data["mutated_line"]],
         )
-        mutant_path = self.prepare_mutant_file(mutant)
 
-        if mutant_path:  # Only run tests if the mutant file is prepared successfully
-            mutant.mutant_path = mutant_path
-            result = self.run_test(
-                {
-                    "module_path": source_file_path,
-                    "replacement_module_path": mutant_path,
-                    "test_command": self.config.test_command,
-                }
-            )
-            self.process_test_result(result, mutant)
-            udiff_list = self.get_unified_diff(source_file_path, mutant_path, mutant)
-            mutant.udiff = "\n".join(udiff_list)
-        else:
-            mutant.status = "COMPILE_ERROR"
-
-        self.mutants.append(mutant)
-
-    def get_unified_diff(self, source_file_path, mutant_path, mutant):
-        with open(source_file_path, "r") as file:
-            original = file.readlines()
-        with open(mutant_path, "r") as file:
-            mutant = file.readlines()
-        diff = difflib.unified_diff(original, mutant, lineterm="")
-        diff_lines = list(diff)
-        return diff_lines
-
-    def prepare_mutant_file(self, mutant: Mutant) -> str:
-        """
-        Prepares the mutant file for testing.
-        """
-        mutant_file_name = f"{mutant.id}_{os.path.basename(mutant.source_path)}"
+    def prepare_mutant_file(
+        self, mutant_id, mutant_data: Dict[str, Any], source_file_path: str
+    ) -> Optional[str]:
+        mutant_file_name = f"{mutant_id}_{os.path.basename(source_file_path)}"
         mutant_path = os.path.join(
             os.getcwd(), f"logs/_latest/mutants/{mutant_file_name}"
         )
-        self.logger.debug(f"Preparing mutant file: {mutant_path}")
 
-        with open(mutant.source_path, "r") as f:
+        with open(source_file_path, "r") as f:
             source_code = f.read()
 
-        original_lines = source_code.splitlines(keepends=True)
-        original_line = mutant.original_line
-        mutated_line = mutant.mutated_line
+        applied_mutant = self.apply_mutation(source_code, mutant_data)
 
-        for i, line in enumerate(original_lines):
-            if line.lstrip().rstrip() == original_line.lstrip().rstrip():
-                print("found original line", i, line)
-                # check if the temp_lines[i] ends with a newline character
-                # get indentation of the original line
-                indentation_space = len(original_lines[i]) - len(
-                    original_lines[i].lstrip()
-                )
-                # add the indentation to the mutated line after lstripping
-                mutated_line = " " * indentation_space + mutated_line.lstrip()
-                original_lines[i] = mutated_line
-                break
-
-        src_code = "".join(original_lines)
-        with open("./temp.py", "w") as f:
-            f.write("".join(original_lines))
         if self.analyzer.check_syntax(
-            source_file_path=mutant.source_path,
-            src_code=src_code,
+            source_file_path=source_file_path, source_code=applied_mutant
         ):
             with open(mutant_path, "w") as f:
-                f.write(src_code)
+                f.write(applied_mutant)
             self.logger.debug(f"Mutant file prepared: {mutant_path}")
             return mutant_path
         else:
             self.logger.error(
-                f"Syntax error in mutant code for file: {mutant.source_path}"
+                f"Syntax error in mutant code for file: {source_file_path}"
             )
-            return ""
+            return None
+
+    def apply_mutation(self, source_code: str, mutant_data: Dict[str, Any]) -> str:
+        src_code_lines = source_code.splitlines(keepends=True)
+        original_line = mutant_data["original_line"].strip()
+        mutated_line = mutant_data["mutated_line"].strip()
+        line_number = mutant_data["line_number"]
+
+        indentation = len(src_code_lines[line_number - 1]) - len(
+            src_code_lines[line_number - 1].lstrip()
+        )
+        src_code_lines[line_number - 1] = " " * indentation + mutated_line + "\n"
+
+        return "".join(src_code_lines)
 
     def run_test(self, params: Dict[str, str]) -> Any:
         """
@@ -348,7 +245,29 @@ class Mutator:
         )
         return self.test_runner.run_test(params)
 
-    def process_test_result(self, result: Any, mutant: Mutant) -> None:
+    def test_mutant(
+        self, mutant: Mutant, mutant_path: str, source_file_path: str
+    ) -> None:
+        result = self.run_test(
+            {
+                "module_path": source_file_path,
+                "replacement_module_path": mutant_path,
+                "test_command": self.config.test_command,
+            }
+        )
+        self.process_test_result(result, mutant)
+        udiff_list = self.get_unified_diff(source_file_path, mutant_path)
+        mutant.udiff = "\n".join(udiff_list)
+
+    def get_unified_diff(self, source_file_path: str, mutant_path: str) -> List[str]:
+        with open(source_file_path, "r") as file:
+            original = file.readlines()
+        with open(mutant_path, "r") as file:
+            mutant = file.readlines()
+        diff = difflib.unified_diff(original, mutant, lineterm="")
+        return list(diff)
+
+    def process_test_result(self, result: Any, mutant) -> None:
         """
         Processes the result of a test run.
 

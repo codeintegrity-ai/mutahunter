@@ -54,14 +54,6 @@ class LLMMutationEngine:
             "system": system_template,
             "user": user_template,
         }
-
-        with open("system_template.txt", "w") as f:
-            f.write(system_template)
-        with open("user_template.txt", "w") as f:
-            f.write(user_template)
-        # print("system_template:", system_template)
-        # print("user_template:", user_template)
-
         model_response, _, _ = self.router.generate_response(
             prompt=prompt, streaming=True
         )

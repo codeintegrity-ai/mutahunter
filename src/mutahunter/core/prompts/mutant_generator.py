@@ -57,25 +57,17 @@ class SingleMutant(BaseModel):
     function_name: str = Field(..., description="The name of the function where the mutation was applied.")
     type: str = Field(..., description="The type of the mutation operator used.")
     description: str = Field(..., description="A brief description detailing the mutation applied.")
-    line_number: int = Field(..., description="The line number where the mutation was applied.")
-    original_line: str = Field(..., description="The original line of code before mutation. Exclude any line numbers and ensure proper formatting for YAML literal block scalar. Add comment starting with Mutation: <mutation_description>.")
-    mutated_line: str = Field(..., description="The mutated line of code, annotated with a comment explaining the mutation. Exclude any line numbers and ensure proper formatting for YAML literal block scalar.")
+    line_number: int = Field(..., description="Line number where the mutation was applied.")
+    original_line: str = Field(..., description="The original line of code before mutation. Ensure proper formatting for YAML literal block scalar.
+    mutated_line: Ones Field(..., description="The mutated line of code. Please annotate with a comment explaining the mutation. Ensure proper formatting for YAML literal block scalar.")
 
 class Mutants(BaseModel):
-    changes: List[SingleMutant] = Field(..., description="A list of SingleMutant instances each representing a specific mutation change.")
+    mutants: List[SingleMutant] = Field(..., description="A list of SingleMutant instances each representing a specific mutation change.")
 ```
-Key Points to Note:
-- Field Requirements: Each field in the SingleMutant and Mutants classes must be populated with data that comply strictly with the descriptions provided.  
-- Formatting: Ensure that when creating the YAML output, the structure mirrors that of the nested Pydantic models, with correct indentation and hierarchy representing the relationship between Mutants and SingleMutant.
-Mutant Details: 
-  - Function Name should clearly state where the mutation was inserted.
-  - Type should reflect the category or nature of the mutation applied.
-  - Description should offer a concise yet descriptive insight into what the mutation entails and possibly its intent or impact.
-  - Original and Mutated Lines should be accurate reproductions of the code pre- and post-mutation but without line numbers, while the mutated line must include an explanatory comment inline.
 
 ## Source Code to Mutate
 Lines Covered: {{covered_lines}}. Only mutate lines that are covered by execution.
-Note that line numbers have been manually added for reference. Do not include these line numbers in your response. For each covered line, generate at least one meaningful mutant. Do not generate multi-line mutants. 
+Note that line numbers have been manually added for reference. Do not include these line numbers in your response. For each covered line, generate at least one meaningful mutant. Multi-line mutants are acceptable, only if necessary.
 ```{{language}}
 {{function_block}}
 ```
@@ -83,37 +75,19 @@ Note that line numbers have been manually added for reference. Do not include th
 ## Task
 Analyze the source code line by line. For each line number, {{covered_lines}} identify the mutation points based on the guidelines provided. Focus on designated mutation areas. Ensure that these mutations contribute valuable insights into the code quality and test coverage. The output should be organized with line numbers in ascending order.
 
-## Example Output for line covered [1, 2, 4]
+<example>
 ```yaml
-changes:
-  - function_name: ...
-    type: ...
-    description: ...
-    line_number: 1
-    line_number: ...
-    original_line: |
-      ...
-    mutated_line: |
-      ...
-  - function_name: ...
-    type: ...
-    description: ...
-    line_number: 2
-    line_number: ...
-    original_line: |
-      ...
-    mutated_line: |
-      ...
-  - function_name: ...
-    type: ...
-    description: ...
-    line_number: 4
-    line_number: ...
-    original_line: |
-      ...
-    mutated_line: |
-      ...
-```
+mutants:
+   - function_name: ...
+      type: ...
+      description: ...
+      line_numbers: 2
+      original_line: |
+         line 1
+      mutated_line: |
+         line 1 mutated
+``` 
+</example>
 """
 
 MUTANT_ANALYSIS = """
