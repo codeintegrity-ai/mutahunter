@@ -9,10 +9,13 @@ from grep_ast import filename_to_lang
 from jinja2 import Template
 
 from mutahunter.core.analyzer import Analyzer
+from mutahunter.core.controller import MutationTestControllerConfig
 from mutahunter.core.coverage_processor import CoverageProcessor
-from mutahunter.core.entities.config import MutatorConfig, UnittestGeneratorConfig
+from mutahunter.core.entities.config import (
+    MutationTestControllerConfig,
+    UnittestGeneratorConfig,
+)
 from mutahunter.core.error_parser import extract_error_message
-from mutahunter.core.mutator import Mutator
 from mutahunter.core.prompts.unittest_generator import (
     FAILED_TESTS_TEXT,
     LINE_COV_UNITTEST_GENERATOR_USER_PROMPT,
@@ -21,7 +24,7 @@ from mutahunter.core.prompts.unittest_generator import (
     REPORT_PROMPT,
 )
 from mutahunter.core.router import LLMRouter
-from mutahunter.core.runner import TestRunner
+from mutahunter.core.runner import MutantTestRunner
 
 
 class UnittestGenerator:
@@ -32,11 +35,11 @@ class UnittestGenerator:
             coverage_type=self.config.coverage_type,
         )
         self.analyzer = Analyzer()
-        self.test_runner = TestRunner(test_command=self.config.test_command)
+        self.test_runner = MutantTestRunner(test_command=self.config.test_command)
         self.router = LLMRouter(model=self.config.model, api_base=self.config.api_base)
 
-        self.mutator = Mutator(
-            config=MutatorConfig(
+        self.mutator = MutationTestControllerConfig(
+            config=MutationTestControllerConfig(
                 model=self.config.model,
                 api_base=self.config.api_base,
                 test_command=self.config.test_command,
@@ -249,7 +252,7 @@ class UnittestGenerator:
             return False
 
     def check_mutant_coverage_increase(self, generated_unittest, test_code):
-        runner = TestRunner(test_command=self.config.test_command)
+        runner = MutantTestRunner(test_command=self.config.test_command)
         for mutant in self.mutator.mutants:
             if (
                 mutant.id == generated_unittest["mutant_id"]

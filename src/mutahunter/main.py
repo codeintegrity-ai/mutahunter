@@ -1,10 +1,10 @@
 import argparse
 import sys
 
-from mutahunter.core.entities.config import (MutatorConfig,
+from mutahunter.core.controller import MutationTestController
+from mutahunter.core.entities.config import (MutationTestControllerConfig,
                                              UnittestGeneratorConfig)
 from mutahunter.core.logger import logger
-from mutahunter.core.mutator import Mutator
 from mutahunter.core.unittest_generator import UnittestGenerator
 
 
@@ -140,12 +140,6 @@ def parse_arguments():
         action="store_true",
         help="Run mutation testing only on modified files in the latest commit.",
     )
-    main_parser.add_argument(
-        "--extreme",
-        default=False,
-        action="store_true",
-        help="Enable extreme mutation testing mode.",
-    )
     return parser.parse_args()
 
 
@@ -173,7 +167,7 @@ def run():
         runner = UnittestGenerator(config=config)
         runner.run()
     else:
-        config = MutatorConfig(
+        config = MutationTestControllerConfig(
             model=args.model,
             api_base=args.api_base,
             test_command=args.test_command,
@@ -182,9 +176,8 @@ def run():
             exclude_files=args.exclude_files,
             only_mutate_file_paths=args.only_mutate_file_paths,
             modified_files_only=args.modified_files_only,
-            extreme=args.extreme,
         )
-        runner = Mutator(config=config)
+        runner = MutationTestController(config=config)
         runner.run()
 
 

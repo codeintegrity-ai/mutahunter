@@ -58,18 +58,19 @@ class SingleMutant(BaseModel):
     type: str = Field(..., description="The type of the mutation operator used.")
     description: str = Field(..., description="A brief description detailing the mutation applied.")
     line_number: int = Field(..., description="Line number where the mutation was applied.")
-    original_line: str = Field(..., description="The original line of code before mutation. Ensure proper formatting for YAML literal block scalar.
-    mutated_line: Ones Field(..., description="The mutated line of code. Please annotate with a comment explaining the mutation. Ensure proper formatting for YAML literal block scalar.")
+    original_code: str = Field(..., description="The original line of code before mutation. Ensure proper formatting for YAML literal block scalar.
+    mutated_code: Ones Field(..., description="The mutated line of code. Please annotate with a comment explaining the mutation. Ensure proper formatting for YAML literal block scalar.")
 
 class Mutants(BaseModel):
+    source_file: str = Field(..., description="The name of the source file where mutations were applied.")
     mutants: List[SingleMutant] = Field(..., description="A list of SingleMutant instances each representing a specific mutation change.")
 ```
 
-## Source Code to Mutate
+## Source Code to Mutate, located at {{src_code_file}}
 Lines Covered: {{covered_lines}}. Only mutate lines that are covered by execution.
 Note that line numbers have been manually added for reference. Do not include these line numbers in your response. For each covered line, generate at least one meaningful mutant. Multi-line mutants are acceptable, only if necessary.
 ```{{language}}
-{{function_block}}
+{{src_code_with_line_num}}
 ```
 
 ## Task
@@ -77,14 +78,15 @@ Analyze the source code line by line. For each line number, {{covered_lines}} id
 
 <example>
 ```yaml
+source_file: {{src_code_file}}
 mutants:
    - function_name: ...
       type: ...
       description: ...
-      line_numbers: 2
-      original_line: |
+      line_number: 2
+      original_code: |
          line 1
-      mutated_line: |
+      mutated_code: |
          line 1 mutated
 ``` 
 </example>

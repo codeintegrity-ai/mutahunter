@@ -38,19 +38,14 @@ Mutahunter can automatically generate unit tests to increase line and mutation c
 - **LLM Context-aware Mutations:** Utilizes LLM models to generate context-aware mutants. [Research](https://arxiv.org/abs/2406.09843) indicates that LLM-generated mutants have higher fault detection potential, fewer equivalent mutants, and higher coupling and semantic similarity to real faults. It uses a map of your entire git repository to generate contextually relevant mutants using [aider's repomap](https://aider.chat/docs/repomap.html). Supports self-hosted LLMs, Anthropic, OpenAI, and any LLM models via [LiteLLM](https://github.com/BerriAI/litellm).
 - **Change-Based Testing:** Runs mutation tests on modified files and lines based on the latest commit or pull request changes, ensuring that only relevant parts of the code are tested.
 - **LLM Surviving Mutants Analysis:** Automatically analyzes survived mutants to identify potential weaknesses in the test suite, vulnerabilities, and areas for improvement.
-- **Extreme Mutation Testing:** Leverages language agnostic [TreeSitter](https://tree-sitter.github.io/) parser to apply extreme mutations to the codebase without using LLMs. [Research](https://arxiv.org/abs/2103.08480) shows that this approach is effective at detecting pseudo-tested methods with significantly lower computational cost. Currently supports Python, Java, JavaScript, and Go. Check the [scheme files](/src/mutahunter/core/queries/) to see the supported operators. We welcome contributions to add more operators and languages.
 
 ## Recommended Mutation Testing Process
-
-![Workflow](/images/diagram.svg)
 
 We recommend running Mutahunter per test file. This approach ensures that the mutation testing is focused on the test suite's effectiveness and efficiency. Here are some best practices to follow:
 
 1. **Achieve High Line Coverage:** Ensure your test suite has high line coverage, preferably 100%.
 
-2. **Strict Mutation Testing:** Use strict mutation testing during development to improve mutation coverage during development without additional cost. Utilize the `--only-mutate-file-paths` flag for targeted testing on critical files.
-
-3. **LLM-Based Mutation Testing on Changed Files:** Inject context-aware mutants using LLMs on changed files during pull requests as the final line of defense. Use the `--modified-files-only` flag to focus on recent changes. In this way it will make the mutation testing significantly **faster** and **cost effective.**
+2. **LLM-Based Mutation Testing on Changed Files:** Inject context-aware mutants using LLMs on changed files during pull requests as the final line of defense. Use the `--modified-files-only` flag to focus on recent changes. In this way it will make the mutation testing significantly **faster** and **cost effective.**
 
 ## Getting Started with Mutation Testing
 
