@@ -24,10 +24,13 @@ class MutantReport:
     def __init__(self, db: MutationDatabase) -> None:
         self.log_file = "logs/_latest/coverage.txt"
         self.db = db
+        os.makedirs("logs/_latest/html", exist_ok=True)
         module_dir = os.path.dirname(__file__)
         templates_dir = os.path.join(module_dir, "html")
         self.template_env = Environment(loader=FileSystemLoader(templates_dir))
-        os.makedirs("logs/_latest/html", exist_ok=True)
+        # check if template is loaded
+        assert self.template_env.get_template("report_template.html")
+        assert self.template_env.get_template("file_detail_template.html")
 
     def generate_report(self, total_cost: float, line_rate: float) -> None:
         """
