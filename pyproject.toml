@@ -37,4 +37,7 @@ testing = ['pytest']
 mutahunter = "mutahunter.main:run"
 
 [tool.setuptools.package-data]
-mutahunter = ['src/mutahunter/core/queries/*.scm']
+mutahunter = [
+    'src/mutahunter/core/queries/*.scm',
+    'src/mutahunter/core/html/*.html',
+]

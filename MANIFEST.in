@@ -1,1 +1,2 @@
 include src/mutahunter/core/queries/*.scm
+include src/mutahunter/core/html/*.html
