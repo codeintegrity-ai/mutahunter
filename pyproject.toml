@@ -26,7 +26,7 @@ authors = [{ name = "Steven Jung" }]
 maintainers = [{ name = "Steven Jung" }]
 
 [project.urls]
-Homepage = "https://www.mutahunter.ai"
+Homepage = "https://mutahunter.ai"
 Repository = "https://github.com/codeintegrity-ai/mutahunter"
 
 [project.optional-dependencies]
@@ -39,5 +39,5 @@ mutahunter = "mutahunter.main:run"
 [tool.setuptools.package-data]
 mutahunter = [
     'src/mutahunter/core/queries/*.scm',
-    'src/mutahunter/core/html/*.html',
+    'src/mutahunter/core/templates/*.html',
 ]

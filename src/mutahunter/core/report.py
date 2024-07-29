@@ -5,9 +5,13 @@ Module for generating mutation testing reports.
 import os
 from typing import Any, Dict, List
 
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import (
+    Environment,
+    PackageLoader,
+    FileSystemLoader,
+    select_autoescape,
+)
 from importlib import resources
-
 from mutahunter.core.db import MutationDatabase
 from mutahunter.core.logger import logger
 
@@ -24,10 +28,12 @@ class MutantReport:
     def __init__(self, db: MutationDatabase) -> None:
         self.log_file = "logs/_latest/coverage.txt"
         self.db = db
-        module_dir = os.path.dirname(__file__)
-        templates_dir = os.path.join(module_dir, "html")
-        self.template_env = Environment(loader=FileSystemLoader(templates_dir))
         os.makedirs("logs/_latest/html", exist_ok=True)
+        self.template_env = Environment(
+            loader=FileSystemLoader(resources.files(__package__).joinpath("templates"))
+        )
+        assert self.template_env.get_template("report_template.html")
+        assert self.template_env.get_template("file_detail_template.html")
 
     def generate_report(self, total_cost: float, line_rate: float) -> None:
         """
