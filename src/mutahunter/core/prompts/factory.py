@@ -9,7 +9,7 @@ class PromptFactory:
     """Factory class to generate prompts based on the programming language."""
 
     @staticmethod
-    def get_prompt(language: str):
+    def get_prompt():
         return BasePrompt()
 
 

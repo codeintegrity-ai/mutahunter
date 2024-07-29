@@ -1,10 +1,21 @@
 import argparse
 import sys
 
-from mutahunter.core.entities.config import (MutatorConfig,
+from mutahunter.core.analyzer import Analyzer
+from mutahunter.core.controller import MutationTestController
+from mutahunter.core.coverage_processor import CoverageProcessor
+from mutahunter.core.db import MutationDatabase
+from mutahunter.core.entities.config import (MutationTestControllerConfig,
                                              UnittestGeneratorConfig)
+from mutahunter.core.error_parser import extract_error_message
+from mutahunter.core.git_handler import GitHandler
+from mutahunter.core.io import FileOperationHandler
+from mutahunter.core.llm_mutation_engine import LLMMutationEngine
 from mutahunter.core.logger import logger
-from mutahunter.core.mutator import Mutator
+from mutahunter.core.prompts.mutant_generator import MUTANT_ANALYSIS
+from mutahunter.core.report import MutantReport
+from mutahunter.core.router import LLMRouter
+from mutahunter.core.runner import MutantTestRunner
 from mutahunter.core.unittest_generator import UnittestGenerator
 
 
@@ -135,18 +146,75 @@ def parse_arguments():
         help="A list of specific files to mutate. Optional.",
     )
     main_parser.add_argument(
-        "--modified-files-only",
+        "--diff",
         default=False,
         action="store_true",
         help="Run mutation testing only on modified files in the latest commit.",
     )
-    main_parser.add_argument(
-        "--extreme",
-        default=False,
-        action="store_true",
-        help="Enable extreme mutation testing mode.",
-    )
     return parser.parse_args()
+
+
+def create_controller(config: MutationTestControllerConfig) -> MutationTestController:
+    coverage_processor = CoverageProcessor(
+        code_coverage_report_path=config.code_coverage_report_path,
+        coverage_type=config.coverage_type,
+    )
+    analyzer = Analyzer()
+    test_runner = MutantTestRunner(test_command=config.test_command)
+    router = LLMRouter(model=config.model, api_base=config.api_base)
+    engine = LLMMutationEngine(
+        model=config.model,
+        router=router,
+    )
+    db = MutationDatabase()
+    mutant_report = MutantReport(db=db)
+    file_handler = FileOperationHandler()
+
+    return MutationTestController(
+        config=config,
+        coverage_processor=coverage_processor,
+        analyzer=analyzer,
+        test_runner=test_runner,
+        router=router,
+        engine=engine,
+        db=db,
+        mutant_report=mutant_report,
+        file_handler=file_handler,
+    )
+
+
+def create_unittest_controller(config: UnittestGeneratorConfig) -> UnittestGenerator:
+    coverage_processor = CoverageProcessor(
+        code_coverage_report_path=config.code_coverage_report_path,
+        coverage_type=config.coverage_type,
+    )
+    analyzer = Analyzer()
+    test_runner = MutantTestRunner(test_command=config.test_command)
+    router = LLMRouter(model=config.model, api_base=config.api_base)
+
+    db = MutationDatabase()
+
+    mutation_config = MutationTestControllerConfig(
+        model=config.model,
+        api_base=config.api_base,
+        test_command=config.test_command,
+        code_coverage_report_path=config.code_coverage_report_path,
+        coverage_type=config.coverage_type,
+        exclude_files=[],
+        only_mutate_file_paths=[config.source_file_path],
+        diff=False,
+    )
+    mutator = create_controller(mutation_config)
+
+    return UnittestGenerator(
+        config=config,
+        coverage_processor=coverage_processor,
+        analyzer=analyzer,
+        test_runner=test_runner,
+        router=router,
+        db=db,
+        mutator=mutator,
+    )
 
 
 def run():
@@ -170,10 +238,10 @@ def run():
             target_mutation_coverage_rate=args.target_mutation_coverage_rate,
             max_attempts=args.max_attempts,
         )
-        runner = UnittestGenerator(config=config)
-        runner.run()
+        controller = create_unittest_controller(config)
+        controller.run()
     else:
-        config = MutatorConfig(
+        config = MutationTestControllerConfig(
             model=args.model,
             api_base=args.api_base,
             test_command=args.test_command,
@@ -181,11 +249,10 @@ def run():
             coverage_type=args.coverage_type,
             exclude_files=args.exclude_files,
             only_mutate_file_paths=args.only_mutate_file_paths,
-            modified_files_only=args.modified_files_only,
-            extreme=args.extreme,
+            diff=args.diff,
         )
-        runner = Mutator(config=config)
-        runner.run()
+        controller = create_controller(config)
+        controller.run()
 
 
 if __name__ == "__main__":

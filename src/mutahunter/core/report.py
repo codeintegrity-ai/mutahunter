@@ -2,11 +2,12 @@
 Module for generating mutation testing reports.
 """
 
-import json
-from dataclasses import asdict
-from typing import Any, List
+import os
+from typing import Any, Dict, List
 
-from mutahunter.core.entities.mutant import Mutant
+from jinja2 import Environment, FileSystemLoader
+
+from mutahunter.core.db import MutationDatabase
 from mutahunter.core.logger import logger
 
 MUTAHUNTER_ASCII = r"""
@@ -19,74 +20,120 @@ MUTAHUNTER_ASCII = r"""
 class MutantReport:
     """Class for generating mutation testing reports."""
 
-    def __init__(
-        self,
-        extreme: bool,
-    ) -> None:
-        self.extreme = extreme
+    def __init__(self, db: MutationDatabase) -> None:
         self.log_file = "logs/_latest/coverage.txt"
+        self.db = db
+        self.template_env = Environment(
+            loader=FileSystemLoader(os.path.join(os.path.dirname(__file__), "html"))
+        )
+        os.makedirs("logs/_latest/html", exist_ok=True)
 
-    def generate_report(
-        self, mutants: List[Mutant], total_cost: float, line_rate: float
-    ) -> None:
+    def generate_report(self, total_cost: float, line_rate: float) -> None:
         """
         Generates a comprehensive mutation testing report.
 
         Args:
-            mutants (List[Mutant]): List of mutants generated during mutation testing.
             total_cost (float): The total cost of mutation testing.
             line_rate (float): The line coverage rate.
         """
-        mutant_dicts = [asdict(mutant) for mutant in mutants]
-        self.save_report("logs/_latest/mutants.json", mutant_dicts)
         print(MUTAHUNTER_ASCII)
-        self._generate_summary_report(mutant_dicts, total_cost, line_rate)
-        self._generate_detailed_report(mutant_dicts)
+        self._generate_summary_report(total_cost, line_rate)
 
-    def _generate_summary_report(
-        self, mutants: List[dict], total_cost: float, line_rate: float
-    ) -> None:
+        # HTML Report
+        summary_data = self.db.get_mutant_summary()
+        file_data = self.db.get_file_data()
+
+        # Generate main report
+        main_html = self._generate_main_report(
+            summary_data, file_data, total_cost, line_rate
+        )
+        self._write_html_report(main_html, "mutation_report.html")
+
+        # Generate detailed file reports
+        for file_info in file_data:
+            file_html = self._generate_file_report(file_info["id"])
+            self._write_html_report(file_html, f"{file_info['id']}.html")
+
+    def _generate_main_report(
+        self,
+        summary_data: Dict[str, Any],
+        file_data: List[Dict[str, Any]],
+        total_cost: float,
+        line_rate: float,
+    ) -> str:
+        valid_mutants = (
+            summary_data["total_mutants"]
+            - summary_data["compile_error_mutants"]
+            - summary_data["timeout_mutants"]
+        )
+        mutation_coverage = (
+            f"{summary_data['killed_mutants'] / valid_mutants * 100:.2f}"
+            if valid_mutants > 0
+            else "0.00"
+        )
+
+        template = self.template_env.get_template("report_template.html")
+        return template.render(
+            line_coverage=f"{line_rate * 100:.2f}",
+            mutation_coverage=mutation_coverage,
+            total_mutants=summary_data["total_mutants"],
+            killed_mutants=summary_data["killed_mutants"],
+            survived_mutants=summary_data["survived_mutants"],
+            timeout_mutants=summary_data["timeout_mutants"],
+            compile_error_mutants=summary_data["compile_error_mutants"],
+            total_cost=f"{total_cost:.7f}",
+            file_data=file_data,
+        )
+
+    def _generate_file_report(self, file_id: str) -> str:
+        file_name = self.db.get_source_file_by_id(file_id)
+        source_code = self._get_source_code(file_name)
+        mutations = self.db.get_file_mutations(file_name)
+
+        source_lines = []
+        for i, line in enumerate(source_code.splitlines(), start=1):
+            line_mutations = [m for m in mutations if m["line_number"] == i]
+            gutter = (
+                "survived"
+                if any(m["status"] == "SURVIVED" for m in line_mutations)
+                else "killed" if line_mutations else ""
+            )
+            source_lines.append(
+                {"code": line, "gutter": gutter, "mutations": line_mutations}
+            )
+
+        template = self.template_env.get_template("file_detail_template.html")
+        return template.render(file_name=file_name, source_lines=source_lines)
+
+    def _get_source_code(self, file_name: str) -> str:
+        with open(file_name, "r") as f:
+            return f.read()
+
+    def _write_html_report(self, html_content: str, filename: str) -> None:
+        with open(os.path.join("logs/_latest/html", filename), "w") as f:
+            f.write(html_content)
+        logger.info(f"HTML report generated: {filename}")
+
+    def _generate_summary_report(self, total_cost: float, line_rate: float) -> None:
         """
         Generates a summary mutation testing report.
 
         Args:
-            mutants (List[dict]): List of mutant dictionaries.
             total_cost (float): The total cost of mutation testing.
             line_rate (float): The line coverage rate.
         """
-        report_data = self._compute_summary_data(mutants)
+        report_data = self._compute_summary_data()
         summary_text = self._format_summary(report_data, total_cost, line_rate)
         self._log_and_write(summary_text)
-        self.killed_mutants = report_data["killed_mutants"]
-        self.survived_mutants = report_data["survived_mutants"]
-        self.timeout_mutants = report_data["timeout_mutants"]
-        self.compile_error_mutants = report_data["compile_error_mutants"]
-        self.total_mutants = report_data["total_mutants"]
-        self.mutation_coverage_rate = (
-            float(report_data["mutation_coverage"].replace("%", "")) / 100
-        )
 
-        self.valid_mutants = report_data["valid_mutants"]
-
-    def _compute_summary_data(self, mutants: List[dict]) -> dict:
+    def _compute_summary_data(self) -> Dict[str, Any]:
         """
-        Computes summary data from the list of mutants.
-
-        Args:
-            mutants (List[dict]): List of mutant dictionaries.
+        Computes summary data from the mutants in the database.
 
         Returns:
-            dict: Summary data including counts of different mutant statuses.
+            Dict[str, Any]: Summary data including counts of different mutant statuses.
         """
-        data = {
-            "killed_mutants": len([m for m in mutants if m["status"] == "KILLED"]),
-            "survived_mutants": len([m for m in mutants if m["status"] == "SURVIVED"]),
-            "timeout_mutants": len([m for m in mutants if m["status"] == "TIMEOUT"]),
-            "compile_error_mutants": len(
-                [m for m in mutants if m["status"] == "COMPILE_ERROR"]
-            ),
-        }
-        data["total_mutants"] = len(mutants)
+        data = self.db.get_mutant_summary()
         data["valid_mutants"] = (
             data["total_mutants"]
             - data["compile_error_mutants"]
@@ -99,12 +146,14 @@ class MutantReport:
         )
         return data
 
-    def _format_summary(self, data: dict, total_cost: float, line_rate: float) -> str:
+    def _format_summary(
+        self, data: Dict[str, Any], total_cost: float, line_rate: float
+    ) -> str:
         """
         Formats the summary data into a string.
 
         Args:
-            data (dict): Summary data including counts of different mutant statuses.
+            data (Dict[str, Any]): Summary data including counts of different mutant statuses.
             total_cost (float): The total cost of mutation testing.
             line_rate (float): The line coverage rate.
 
@@ -112,98 +161,19 @@ class MutantReport:
             str: Formatted summary report.
         """
         line_coverage = f"{line_rate * 100:.2f}%"
-        details = []
-        details.append("📊 Overall Mutation Coverage 📊")
-        details.append(f"📈 Line Coverage: {line_coverage} 📈")
-        details.append(f"🎯 Mutation Coverage: {data['mutation_coverage']} 🎯")
-        details.append(f"🦠 Total Mutants: {data['total_mutants']} 🦠")
-        details.append(f"🛡️ Survived Mutants: {data['survived_mutants']} 🛡️")
-        details.append(f"🗡️ Killed Mutants: {data['killed_mutants']} 🗡️")
-        details.append(f"🕒 Timeout Mutants: {data['timeout_mutants']} 🕒")
-        details.append(f"🔥 Compile Error Mutants: {data['compile_error_mutants']} 🔥")
-        if self.extreme:
-            details.append("💰 No Cost for extreme mutation testing 💰")
-        else:
-            details.append(f"💰 Expected Cost: ${total_cost:.5f} USD 💰")
-        return "\n".join(details)
-
-    def _generate_detailed_report(self, mutants: List[dict]) -> None:
-        """
-        Generates a detailed mutation testing report per source file.
-
-        Args:
-            mutants (List[dict]): List of mutant dictionaries.
-        """
-        report_detail = self._compute_detailed_data(mutants)
-        detailed_text = self._format_detailed_report(report_detail)
-        self._log_and_write(detailed_text)
-
-    def _compute_detailed_data(self, mutants: List[dict]) -> dict:
-        """
-        Computes detailed data for each source file from the list of mutants.
-
-        Args:
-            mutants (List[dict]): List of mutant dictionaries.
-
-        Returns:
-            dict: Detailed data including counts of different mutant statuses per source file.
-        """
-        detail = {}
-        for mutant in mutants:
-            source_path = mutant["source_path"]
-            if source_path not in detail:
-                detail[source_path] = {
-                    "total_mutants": 0,
-                    "killed_mutants": 0,
-                    "survived_mutants": 0,
-                    "timeout_mutants": 0,
-                    "compile_error_mutants": 0,
-                }
-            detail[source_path]["total_mutants"] += 1
-            if mutant["status"] == "KILLED":
-                detail[source_path]["killed_mutants"] += 1
-            elif mutant["status"] == "SURVIVED":
-                detail[source_path]["survived_mutants"] += 1
-            elif mutant["status"] == "TIMEOUT":
-                detail[source_path]["timeout_mutants"] += 1
-            elif mutant["status"] == "COMPILE_ERROR":
-                detail[source_path]["compile_error_mutants"] += 1
-
-        for source_path, data in detail.items():
-            valid_mutants = (
-                data["total_mutants"]
-                - data["compile_error_mutants"]
-                - data["timeout_mutants"]
-            )
-            data["mutation_coverage"] = (
-                f"{data['killed_mutants'] / valid_mutants * 100:.2f}%"
-                if valid_mutants
-                else "0.00%"
-            )
-        return detail
-
-    def _format_detailed_report(self, report_detail: dict) -> str:
-        """
-        Formats the detailed report data into a string.
-
-        Args:
-            report_detail (dict): Detailed data including counts of different mutant statuses per source file.
-
-        Returns:
-            str: Formatted detailed report.
-        """
-        details = ["📂 Detailed Mutation Coverage 📂"]
-        for source_path, detail in report_detail.items():
-            details.append(f"📂 Source File: {source_path} 📂")
-            details.append(f"🎯 Mutation Coverage: {detail['mutation_coverage']} 🎯")
-            details.append(f"🦠 Total Mutants: {detail['total_mutants']} 🦠")
-            details.append(f"🛡️ Survived Mutants: {detail['survived_mutants']} 🛡️")
-            details.append(f"🗡️ Killed Mutants: {detail['killed_mutants']} 🗡️")
-            details.append(f"🕒 Timeout Mutants: {detail['timeout_mutants']} 🕒")
-            details.append(
-                f"🔥 Compile Error Mutants: {detail['compile_error_mutants']} 🔥"
-            )
-            details.append("\n")
+        details = [
+            f"\n=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n",
+            "📊 Overall Mutation Coverage 📊",
+            f"📈 Line Coverage: {line_coverage} 📈",
+            f"🎯 Mutation Coverage: {data['mutation_coverage']} 🎯",
+            f"🦠 Total Mutants: {data['total_mutants']} 🦠",
+            f"🛡️ Survived Mutants: {data['survived_mutants']} 🛡️",
+            f"🗡️ Killed Mutants: {data['killed_mutants']} 🗡️",
+            f"🕒 Timeout Mutants: {data['timeout_mutants']} 🕒",
+            f"🔥 Compile Error Mutants: {data['compile_error_mutants']} 🔥",
+            f"💰 Total Cost: ${total_cost:.5f} USD 💰",
+            f"\n=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n",
+        ]
         return "\n".join(details)
 
     def _log_and_write(self, text: str) -> None:
@@ -216,15 +186,3 @@ class MutantReport:
         logger.info(text)
         with open(self.log_file, "a") as file:
             file.write(text + "\n")
-
-    def save_report(self, filepath: str, data: Any) -> None:
-        """
-        Saves the report data to a JSON file.
-
-        Args:
-            filepath (str): The path to the file where the data should be saved.
-            data (Any): The data to be saved.
-        """
-        with open(filepath, "w") as f:
-            json.dump(data, f, indent=4)
-        logger.info(f"Report saved to {filepath}")

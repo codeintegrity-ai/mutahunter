@@ -166,3 +166,5 @@ dist*
 
 *.html
 *.log
+logs/*
+*.db

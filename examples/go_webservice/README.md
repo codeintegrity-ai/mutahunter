@@ -24,8 +24,4 @@ export OPENAI_API_KEY=your-key-goes-here
 mutahunter run --test-command "go test" --code-coverage-report-path "coverage.xml" --only-mutate-file-paths "app.go" --model "gpt-4o-mini"
 ```
 
-### Surviving Mutant Analysis
-
-[Mutants](./mutants.json)
-
-[Report](./mutant_analysis.md)
+Check `logs/_latest/html` for mutation report.

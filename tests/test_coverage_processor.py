@@ -4,12 +4,12 @@ from unittest.mock import Mock, mock_open, patch
 import pytest
 
 from mutahunter.core.coverage_processor import CoverageProcessor
-from mutahunter.core.entities.config import MutatorConfig
+from mutahunter.core.entities.config import MutationTestControllerConfig
 
 
 @pytest.fixture
 def config():
-    return MutatorConfig(
+    return MutationTestControllerConfig(
         model="dummy_model",
         api_base="http://dummy_api_base",
         test_command="pytest",
@@ -17,8 +17,7 @@ def config():
         coverage_type="cobertura",
         exclude_files=[],
         only_mutate_file_paths=[],
-        modified_files_only=False,
-        extreme=False,
+        diff=False,
     )
 
 
