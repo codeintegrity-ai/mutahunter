@@ -47,14 +47,16 @@ class FileOperationHandler:
         return mutant_path
 
     @staticmethod
-    def should_skip_file(filename: str, exclude_files: List[str]) -> bool:
-        for file_path in exclude_files:
-            if not os.path.exists(file_path):
-                raise FileNotFoundError(f"File {file_path} does not exist.")
-            return all(file_path != filename for file_path in exclude_files)
+    def should_skip_file(
+        filename: str, exclude_files: List[str], only_mutate_file_paths: List[str]
+    ) -> bool:
+        if only_mutate_file_paths:
+            for file_path in only_mutate_file_paths:
+                if not os.path.exists(file_path):
+                    raise FileNotFoundError(f"File {file_path} does not exist.")
+            return all(file_path != filename for file_path in only_mutate_file_paths)
         if filename in exclude_files:
             return True
-        return any(keyword in filename for keyword in TEST_FILE_PATTERNS)
 
     @staticmethod
     def check_syntax(source_file_path: str, source_code: str) -> bool:

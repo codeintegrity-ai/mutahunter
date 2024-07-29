@@ -11,11 +11,14 @@ from mutahunter.core.coverage_processor import CoverageProcessor
 from mutahunter.core.db import MutationDatabase
 from mutahunter.core.entities.config import MutationTestControllerConfig
 from mutahunter.core.error_parser import extract_error_message
-from mutahunter.core.exceptions import (CoverageAnalysisError,
-                                        MutantKilledError, MutantSurvivedError,
-                                        MutationTestingError,
-                                        ReportGenerationError,
-                                        UnexpectedTestResultError)
+from mutahunter.core.exceptions import (
+    CoverageAnalysisError,
+    MutantKilledError,
+    MutantSurvivedError,
+    MutationTestingError,
+    ReportGenerationError,
+    UnexpectedTestResultError,
+)
 from mutahunter.core.git_handler import GitHandler
 from mutahunter.core.io import FileOperationHandler
 from mutahunter.core.llm_mutation_engine import LLMMutationEngine
@@ -93,7 +96,9 @@ class MutationTestController:
         all_covered_files = self.coverage_processor.file_lines_executed.keys()
         for covered_file_path in tqdm(all_covered_files):
             if FileOperationHandler.should_skip_file(
-                covered_file_path, self.config.exclude_files
+                covered_file_path,
+                exclude_files=self.config.exclude_files,
+                only_mutate_file_paths=self.config.only_mutate_file_paths,
             ):
                 continue
             executed_lines = self.coverage_processor.file_lines_executed[
@@ -114,7 +119,9 @@ class MutationTestController:
         )
         for file_path in tqdm(modified_files):
             if FileOperationHandler.should_skip_file(
-                file_path, self.config.exclude_files
+                file_path,
+                exclude_files=self.config.exclude_files,
+                only_mutate_file_paths=self.config.only_mutate_file_paths,
             ):
                 continue
             modified_lines = GitHandler.get_modified_lines(file_path)
