@@ -29,10 +29,9 @@ class MutantReport:
         self.log_file = "logs/_latest/coverage.txt"
         self.db = db
         os.makedirs("logs/_latest/html", exist_ok=True)
-        module_dir = resources.files(__package__).joinpath(
-            os.path.join(os.path.dirname(__file__), "templates")
+        self.template_env = Environment(
+            loader=FileSystemLoader(resources.files(__package__).joinpath("templates"))
         )
-        self.template_env = Environment(loader=FileSystemLoader(module_dir))
         assert self.template_env.get_template("report_template.html")
         assert self.template_env.get_template("file_detail_template.html")
 
