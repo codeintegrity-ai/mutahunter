@@ -6,6 +6,7 @@ import os
 from typing import Any, Dict, List
 
 from jinja2 import Environment, FileSystemLoader
+from importlib import resources
 
 from mutahunter.core.db import MutationDatabase
 from mutahunter.core.logger import logger
@@ -23,8 +24,9 @@ class MutantReport:
     def __init__(self, db: MutationDatabase) -> None:
         self.log_file = "logs/_latest/coverage.txt"
         self.db = db
+
         self.template_env = Environment(
-            loader=FileSystemLoader(os.path.join(os.path.dirname(__file__), "html"))
+            loader=FileSystemLoader(resources.files(__package__).joinpath("html"))
         )
         os.makedirs("logs/_latest/html", exist_ok=True)
 
