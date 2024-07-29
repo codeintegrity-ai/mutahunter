@@ -17,8 +17,7 @@ def config():
         coverage_type="cobertura",
         exclude_files=[],
         only_mutate_file_paths=[],
-        modified_files_only=False,
-        extreme=False,
+        diff=False,
     )
 
 

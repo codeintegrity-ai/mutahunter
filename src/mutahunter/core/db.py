@@ -1,8 +1,8 @@
 import hashlib
 import os
 import sqlite3
-from typing import Dict, Optional, Tuple, List, Any
 from contextlib import contextmanager
+from typing import Any, Dict, List, Optional, Tuple
 
 
 class DatabaseError(Exception):
