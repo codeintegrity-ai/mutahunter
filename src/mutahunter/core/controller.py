@@ -195,7 +195,7 @@ class MutationTestController:
             raise MutantSurvivedError("Mutant survived the tests")
         elif result.returncode == 1:
             logger.info(f"🗡️ Mutant killed 🗡️\n")
-            raise MutantKilledError(result.stderr)
+            raise MutantKilledError("Mutant killed by the tests")
         else:
             error_output = result.stderr + result.stdout
             logger.info(
