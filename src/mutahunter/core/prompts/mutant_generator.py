@@ -68,7 +68,7 @@ class Mutants(BaseModel):
 
 ## Source Code to Mutate, located at {{src_code_file}}
 Lines Covered: {{covered_lines}}. Only mutate lines that are covered by execution.
-Note that line numbers have been manually added for reference. Do not include these line numbers in your response. For each covered line, generate at least one meaningful mutant. Multi-line mutants are acceptable, only if necessary.
+Note that line numbers have been manually added for reference. Do not include these line numbers in your response. Generate mutant for each covered line, focusing on function blocks and critical areas. Do not generate multi-line mutants.
 ```{{language}}
 {{src_code_with_line_num}}
 ```

@@ -1,11 +1,13 @@
+import os
+from typing import Any, Dict, List, Optional
+
 import yaml
-from typing import List, Dict, Any, Optional
 from grep_ast import filename_to_lang
 from jinja2 import Template
+
 from mutahunter.core.logger import logger
 from mutahunter.core.prompts.factory import PromptFactory
 from mutahunter.core.repomap import RepoMap
-import os
 
 SYSTEM_YAML_FIX = """
 Based on the error message, the YAML content provided is not in the correct format. Please ensure the YAML content is in the correct format and try again.

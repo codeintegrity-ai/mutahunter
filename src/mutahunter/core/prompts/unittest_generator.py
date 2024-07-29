@@ -1,6 +1,6 @@
 LINE_COV_UNITTEST_GENERATOR_USER_PROMPT = """
 ## Overview
-You are a code assistant that accepts a {{ language }} source file and test file. Your goal is to generate additional unit tests to complement the existing test suite and increase line coverage against the source file.
+You are a code assistant that accepts a {{ language }} source code and test file. Your goal is to generate additional unit tests to complement the existing test suite and increase line coverage against the source file.
 
 ## Guidelines:
 - Analyze the provided code to understand its purpose, inputs, outputs, and key logic.
@@ -75,12 +75,12 @@ new_tests:
 
 MUTATION_COV_UNITTEST_GENERATOR_USER_PROMPT = """
 ## Overview
-You are a code assistant that accepts a {{ language }} source file and test file. The current code has a line coverage of {{ line_coverage }}% and a mutation coverage of {{ mutation_coverage }}%.
+You are a code assistant that accepts a {{ language }} source code and test file. 
 
-Your goal is to generate additional unit tests to kill the survived mutants in the source code. To kill a mutant, you need to write a test that triggers the fault introduced by the mutant but passes for the original code.
+Your goal is to generate additional unit tests to kill the survived mutants. To kill a mutant, you need to write a test that triggers the fault introduced by the mutant but passes for the original code.
 
-## Source File
-Here is the source file you will be writing tests against, called `{{ source_file_name }}`.
+## Source Code
+Here is the source code you will be writing tests against, called `{{ source_file_name }}`.
 ```{{ language }}
 {{ source_code }}
 ```
@@ -91,7 +91,7 @@ Here is the file that contains the existing tests, called `{{ test_file_name }}`
 ```
 
 ## Survived Mutants
-Below is a list of survived mutants. Your goal is to write tests that will detect faults based on these mutants.
+Below is a list of survived mutants.
 ```json
 {{ survived_mutants }}
 ```
@@ -110,7 +110,7 @@ class NewTest(BaseModel):
     test_behavior: str = Field(..., description="Short description of the behavior the test covers.")
     mutant_id: str = Field(..., description="The ID of the mutant that the test should kill.")
     test_name: str = Field(..., description="A short unique test name reflecting the test objective.")
-    test_code: str = Field(..., description="A single test function testing the behavioral description.")
+    test_code: str = Field(..., description="A single test function testing the behavioral description.Full test code, following the existing test style.")
     new_imports_code: str = Field(..., description="New imports required for the new test function, or an empty string if none.")
 
 class TestInsertionResponse(BaseModel):
@@ -140,7 +140,7 @@ new_tests:
 {{ failed_tests_section }}
 
 ## Task
-Produce between 1 and 5 new tests that will kill the survived mutants. The new tests should be written in the same style and structure as the existing test suite. Ensure that the tests are independent, cover all scenarios, and include clear assertions to validate expected behavior.
+Generate between 1 and 5 new unit tests, conforming to the existing test suite style and structure that pass for the original code but fail for the survived mutants. Ensure that the tests are independent, cover all scenarios, and include clear assertions to validate expected behavior.
 """
 
 MUTATION_WEAK_TESTS_TEXT = """
@@ -157,24 +157,4 @@ Below is a list of failed tests that you generated in previous iterations. Do no
 ```json
 {{ failed_test }}
 ```
-"""
-
-REPORT_PROMPT = """
-## Overview
-You are a code assistant that accepts a {{ language }} source file and test file. Your goal is to analyze the existing test suite and generate a report that provides insights into the quality and effectiveness of the tests based on the surviving mutants and failed tests.
-
-Here is the source file that you will be writing tests against, called `{{ source_file_name }}`.
-```{{ language }}
-{{ source_code }}
-```
-## Test File
-Here is the file that contains the existing tests, called `{{ test_file }}`
-```{{ language }}
-{{ test_code }}
-```
-
-## Survived Mutants
-{{survived_mutants_section}}
-
-Based on the surviving mutants that could not be killed by the existing tests, there might be bugs in the source code or weaknesses in the test file. Please identify potential bugs in the source code or weaknesses in the test file. The report must be in markdown format and no more than 400 words. Use concise bullet points to summarize the key insights and recommendations.
 """

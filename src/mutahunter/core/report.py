@@ -2,11 +2,13 @@
 Module for generating mutation testing reports.
 """
 
-from typing import Dict, Any, List
-from mutahunter.core.logger import logger
-from mutahunter.core.db import MutationDatabase
-from jinja2 import Environment, FileSystemLoader
 import os
+from typing import Any, Dict, List
+
+from jinja2 import Environment, FileSystemLoader
+
+from mutahunter.core.db import MutationDatabase
+from mutahunter.core.logger import logger
 
 MUTAHUNTER_ASCII = r"""
 .  . . . .-. .-. . . . . . . .-. .-. .-. 
@@ -39,7 +41,7 @@ class MutantReport:
 
         # HTML Report
         summary_data = self.db.get_mutant_summary()
-        file_data = self._get_file_data()
+        file_data = self.db.get_file_data()
 
         # Generate main report
         main_html = self._generate_main_report(
@@ -51,34 +53,6 @@ class MutantReport:
         for file_info in file_data:
             file_html = self._generate_file_report(file_info["id"])
             self._write_html_report(file_html, f"{file_info['id']}.html")
-
-    def _get_file_data(self) -> List[Dict[str, Any]]:
-        self.db.cursor.execute(
-            """
-            SELECT 
-                sf.id,
-                sf.file_path,
-                COUNT(m.id) as total_mutants,
-                SUM(CASE WHEN m.status = 'KILLED' THEN 1 ELSE 0 END) as killed_mutants,
-                SUM(CASE WHEN m.status = 'SURVIVED' THEN 1 ELSE 0 END) as survived_mutants
-            FROM SourceFiles sf
-            JOIN FileVersions fv ON sf.id = fv.source_file_id
-            JOIN Mutants m ON fv.id = m.file_version_id
-            GROUP BY sf.file_path
-        """
-        )
-        return [
-            {
-                "id": row[0],
-                "name": row[1],
-                "totalMutants": row[2],
-                "mutationCoverage": (
-                    f"{(row[3] / row[2] * 100):.2f}" if row[2] > 0 else "0.00"
-                ),
-                "survivedMutants": row[4],
-            }
-            for row in self.db.cursor.fetchall()
-        ]
 
     def _generate_main_report(
         self,
@@ -97,6 +71,8 @@ class MutantReport:
             if valid_mutants > 0
             else "0.00"
         )
+        print("SUMMARY DATA", summary_data)
+        print("FILE DATA", file_data)
 
         template = self.template_env.get_template("report_template.html")
         return template.render(
@@ -114,7 +90,7 @@ class MutantReport:
     def _generate_file_report(self, file_id: str) -> str:
         file_name = self.db.get_source_file_by_id(file_id)
         source_code = self._get_source_code(file_name)
-        mutations = self._get_file_mutations(file_name)
+        mutations = self.db.get_file_mutations(file_name)
 
         source_lines = []
         for i, line in enumerate(source_code.splitlines(), start=1):
@@ -134,31 +110,6 @@ class MutantReport:
     def _get_source_code(self, file_name: str) -> str:
         with open(file_name, "r") as f:
             return f.read()
-
-    def _get_file_mutations(self, file_name: str) -> List[Dict[str, Any]]:
-        self.db.cursor.execute(
-            """
-                SELECT m.id, m.status, m.type, m.description, m.line_number, m.original_code, m.mutated_code
-                FROM Mutants m
-                JOIN FileVersions fv ON m.file_version_id = fv.id
-                JOIN SourceFiles sf ON fv.source_file_id = sf.id
-                WHERE sf.file_path = ?
-                ORDER BY m.line_number
-            """,
-            (file_name,),
-        )
-        return [
-            {
-                "id": row[0],
-                "status": row[1],
-                "type": row[2],
-                "description": row[3],
-                "line_number": row[4],
-                "original_code": row[5],
-                "mutated_code": row[6],
-            }
-            for row in self.db.cursor.fetchall()
-        ]
 
     def _write_html_report(self, html_content: str, filename: str) -> None:
         with open(os.path.join("logs/_latest/html", filename), "w") as f:
@@ -222,7 +173,7 @@ class MutantReport:
             f"🗡️ Killed Mutants: {data['killed_mutants']} 🗡️",
             f"🕒 Timeout Mutants: {data['timeout_mutants']} 🕒",
             f"🔥 Compile Error Mutants: {data['compile_error_mutants']} 🔥",
-            f"💰 Expected Cost: ${total_cost:.5f} USD 💰",
+            f"💰 Total Cost: ${total_cost:.5f} USD 💰",
             f"\n=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n",
         ]
         return "\n".join(details)

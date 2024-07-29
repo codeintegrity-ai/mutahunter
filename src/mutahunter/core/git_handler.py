@@ -11,7 +11,6 @@ class GitCommandError(Exception):
 
 
 class GitHandler:
-    @staticmethod
     def get_modified_files(covered_files) -> List[str]:
         try:
             modified_files = GitHandler.run_git_command(
@@ -25,12 +24,12 @@ class GitHandler:
             return []
 
     @staticmethod
-    def get_modified_lines(self, file_path: str) -> List[int]:
+    def get_modified_lines(file_path: str) -> List[int]:
         try:
             diff_output = GitHandler.run_git_command(
                 ["git", "diff", "-U0", "HEAD", file_path]
             )
-            return self._parse_diff_output(diff_output)
+            return GitHandler._parse_diff_output(diff_output)
         except GitCommandError as e:
             logger.error(f"Error identifying modified lines in {file_path}: {e}")
             return []
@@ -42,3 +41,14 @@ class GitHandler:
             return output.decode("utf-8").splitlines()
         except subprocess.CalledProcessError as e:
             raise GitCommandError(f"Git command failed: {e.stderr.decode('utf-8')}")
+
+    @staticmethod
+    def _parse_diff_output(diff_output: List[str]) -> List[int]:
+        modified_lines = []
+        for line in diff_output:
+            if line.startswith("@@"):
+                line_numbers = line.split(" ")[2].split(",")
+                start_line = int(line_numbers[0][1:])
+                line_count = int(line_numbers[1])
+                modified_lines.extend(range(start_line, start_line + line_count))
+        return modified_lines

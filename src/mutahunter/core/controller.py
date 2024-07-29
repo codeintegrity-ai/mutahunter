@@ -1,88 +1,103 @@
-import difflib
 import os
-from typing import Any, Dict, List, Optional
 import time
-from grep_ast import filename_to_lang
-from jinja2 import Template
-from tqdm import tqdm
+from subprocess import CompletedProcess
+from typing import Any, Dict, List, Optional
 from uuid import uuid4
+
+from tqdm import tqdm
 
 from mutahunter.core.analyzer import Analyzer
 from mutahunter.core.coverage_processor import CoverageProcessor
+from mutahunter.core.db import MutationDatabase
 from mutahunter.core.entities.config import MutationTestControllerConfig
 from mutahunter.core.error_parser import extract_error_message
+from mutahunter.core.exceptions import (
+    CoverageAnalysisError,
+    MutantKilledError,
+    MutantSurvivedError,
+    MutationTestingError,
+    ReportGenerationError,
+    UnexpectedTestResultError,
+)
 from mutahunter.core.git_handler import GitHandler
+from mutahunter.core.io import FileOperationHandler
 from mutahunter.core.llm_mutation_engine import LLMMutationEngine
 from mutahunter.core.logger import logger
 from mutahunter.core.prompts.mutant_generator import MUTANT_ANALYSIS
 from mutahunter.core.report import MutantReport
 from mutahunter.core.router import LLMRouter
 from mutahunter.core.runner import MutantTestRunner
-from mutahunter.core.db import MutationDatabase
-
-TEST_FILE_PATTERNS = [
-    "test_",
-    "_test",
-    ".test",
-    ".spec",
-    ".tests",
-    ".Test",
-    "tests/",
-    "test/",
-]
-
-from typing import List
 
 
 class MutationTestController:
-    def __init__(self, config: MutationTestControllerConfig) -> None:
+    def __init__(
+        self,
+        config: MutationTestControllerConfig,
+        coverage_processor: CoverageProcessor,
+        analyzer: Analyzer,
+        test_runner: MutantTestRunner,
+        router: LLMRouter,
+        engine: LLMMutationEngine,
+        db: MutationDatabase,
+        mutant_report: MutantReport,
+        file_handler: FileOperationHandler,
+    ) -> None:
         self.config = config
-        self.logger = logger
-        self.coverage_processor = CoverageProcessor(
-            code_coverage_report_path=self.config.code_coverage_report_path,
-            coverage_type=self.config.coverage_type,
-        )
-        self.analyzer = Analyzer()
-        self.test_runner = MutantTestRunner(test_command=self.config.test_command)
-        self.router = LLMRouter(model=self.config.model, api_base=self.config.api_base)
-        self.engine = LLMMutationEngine(
-            model=self.config.model,
-            router=self.router,
-        )
-        self.db = MutationDatabase()
-        self.mutant_report = MutantReport(db=self.db)
+        self.coverage_processor = coverage_processor
+        self.analyzer = analyzer
+        self.test_runner = test_runner
+        self.router = router
+        self.engine = engine
+        self.db = db
+        self.mutant_report = mutant_report
+        self.file_handler = file_handler
 
     def run(self) -> None:
+        start = time.time()
         try:
-            start = time.time()
-            self._run_coverage_analysis()
-            self._run_mutation_testing()
-            self._generate_report()
-            # self._run_mutant_analysis()
-            self.logger.info(
-                f"Mutation Testing Ended. Took {round(time.time() - start)}s"
-            )
-        except Exception as e:
-            logger.error("Error during mutation testing", exc_info=True)
-            raise
+            self.run_coverage_analysis()
+        except CoverageAnalysisError as e:
+            logger.error(f"Coverage analysis failed: {str(e)}")
+            return
+        try:
+            self.run_mutation_testing()
+        except MutationTestingError as e:
+            logger.error(f"Mutation testing failed: {str(e)}")
+        try:
+            self.generate_report()
+        except ReportGenerationError as e:
+            logger.error(f"Report generation failed: {str(e)}")
+        # self._run_mutant_analysis()
+        logger.info(f"Mutation Testing Ended. Took {round(time.time() - start)}s")
 
-    def _run_coverage_analysis(self) -> None:
+    def run_coverage_analysis(self) -> None:
+
         logger.info("Starting Coverage Analysis...")
-        self.test_runner.dry_run()
-        self.coverage_processor.parse_coverage_report()
+        try:
+            self.test_runner.dry_run()
+            self.coverage_processor.parse_coverage_report()
+        except Exception as e:
+            raise CoverageAnalysisError(
+                f"Failed to complete coverage analysis: {str(e)}"
+            )
 
-    def _run_mutation_testing(self) -> None:
-        if self.config.modified_files_only:
-            logger.info("Running mutation testing on modified files...")
-            self._run_mutation_testing_on_modified_files()
-        else:
-            logger.info("Running mutation testing on entire codebase...")
-            self._run_mutation_testing_on_all_files()
+    def run_mutation_testing(self) -> None:
+        try:
+            if self.config.diff_only:
+                logger.info("Running mutation testing on modified files...")
+                self.run_mutation_testing_diff()
+            else:
+                logger.info("Running mutation testing on entire codebase...")
+                self.run_mutation_testing_all()
+        except Exception as e:
+            raise MutationTestingError(f"Failed to complete mutation testing: {str(e)}")
 
-    def _run_mutation_testing_on_all_files(self) -> None:
+    def run_mutation_testing_all(self) -> None:
         all_covered_files = self.coverage_processor.file_lines_executed.keys()
         for covered_file_path in tqdm(all_covered_files):
-            if self._should_skip_file(covered_file_path):
+            if FileOperationHandler.should_skip_file(
+                covered_file_path, self.config.exclude_files
+            ):
                 continue
             executed_lines = self.coverage_processor.file_lines_executed[
                 covered_file_path
@@ -96,10 +111,9 @@ class MutationTestController:
             )["mutants"]
             self.process_mutations(mutations, covered_file_path)
 
-    def _run_mutation_testing_on_modified_files(self) -> None:
-        modified_files = GitHandler.get_modified_files()
-        logger.info(
-            f"Generating mutations for {len(modified_files)} modified files - {','.join(modified_files)}"
+    def run_mutation_testing_diff(self) -> None:
+        modified_files = GitHandler.get_modified_files(
+            covered_files=self.coverage_processor.file_lines_executed.keys()
         )
         for file_path in tqdm(modified_files):
             if self._should_skip_file(file_path):
@@ -116,125 +130,91 @@ class MutationTestController:
             )["mutants"]
             self.process_mutations(mutations, file_path)
 
-    def _should_skip_file(self, filename: str) -> bool:
-        logger.debug(f"Checking if file should be skipped: {filename}")
-        if self.config.only_mutate_file_paths:
-            for file_path in self.config.only_mutate_file_paths:
-                if not os.path.exists(file_path):
-                    raise FileNotFoundError(f"File {file_path} does not exist.")
-            return all(
-                file_path != filename
-                for file_path in self.config.only_mutate_file_paths
-            )
-        if filename in self.config.exclude_files:
-            return True
-        return any(keyword in filename for keyword in TEST_FILE_PATTERNS)
-
     def process_mutations(
         self, mutations: List[Dict[str, Any]], source_file_path: str
     ) -> None:
         file_version_id, _, is_new_version = self.db.get_file_version(source_file_path)
+
+        if not is_new_version:
+            self.db.remove_mutants_by_file_version_id(file_version_id)
+
         for mutant_data in mutations:
             mutant_data["source_path"] = source_file_path
-            mutant_path = self.prepare_mutant_file(mutant_data, source_file_path)
-
-            if mutant_path:
-                status, error_msg = self.test_mutant(
-                    mutant_data, mutant_path, source_file_path
+            try:
+                mutant_path = self.file_handler.prepare_mutant_file(
+                    mutant_data, source_file_path
                 )
-            else:
-                status, error_msg = "COMPILE_ERROR", "Failed to prepare mutant file"
-            # Update mutant_data with final status and error message
-            mutant_data["status"] = status
-            mutant_data["error_msg"] = error_msg
+                logger.debug(f"Mutant file prepared: {mutant_path}")
+                mutant_data["mutant_path"] = mutant_path
+                self.test_mutant(
+                    source_file_path=source_file_path, mutant_path=mutant_path
+                )
+            except MutantSurvivedError as e:
+                mutant_data["status"] = "SURVIVED"
+                mutant_data["error_msg"] = str(e)
+            except MutantKilledError as e:
+                mutant_data["status"] = "KILLED"
+                mutant_data["error_msg"] = str(e)
+            except SyntaxError as e:
+                logger.error(str(e))
+                mutant_data["status"] = "SYNTAX_ERROR"
+                mutant_data["error_msg"] = str(e)
+            except UnexpectedTestResultError as e:
+                logger.error(str(e))
+                mutant_data["status"] = "UNEXPECTED_TEST_ERROR"
+                mutant_data["error_msg"] = str(e)
+            except Exception as e:
+                logger.error(f"Unexpected error processing mutant: {str(e)}")
+                mutant_data["status"] = "ERROR"
+                mutant_data["error_msg"] = str(e)
 
             # Write complete mutant data to database
             self.db.add_mutant(file_version_id, mutant_data)
 
-    def prepare_mutant_file(
-        self, mutant_data: Dict[str, Any], source_file_path: str
-    ) -> Optional[str]:
-        mutant_id = str(uuid4())[:8]
-        mutant_file_name = f"{mutant_id}_{os.path.basename(source_file_path)}"
-        mutant_path = os.path.join(
-            os.getcwd(), f"logs/_latest/mutants/{mutant_file_name}"
-        )
+    def test_mutant(
+        self,
+        source_file_path: str,
+        mutant_path: str,
+    ) -> None:
 
-        with open(source_file_path, "r") as f:
-            source_code = f.read()
-
-        applied_mutant = self.apply_mutation(source_code, mutant_data)
-
-        if self.analyzer.check_syntax(
-            source_file_path=source_file_path, source_code=applied_mutant
-        ):
-            with open(mutant_path, "w") as f:
-                f.write(applied_mutant)
-            self.logger.debug(f"Mutant file prepared: {mutant_path}")
-            return mutant_path
-        else:
-            self.logger.error(
-                f"Syntax error in mutant code for file: {source_file_path}"
-            )
-            return None
-
-    def apply_mutation(self, source_code: str, mutant_data: Dict[str, Any]) -> str:
-        src_code_lines = source_code.splitlines(keepends=True)
-        # original_line = mutant_data["original_line"].strip()
-        mutated_line = mutant_data["mutated_code"].strip()
-        line_number = mutant_data["line_number"]
-
-        indentation = len(src_code_lines[line_number - 1]) - len(
-            src_code_lines[line_number - 1].lstrip()
-        )
-        src_code_lines[line_number - 1] = " " * indentation + mutated_line + "\n"
-
-        return "".join(src_code_lines)
-
-    def run_test(self, params: Dict[str, str]) -> Any:
-        """
-        Runs the test command on the given parameters.
-        """
-        self.logger.info(
+        params = {
+            "module_path": source_file_path,
+            "replacement_module_path": mutant_path,
+            "test_command": self.config.test_command,
+        }
+        logger.info(
             f"'{params['test_command']}' - '{params['replacement_module_path']}'"
         )
-        return self.test_runner.run_test(params)
+        result = self.test_runner.run_test(params)
+        self.process_test_result(result)
 
-    def test_mutant(
-        self, mutant_data: Dict[str, any], mutant_path: str, source_file_path: str
-    ) -> None:
-        result = self.run_test(
-            {
-                "module_path": source_file_path,
-                "replacement_module_path": mutant_path,
-                "test_command": self.config.test_command,
-            }
-        )
-        status, error_msg = self.process_test_result(result, mutant_data)
-        return status, error_msg
-
-    def process_test_result(self, result: Any, mutant_data: Dict[str, Any]):
+    def process_test_result(self, result: CompletedProcess) -> None:
         if result.returncode == 0:
-            self.logger.info(f"🛡️ Mutant survived 🛡️\n")
-            return "SURVIVED", ""
+            logger.info(f"🛡️ Mutant survived 🛡️\n")
+            raise MutantSurvivedError("Mutant survived the tests")
         elif result.returncode == 1:
-            self.logger.info(f"🗡️ Mutant killed 🗡️\n")
-            lang = self.analyzer.get_language_by_filename(mutant_data["source_path"])
-            error_output = extract_error_message(lang, result.stderr + result.stdout)
-            return "KILLED", error_output
+            logger.info(f"🗡️ Mutant killed 🗡️\n")
+            raise MutantKilledError(result.stderr)
         else:
             error_output = result.stderr + result.stdout
-            self.logger.info(f"🔧 Mutant caused a compile error 🔧\n")
-            return "COMPILE_ERROR", error_output
+            logger.info(
+                f"⚠️ Unexpected test result (return code: {result.returncode}) ⚠️\n"
+            )
+            raise UnexpectedTestResultError(
+                f"Unexpected test result. Return code: {result.returncode}. Error output: {error_output}"
+            )
 
-    def _generate_report(self) -> None:
+    def generate_report(self) -> None:
         """
         Generates the mutation testing report.
         """
-        self.mutant_report.generate_report(
-            total_cost=self.router.total_cost,
-            line_rate=self.coverage_processor.line_coverage_rate,
-        )
+        try:
+            self.mutant_report.generate_report(
+                total_cost=self.router.total_cost,
+                line_rate=self.coverage_processor.line_coverage_rate,
+            )
+        except Exception as e:
+            raise ReportGenerationError(f"Failed to generate report: {str(e)}")
 
     # def _run_mutant_analysis(self) -> None:
     #     """

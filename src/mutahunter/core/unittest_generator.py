@@ -9,27 +9,42 @@ from grep_ast import filename_to_lang
 from jinja2 import Template
 
 from mutahunter.core.analyzer import Analyzer
-from mutahunter.core.controller import MutationTestControllerConfig
+from mutahunter.core.controller import MutationTestController
 from mutahunter.core.coverage_processor import CoverageProcessor
-from mutahunter.core.entities.config import (
-    MutationTestControllerConfig,
-    UnittestGeneratorConfig,
-)
+from mutahunter.core.db import MutationDatabase
+from mutahunter.core.entities.config import (MutationTestControllerConfig,
+                                             UnittestGeneratorConfig)
 from mutahunter.core.error_parser import extract_error_message
 from mutahunter.core.prompts.unittest_generator import (
-    FAILED_TESTS_TEXT,
-    LINE_COV_UNITTEST_GENERATOR_USER_PROMPT,
-    MUTATION_COV_UNITTEST_GENERATOR_USER_PROMPT,
-    MUTATION_WEAK_TESTS_TEXT,
-    REPORT_PROMPT,
-)
+    FAILED_TESTS_TEXT, LINE_COV_UNITTEST_GENERATOR_USER_PROMPT,
+    MUTATION_COV_UNITTEST_GENERATOR_USER_PROMPT, MUTATION_WEAK_TESTS_TEXT)
 from mutahunter.core.router import LLMRouter
 from mutahunter.core.runner import MutantTestRunner
+
+SYSTEM_YAML_FIX = """
+Based on the error message, the YAML content provided is not in the correct format. Please ensure the YAML content is in the correct format and try again.
+"""
+
+USER_YAML_FIX = """
+YAML content:
+```yaml
+{{yaml_content}}
+```
+
+Error:
+{{error}}
+
+Output must be wrapped in triple backticks and in YAML format:
+```yaml
+...fix the yaml content here...
+```
+"""
 
 
 class UnittestGenerator:
     def __init__(self, config: UnittestGeneratorConfig):
         self.config = config
+        self.db = MutationDatabase()
         self.coverage_processor = CoverageProcessor(
             code_coverage_report_path=self.config.code_coverage_report_path,
             coverage_type=self.config.coverage_type,
@@ -38,7 +53,7 @@ class UnittestGenerator:
         self.test_runner = MutantTestRunner(test_command=self.config.test_command)
         self.router = LLMRouter(model=self.config.model, api_base=self.config.api_base)
 
-        self.mutator = MutationTestControllerConfig(
+        self.mutator = MutationTestController(
             config=MutationTestControllerConfig(
                 model=self.config.model,
                 api_base=self.config.api_base,
@@ -47,81 +62,56 @@ class UnittestGenerator:
                 coverage_type=self.config.coverage_type,
                 exclude_files=[],
                 only_mutate_file_paths=[self.config.source_file_path],
-                modified_files_only=False,
-                extreme=False,
+                diff_only=False,
             )
         )
 
         self.failed_unittests = []
         self.weak_unittests = []
 
+        file_version_id, _, is_new_version = self.db.get_file_version(
+            self.config.source_file_path
+        )
+        self.file_version_id = file_version_id
+
     def run(self) -> None:
-        self.coverage_processor.parse_coverage_report()
         initial_line_coverage_rate = self.coverage_processor.line_coverage_rate
-
-        current_attempt_for_line = 0
-        while (
-            self.coverage_processor.line_coverage_rate
-            < self.config.target_line_coverage_rate
-            and current_attempt_for_line < self.config.max_attempts
-        ):
-            print(f"Attempt {current_attempt_for_line}")
-            current_attempt_for_line += 1
-            response = self.generate_unittests()
-            self._process_generated_unittests(response)
-
-        # NOTE:// Run mutation testing
-        self.mutator.run()
-
-        current_attempt_for_mutation = 0
-        prev_mutation_coverage_rate = self.mutator.mutant_report.mutation_coverage_rate
-        self.failed_unittests = []
-
-        while (
-            prev_mutation_coverage_rate < self.config.target_mutation_coverage_rate
-            and current_attempt_for_mutation < self.config.max_attempts
-        ):
-            current_attempt_for_mutation += 1
-            response = self.generate_unittests_for_mutants()
-            self._process_generated_unittests_for_mutation(response)
-            self.mutator.mutant_report.generate_report(
-                self.mutator.mutants, 0, self.coverage_processor.line_coverage_rate
-            )
-
-        with open(self.config.source_file_path, "r") as f:
-            source_code = f.read()
-        with open(self.config.test_file_path, "r") as f:
-            test_code = f.read()
-
-        user_template = Template(REPORT_PROMPT).render(
-            language=filename_to_lang(self.config.source_file_path),
-            source_file=self.config.source_file_path,
-            source_code=source_code,
-            test_file=self.config.test_file_path,
-            test_code=test_code,
-            failed_tests=json.dumps(self.failed_unittests[:-5], indent=2),
-            survived_mutants=json.dumps(
-                [
-                    asdict(mutant)
-                    for mutant in self.mutator.mutants
-                    if mutant.status == "SURVIVED"
-                ],
-                indent=2,
-            ),
-        )
-        response, _, _ = self.router.generate_response(
-            prompt={"system": "", "user": user_template}, streaming=False
-        )
-
-        with open("logs/_latest/report.md", "w") as f:
-            f.write(response)
+        initial_mutation_coverage_rate = self.db.get_mutation_coverage()
+        self.increase_line_coverage()
+        self.mutator.run_coverage_analysis()
+        # self.mutator.run_mutation_testing()
+        self.increase_mutation_coverage()
 
         print(
             f"Line coverage increased from {initial_line_coverage_rate*100:.2f}% to {self.coverage_processor.line_coverage_rate*100:.2f}%"
         )
         print(
-            f"Mutation coverage increased from {prev_mutation_coverage_rate*100:.2f}% to {self.mutator.mutant_report.mutation_coverage_rate*100:.2f}%"
+            f"Mutation coverage increased from {initial_mutation_coverage_rate*100:.2f}% to {self.db.get_mutation_coverage()*100:.2f}%"
         )
+
+    def increase_line_coverage(self):
+        self.coverage_processor.parse_coverage_report()
+        attempt = 0
+        while (
+            self.coverage_processor.line_coverage_rate
+            < self.config.target_line_coverage_rate
+            and attempt < self.config.max_attempts
+        ):
+            attempt += 1
+            response = self.generate_unittests()
+            self._process_generated_unittests(response)
+
+    def increase_mutation_coverage(self):
+        attempt = 0
+
+        self.failed_unittests = []
+        while (
+            self.db.get_mutation_coverage() < self.config.target_mutation_coverage_rate
+            and attempt < self.config.max_attempts
+        ):
+            attempt += 1
+            response = self.generate_unittests_for_mutants()
+            self._process_generated_unittests_for_mutation(response)
 
     def generate_unittests(self):
         try:
@@ -221,6 +211,7 @@ class UnittestGenerator:
                 cwd=os.getcwd(),
             )
             if result.returncode == 0:
+                print("Test passed")
                 prev_line_coverage_rate = self.coverage_processor.line_coverage_rate
                 self.coverage_processor.parse_coverage_report()
 
@@ -253,15 +244,17 @@ class UnittestGenerator:
 
     def check_mutant_coverage_increase(self, generated_unittest, test_code):
         runner = MutantTestRunner(test_command=self.config.test_command)
-        for mutant in self.mutator.mutants:
-            if (
-                mutant.id == generated_unittest["mutant_id"]
-                and mutant.status == "SURVIVED"
-            ):
+
+        mutants = self.db.get_survived_mutants_by_file_version_id(
+            file_version_id=self.file_version_id
+        )
+
+        for mutant in mutants:
+            if mutant["id"] == generated_unittest["mutant_id"]:
                 result = runner.run_test(
                     {
                         "module_path": self.config.source_file_path,
-                        "replacement_module_path": mutant.mutant_path,
+                        "replacement_module_path": mutant["mutant_path"],
                         "test_command": self.config.test_command,
                     }
                 )
@@ -270,14 +263,12 @@ class UnittestGenerator:
                     self.weak_unittests.append(
                         {
                             "code": test_code,
-                            "survived_mutant_id": f"Mutant {mutant.id} not killed",
+                            "survived_mutant_id": f"Mutant {mutant['id']} not killed",
                         }
                     )
                 else:
                     print("Mutation coverage increased!")
-                    mutant.status = "KILLED"
-                    # with open("logs/_latest/golden_tests.txt", "a") as f:
-                    #     f.write(test_code)
+                    self.db.update_mutant_status(mutant["id"], "KILLED")
                     return True
         return False
 
@@ -289,26 +280,23 @@ class UnittestGenerator:
     def generate_unittests_for_mutants(self) -> None:
         source_code = FileUtils.read_file(self.config.source_file_path)
         language = filename_to_lang(self.config.source_file_path)
+        self.db
+        # filter survived mutants
+        survived_mutants = self.db.get_survived_mutants(self.config.source_file_path)
 
         user_template = Template(MUTATION_COV_UNITTEST_GENERATOR_USER_PROMPT).render(
             language=language,
-            line_coverage=self.coverage_processor.line_coverage_rate * 100,
-            mutation_coverage=self.mutator.mutant_report.mutation_coverage_rate * 100,
             source_file_name=self.config.source_file_path,
             source_code=source_code,
             test_file_name=self.config.test_file_path,
             test_file=FileUtils.read_file(self.config.test_file_path),
             survived_mutants=json.dumps(
-                [
-                    asdict(mutant)
-                    for mutant in self.mutator.mutants
-                    if mutant.status == "SURVIVED"
-                ],
+                survived_mutants,
                 indent=2,
             ),
             weak_tests_section=(
                 Template(MUTATION_WEAK_TESTS_TEXT).render(
-                    weak_tests=f"{json.dumps(self.weak_unittests[:-5], indent=2)}"
+                    weak_tests=f"{json.dumps(self.weak_unittests, indent=2)}"
                 )
                 if self.weak_unittests
                 else ""
@@ -430,30 +418,9 @@ class FileUtils:
         try:
             if os.path.exists(backup_path):
                 shutil.copyfile(backup_path, file_path)
-                print(f"File reverted to original state from {backup_path}")
             else:
                 print(f"No backup file found for {file_path}")
                 raise FileNotFoundError(f"No backup file found for {file_path}")
         except Exception as e:
             print(f"Failed to revert file {file_path}: {e}")
             raise
-
-
-SYSTEM_YAML_FIX = """
-Based on the error message, the YAML content provided is not in the correct format. Please ensure the YAML content is in the correct format and try again.
-"""
-
-USER_YAML_FIX = """
-YAML content:
-```yaml
-{{yaml_content}}
-```
-
-Error:
-{{error}}
-
-Output must be wrapped in triple backticks and in YAML format:
-```yaml
-...fix the yaml content here...
-```
-"""
