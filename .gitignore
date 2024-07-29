@@ -164,7 +164,6 @@ vendor
 *.lcov
 dist*
 
-*.html
 *.log
 logs/*
 *.db
