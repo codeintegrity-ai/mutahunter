@@ -37,6 +37,25 @@ Mutahunter can automatically generate unit tests to increase line and mutation c
 - **Diff-Based Mutations:** Runs mutation tests on modified files and lines based on the latest commit or pull request changes, ensuring that only relevant parts of the code are tested.
 - **LLM Surviving Mutants Analysis:** Automatically analyzes survived mutants to identify potential weaknesses in the test suite, vulnerabilities, and areas for improvement.
 
+## Unit Test Generator: Enhancing Line and Mutation Coverage (WIP)
+
+This tool generates unit tests to increase both line and mutation coverage, inspired by papers:
+
+- [Automated Unit Test Improvement using Large Language Models at Meta](https://arxiv.org/abs/2402.09171):  
+  - Uses LLMs to identify and fill gaps in test coverage.
+- [Effective Test Generation Using Pre-trained Large Language Models and Mutation Testing](https://arxiv.org/abs/2308.16557):
+  - Generates tests that detect and kill code mutants, ensuring robustness.
+
+```bash
+## go to examples/java_maven
+## remove some tests from BankAccountTest.java
+
+mutahunter gen --test-command "mvn clean test" --code-coverage-report-path "target/site/jacoco/jacoco.xml" --test-file-path "src/test/java/BankAccountTest.java" --source-file-path "src/main/java/com/example/BankAccount.java" --coverage-type jacoco  --model "gpt-4o"
+
+Line coverage increased from 47.00% to 100.00%
+Mutation coverage increased from 92.86% to 92.86%
+```
+
 ## Getting Started with Mutation Testing
 
 ```bash
@@ -95,25 +114,6 @@ Check [Java Example](/examples/java_maven/) to see some interesting LLM-based mu
 - [Python FastAPI Example](/examples/python_fastapi/)
 
 Feel free to add more examples! ✨
-
-## Unit Test Generator: Enhancing Line and Mutation Coverage (WIP)
-
-This tool generates unit tests to increase both line and mutation coverage, inspired by papers:
-
-- [Automated Unit Test Improvement using Large Language Models at Meta](https://arxiv.org/abs/2402.09171):  
-  - Uses LLMs to identify and fill gaps in test coverage.
-- [Effective Test Generation Using Pre-trained Large Language Models and Mutation Testing](https://arxiv.org/abs/2308.16557):
-  - Generates tests that detect and kill code mutants, ensuring robustness.
-
-```bash
-## go to examples/java_maven
-## remove some tests from BankAccountTest.java
-
-mutahunter gen --test-command "mvn clean test" --code-coverage-report-path "target/site/jacoco/jacoco.xml" --test-file-path "src/test/java/BankAccountTest.java" --source-file-path "src/main/java/com/example/BankAccount.java" --coverage-type jacoco  --model "gpt-4o"
-
-Line coverage increased from 47.00% to 100.00%
-Mutation coverage increased from 92.86% to 92.86%
-```
 
 ## CI/CD Integration
 
