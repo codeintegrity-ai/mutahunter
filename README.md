@@ -25,20 +25,17 @@ We'd love to hear your feedback, suggestions, and any thoughts you have on mutat
 - [Unit Test Generator: Enhancing Line and Mutation Coverage (WIP)](#unit-test-generator-enhancing-line-and-mutation-coverage-wip)
 - [Getting Started with Mutation Testing](#getting-started-with-mutation-testing)
 - [Examples](#examples)
-- [LLM Survivng Mutant Analysis Report](#mutant-report)
-- [Examples](#examples)
 - [CI/CD Integration](#cicd-integration)
 
 Mutahunter can automatically generate unit tests to increase line and mutation coverage, leveraging Large Language Models (LLMs) to identify and fill gaps in test coverage. It uses LLM models to inject context-aware faults into your codebase. This AI-driven approach produces fewer equivalent mutants, mutants with higher fault detection potential, and those with higher coupling and semantic similarity to real faults, ensuring comprehensive and effective testing.
 
 ## Features
 
-- **Automatic Test Generation:** Generates unit tests to increase line and mutation coverage, leveraging LLMs to identify and fill gaps in test coverage. See the [Unit Test Generator](#unit-test-generator-enhancing-line-and-mutation-coverage-wip) section for more details.
+- **Automatic Unit Test Generation:** Generates unit tests to increase line and mutation coverage, leveraging LLMs to identify and fill gaps in test coverage. See the [Unit Test Generator](#unit-test-generator-enhancing-line-and-mutation-coverage-wip) section for more details.
 - **Language Agnostic:** Compatible with languages that provide coverage reports in Cobertura XML, Jacoco XML, and lcov formats. Extensible to additional languages and testing frameworks.
 - **LLM Context-aware Mutations:** Utilizes LLM models to generate context-aware mutants. [Research](https://arxiv.org/abs/2406.09843) indicates that LLM-generated mutants have higher fault detection potential, fewer equivalent mutants, and higher coupling and semantic similarity to real faults. It uses a map of your entire git repository to generate contextually relevant mutants using [aider's repomap](https://aider.chat/docs/repomap.html). Supports self-hosted LLMs, Anthropic, OpenAI, and any LLM models via [LiteLLM](https://github.com/BerriAI/litellm).
-- **Diff-Based Testing:** Runs mutation tests on modified files and lines based on the latest commit or pull request changes, ensuring that only relevant parts of the code are tested.
+- **Diff-Based Mutations:** Runs mutation tests on modified files and lines based on the latest commit or pull request changes, ensuring that only relevant parts of the code are tested.
 - **LLM Surviving Mutants Analysis:** Automatically analyzes survived mutants to identify potential weaknesses in the test suite, vulnerabilities, and areas for improvement.
-
 
 ## Getting Started with Mutation Testing
 
@@ -54,27 +51,37 @@ $ export ANTHROPIC_API_KEY=your-key-goes-here
 
 # Run Mutahunter on a specific file. 
 # Coverage report should correspond to the test command.
-$ mutahunter run --test-command "pytest tests/unit" --code-coverage-report-path "coverage.xml" --only-mutate-file-paths "app_1.py" "app_2.py"
+$ mutahunter run --test-command "mvn test" --code-coverage-report-path "target/site/jacoco/jacoco.xml" --coverage-type jacoco --model "gpt-4o-mini"
 
-# Run mutation testing on modified files based on the latest commit
-$ mutahunter run --test-command "pytest tests/unit" --code-coverage-report-path "coverage.xml" --modified-files-only
+.  . . . .-. .-. . . . . . . .-. .-. .-.
+|\/| | |  |  |-| |-| | | |\|  |  |-  |(
+'  ` `-'  '  ` ' ' ` `-' ' `  '  `-' ' '
 
-.  . . . .-. .-. . . . . . . .-. .-. .-. 
-|\/| | |  |  |-| |-| | | |\|  |  |-  |(  
-'  ` `-'  '  ` ' ' ` `-' ' `  '  `-' ' ' 
+2024-07-29 12:31:22,045 INFO:
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-2024-07-05 00:26:13,420 INFO: 📊 Line Coverage: 100% 📊
-2024-07-05 00:26:13,420 INFO: 🎯 Mutation Coverage: 61.54% 🎯
-2024-07-05 00:26:13,420 INFO: 🦠 Total Mutants: 13 🦠
-2024-07-05 00:26:13,420 INFO: 🛡️ Survived Mutants: 5 🛡️
-2024-07-05 00:26:13,420 INFO: 🗡️ Killed Mutants: 8 🗡️
-2024-07-05 00:26:13,421 INFO: 🕒 Timeout Mutants: 0 🕒
-2024-07-05 00:26:13,421 INFO: 🔥 Compile Error Mutants: 0 🔥
-2024-07-05 00:26:13,421 INFO: 💰 Total Cost: $0.00583 USD 💰
-2024-07-05 00:26:13,421 INFO: Report saved to logs/_latest/mutation_coverage.json
-2024-07-05 00:26:13,421 INFO: Report saved to logs/_latest/mutation_coverage_detail.json
-2024-07-05 00:26:13,421 INFO: Mutation Testing Ended. Took 43s
+📊 Overall Mutation Coverage 📊
+📈 Line Coverage: 100.00% 📈
+🎯 Mutation Coverage: 63.33% 🎯
+🦠 Total Mutants: 30 🦠
+🛡️  Survived Mutants: 11 🛡️ 
+🗡️  Killed Mutants: 19 🗡️ 
+🕒 Timeout Mutants: 0 🕒
+🔥 Compile Error Mutants: 0 🔥
+💰 Total Cost: $0.00167 USD 💰
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+2024-07-29 12:31:22,050 INFO: HTML report generated: mutation_report.html
+2024-07-29 12:31:22,058 INFO: HTML report generated: 1.html
+2024-07-29 12:31:22,058 INFO: Mutation Testing Ended. Took 127s
 ```
+
+### HTML Mutation Report
+
+![HTML Report](/images/mutation_overall.png)
+![HTML Report](/images/mutation_report.png)
+![HTML Report](/images/mutation_details.png)
 
 ### Examples
 
@@ -107,18 +114,6 @@ mutahunter gen --test-command "mvn clean test" --code-coverage-report-path "targ
 Line coverage increased from 47.00% to 100.00%
 Mutation coverage increased from 92.86% to 92.86%
 ```
-
-## Mutant Report
-
-Check the logs directory to view the report:
-
-- `mutants.json` - Contains the list of mutants generated.
-- `coverage.txt` - Contains information about mutation coverage.
-- `audit.md` - Contains the analysis of survived mutants
-
-### Survivng Mutant Analysis Audit Report
-
-![Report](/images/audit.png)
 
 ## CI/CD Integration
 
@@ -168,7 +163,7 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          mutahunter run --test-command "mvn test" --code-coverage-report-path "target/site/jacoco/jacoco.xml" --coverage-type jacoco --model "gpt-4o" --modified-files-only 
+          mutahunter run --test-command "mvn test" --code-coverage-report-path "target/site/jacoco/jacoco.xml" --coverage-type jacoco --model "gpt-4o" --diff
 
       - name: PR comment the mutation coverage
         uses: thollander/actions-comment-pull-request@v2.5.0
