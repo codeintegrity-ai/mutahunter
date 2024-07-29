@@ -387,7 +387,7 @@ class MutationDatabase:
 
     def remove_mutants_by_file_version_id(self, file_version_id: int):
         with self.get_connection() as conn:
-            cursor = conn.cursor
+            cursor = conn.cursor()
             try:
                 cursor.execute(
                     "DELETE FROM Mutants WHERE file_version_id = ?", (file_version_id,)

@@ -71,8 +71,6 @@ class MutantReport:
             if valid_mutants > 0
             else "0.00"
         )
-        print("SUMMARY DATA", summary_data)
-        print("FILE DATA", file_data)
 
         template = self.template_env.get_template("report_template.html")
         return template.render(

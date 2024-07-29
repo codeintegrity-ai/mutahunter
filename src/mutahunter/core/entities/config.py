@@ -11,7 +11,7 @@ class MutationTestControllerConfig:
     coverage_type: str
     exclude_files: List[str]
     only_mutate_file_paths: List[str]
-    diff_only: bool
+    diff: bool
 
 
 @dataclass

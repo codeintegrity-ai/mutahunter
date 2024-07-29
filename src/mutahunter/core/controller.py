@@ -83,7 +83,7 @@ class MutationTestController:
 
     def run_mutation_testing(self) -> None:
         try:
-            if self.config.diff_only:
+            if self.config.diff:
                 logger.info("Running mutation testing on modified files...")
                 self.run_mutation_testing_diff()
             else:
@@ -116,8 +116,9 @@ class MutationTestController:
             covered_files=self.coverage_processor.file_lines_executed.keys()
         )
         for file_path in tqdm(modified_files):
-            if self._should_skip_file(file_path):
-                logger.debug(f"Skipping file: {file_path}")
+            if FileOperationHandler.should_skip_file(
+                file_path, self.config.exclude_files
+            ):
                 continue
             modified_lines = GitHandler.get_modified_lines(file_path)
             if not modified_lines:

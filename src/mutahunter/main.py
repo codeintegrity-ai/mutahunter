@@ -5,8 +5,10 @@ from mutahunter.core.analyzer import Analyzer
 from mutahunter.core.controller import MutationTestController
 from mutahunter.core.coverage_processor import CoverageProcessor
 from mutahunter.core.db import MutationDatabase
-from mutahunter.core.entities.config import (MutationTestControllerConfig,
-                                             UnittestGeneratorConfig)
+from mutahunter.core.entities.config import (
+    MutationTestControllerConfig,
+    UnittestGeneratorConfig,
+)
 from mutahunter.core.error_parser import extract_error_message
 from mutahunter.core.git_handler import GitHandler
 from mutahunter.core.io import FileOperationHandler
@@ -146,7 +148,7 @@ def parse_arguments():
         help="A list of specific files to mutate. Optional.",
     )
     main_parser.add_argument(
-        "--diff-only",
+        "--diff",
         default=False,
         action="store_true",
         help="Run mutation testing only on modified files in the latest commit.",
@@ -183,6 +185,40 @@ def create_controller(config: MutationTestControllerConfig) -> MutationTestContr
     )
 
 
+def create_unittest_controller(config: UnittestGeneratorConfig) -> UnittestGenerator:
+    coverage_processor = CoverageProcessor(
+        code_coverage_report_path=config.code_coverage_report_path,
+        coverage_type=config.coverage_type,
+    )
+    analyzer = Analyzer()
+    test_runner = MutantTestRunner(test_command=config.test_command)
+    router = LLMRouter(model=config.model, api_base=config.api_base)
+
+    db = MutationDatabase()
+
+    mutation_config = MutationTestControllerConfig(
+        model=config.model,
+        api_base=config.api_base,
+        test_command=config.test_command,
+        code_coverage_report_path=config.code_coverage_report_path,
+        coverage_type=config.coverage_type,
+        exclude_files=[],
+        only_mutate_file_paths=[config.source_file_path],
+        diff=False,
+    )
+    mutator = create_controller(mutation_config)
+
+    return UnittestGenerator(
+        config=config,
+        coverage_processor=coverage_processor,
+        analyzer=analyzer,
+        test_runner=test_runner,
+        router=router,
+        db=db,
+        mutator=mutator,
+    )
+
+
 def run():
     """
     Main function to parse arguments and initiate the Mutahunter run process.
@@ -204,8 +240,8 @@ def run():
             target_mutation_coverage_rate=args.target_mutation_coverage_rate,
             max_attempts=args.max_attempts,
         )
-        runner = UnittestGenerator(config=config)
-        runner.run()
+        controller = create_unittest_controller(config)
+        controller.run()
     else:
         config = MutationTestControllerConfig(
             model=args.model,
@@ -215,7 +251,7 @@ def run():
             coverage_type=args.coverage_type,
             exclude_files=args.exclude_files,
             only_mutate_file_paths=args.only_mutate_file_paths,
-            diff_only=args.diff_only,
+            diff=args.diff,
         )
         controller = create_controller(config)
         controller.run()

@@ -59,7 +59,7 @@ class SingleMutant(BaseModel):
     description: str = Field(..., description="A brief description detailing the mutation applied.")
     line_number: int = Field(..., description="Line number where the mutation was applied.")
     original_code: str = Field(..., description="The original line of code before mutation. Ensure proper formatting for YAML literal block scalar.
-    mutated_code: Ones Field(..., description="The mutated line of code. Please annotate with a comment explaining the mutation. Ensure proper formatting for YAML literal block scalar.")
+    mutated_code: Ones Field(..., description="The mutated line of code. Please annotate with a {{language}} syntax comment explaining the mutation. Ensure proper formatting for YAML literal block scalar.")
 
 class Mutants(BaseModel):
     source_file: str = Field(..., description="The name of the source file where mutations were applied.")

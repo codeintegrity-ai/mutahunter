@@ -12,12 +12,17 @@ from mutahunter.core.analyzer import Analyzer
 from mutahunter.core.controller import MutationTestController
 from mutahunter.core.coverage_processor import CoverageProcessor
 from mutahunter.core.db import MutationDatabase
-from mutahunter.core.entities.config import (MutationTestControllerConfig,
-                                             UnittestGeneratorConfig)
+from mutahunter.core.entities.config import (
+    MutationTestControllerConfig,
+    UnittestGeneratorConfig,
+)
 from mutahunter.core.error_parser import extract_error_message
 from mutahunter.core.prompts.unittest_generator import (
-    FAILED_TESTS_TEXT, LINE_COV_UNITTEST_GENERATOR_USER_PROMPT,
-    MUTATION_COV_UNITTEST_GENERATOR_USER_PROMPT, MUTATION_WEAK_TESTS_TEXT)
+    FAILED_TESTS_TEXT,
+    LINE_COV_UNITTEST_GENERATOR_USER_PROMPT,
+    MUTATION_COV_UNITTEST_GENERATOR_USER_PROMPT,
+    MUTATION_WEAK_TESTS_TEXT,
+)
 from mutahunter.core.router import LLMRouter
 from mutahunter.core.runner import MutantTestRunner
 
@@ -42,29 +47,23 @@ Output must be wrapped in triple backticks and in YAML format:
 
 
 class UnittestGenerator:
-    def __init__(self, config: UnittestGeneratorConfig):
+    def __init__(
+        self,
+        config: UnittestGeneratorConfig,
+        coverage_processor: CoverageProcessor,
+        analyzer: Analyzer,
+        test_runner: MutantTestRunner,
+        router: LLMRouter,
+        db: MutationDatabase,
+        mutator: MutationTestController,
+    ):
         self.config = config
-        self.db = MutationDatabase()
-        self.coverage_processor = CoverageProcessor(
-            code_coverage_report_path=self.config.code_coverage_report_path,
-            coverage_type=self.config.coverage_type,
-        )
-        self.analyzer = Analyzer()
-        self.test_runner = MutantTestRunner(test_command=self.config.test_command)
-        self.router = LLMRouter(model=self.config.model, api_base=self.config.api_base)
-
-        self.mutator = MutationTestController(
-            config=MutationTestControllerConfig(
-                model=self.config.model,
-                api_base=self.config.api_base,
-                test_command=self.config.test_command,
-                code_coverage_report_path=self.config.code_coverage_report_path,
-                coverage_type=self.config.coverage_type,
-                exclude_files=[],
-                only_mutate_file_paths=[self.config.source_file_path],
-                diff_only=False,
-            )
-        )
+        self.db = db
+        self.coverage_processor = coverage_processor
+        self.analyzer = analyzer
+        self.test_runner = test_runner
+        self.router = router
+        self.mutator = mutator
 
         self.failed_unittests = []
         self.weak_unittests = []
@@ -75,13 +74,15 @@ class UnittestGenerator:
         self.file_version_id = file_version_id
 
     def run(self) -> None:
+        self.coverage_processor.parse_coverage_report()
         initial_line_coverage_rate = self.coverage_processor.line_coverage_rate
-        initial_mutation_coverage_rate = self.db.get_mutation_coverage()
+        print("Initial line coverage rate:", initial_line_coverage_rate)
         self.increase_line_coverage()
         self.mutator.run_coverage_analysis()
-        # self.mutator.run_mutation_testing()
+        self.mutator.run_mutation_testing()
+        initial_mutation_coverage_rate = self.db.get_mutation_coverage()
+        print("Initial mutation coverage rate:", initial_mutation_coverage_rate)
         self.increase_mutation_coverage()
-
         print(
             f"Line coverage increased from {initial_line_coverage_rate*100:.2f}% to {self.coverage_processor.line_coverage_rate*100:.2f}%"
         )
@@ -90,7 +91,6 @@ class UnittestGenerator:
         )
 
     def increase_line_coverage(self):
-        self.coverage_processor.parse_coverage_report()
         attempt = 0
         while (
             self.coverage_processor.line_coverage_rate
@@ -100,6 +100,7 @@ class UnittestGenerator:
             attempt += 1
             response = self.generate_unittests()
             self._process_generated_unittests(response)
+            self.coverage_processor.parse_coverage_report()
 
     def increase_mutation_coverage(self):
         attempt = 0
@@ -282,7 +283,12 @@ class UnittestGenerator:
         language = filename_to_lang(self.config.source_file_path)
         self.db
         # filter survived mutants
-        survived_mutants = self.db.get_survived_mutants(self.config.source_file_path)
+        survived_mutants = self.db.get_survived_mutants_by_file_version_id(
+            self.file_version_id
+        )
+
+        if not survived_mutants:
+            raise Exception("No survived mutants found")
 
         user_template = Template(MUTATION_COV_UNITTEST_GENERATOR_USER_PROMPT).render(
             language=language,
@@ -310,7 +316,7 @@ class UnittestGenerator:
             ),
         )
         response, _, _ = self.router.generate_response(
-            prompt={"system": "", "user": user_template}, streaming=True
+            prompt={"system": "", "user": user_template}, streaming=False
         )
 
         resp = self.extract_response(response)
@@ -355,7 +361,7 @@ class UnittestGenerator:
             "user": user_template,
         }
         model_response, _, _ = self.router.generate_response(
-            prompt=prompt, streaming=True
+            prompt=prompt, streaming=False
         )
         return model_response
 
