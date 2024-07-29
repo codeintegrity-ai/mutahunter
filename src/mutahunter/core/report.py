@@ -24,10 +24,9 @@ class MutantReport:
     def __init__(self, db: MutationDatabase) -> None:
         self.log_file = "logs/_latest/coverage.txt"
         self.db = db
-
-        self.template_env = Environment(
-            loader=FileSystemLoader(resources.files(__package__).joinpath("html"))
-        )
+        module_dir = os.path.dirname(__file__)
+        templates_dir = os.path.join(module_dir, "html")
+        self.template_env = Environment(loader=FileSystemLoader(templates_dir))
         os.makedirs("logs/_latest/html", exist_ok=True)
 
     def generate_report(self, total_cost: float, line_rate: float) -> None:
