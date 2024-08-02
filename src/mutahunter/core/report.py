@@ -35,7 +35,7 @@ class MutantReport:
         assert self.template_env.get_template("report_template.html")
         assert self.template_env.get_template("file_detail_template.html")
 
-    def generate_report(self, total_cost: float, line_rate: float) -> None:
+    def generate_report(self, total_cost: float, line_rate: float, run_id) -> None:
         """
         Generates a comprehensive mutation testing report.
 
@@ -44,18 +44,14 @@ class MutantReport:
             line_rate (float): The line coverage rate.
         """
         print(MUTAHUNTER_ASCII)
-        self._generate_summary_report(total_cost, line_rate)
+        data = self.db.get_mutant_summary(run_id)
+        self._generate_summary_report(data, total_cost, line_rate)
 
-        # HTML Report
-        summary_data = self.db.get_mutant_summary()
-        file_data = self.db.get_file_data()
-
+        # # HTML Report
+        file_data = self.db.get_file_data(run_id=run_id)
         # Generate main report
-        main_html = self._generate_main_report(
-            summary_data, file_data, total_cost, line_rate
-        )
+        main_html = self._generate_main_report(data, file_data, total_cost, line_rate)
         self._write_html_report(main_html, "mutation_report.html")
-
         # Generate detailed file reports
         for file_info in file_data:
             file_html = self._generate_file_report(file_info["id"])
@@ -121,7 +117,9 @@ class MutantReport:
             f.write(html_content)
         logger.info(f"HTML report generated: {filename}")
 
-    def _generate_summary_report(self, total_cost: float, line_rate: float) -> None:
+    def _generate_summary_report(
+        self, data, total_cost: float, line_rate: float
+    ) -> None:
         """
         Generates a summary mutation testing report.
 
@@ -129,29 +127,8 @@ class MutantReport:
             total_cost (float): The total cost of mutation testing.
             line_rate (float): The line coverage rate.
         """
-        report_data = self._compute_summary_data()
-        summary_text = self._format_summary(report_data, total_cost, line_rate)
+        summary_text = self._format_summary(data, total_cost, line_rate)
         self._log_and_write(summary_text)
-
-    def _compute_summary_data(self) -> Dict[str, Any]:
-        """
-        Computes summary data from the mutants in the database.
-
-        Returns:
-            Dict[str, Any]: Summary data including counts of different mutant statuses.
-        """
-        data = self.db.get_mutant_summary()
-        data["valid_mutants"] = (
-            data["total_mutants"]
-            - data["compile_error_mutants"]
-            - data["timeout_mutants"]
-        )
-        data["mutation_coverage"] = (
-            f"{data['killed_mutants'] / data['valid_mutants'] * 100:.2f}%"
-            if data["valid_mutants"]
-            else "0.00%"
-        )
-        return data
 
     def _format_summary(
         self, data: Dict[str, Any], total_cost: float, line_rate: float
@@ -168,11 +145,12 @@ class MutantReport:
             str: Formatted summary report.
         """
         line_coverage = f"{line_rate * 100:.2f}%"
+        mutation_coverage = f"{data['mutation_coverage']*100:.2f}%"
         details = [
             f"\n=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n",
             "📊 Overall Mutation Coverage 📊",
             f"📈 Line Coverage: {line_coverage} 📈",
-            f"🎯 Mutation Coverage: {data['mutation_coverage']} 🎯",
+            f"🎯 Mutation Coverage: {mutation_coverage} 🎯",
             f"🦠 Total Mutants: {data['total_mutants']} 🦠",
             f"🛡️ Survived Mutants: {data['survived_mutants']} 🛡️",
             f"🗡️ Killed Mutants: {data['killed_mutants']} 🗡️",

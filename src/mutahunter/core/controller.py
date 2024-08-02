@@ -5,7 +5,9 @@ from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 from tqdm import tqdm
-
+from md2pdf.core import md2pdf
+from jinja2 import Template
+import json
 from mutahunter.core.analyzer import Analyzer
 from mutahunter.core.coverage_processor import CoverageProcessor
 from mutahunter.core.db import MutationDatabase
@@ -23,7 +25,10 @@ from mutahunter.core.git_handler import GitHandler
 from mutahunter.core.io import FileOperationHandler
 from mutahunter.core.llm_mutation_engine import LLMMutationEngine
 from mutahunter.core.logger import logger
-from mutahunter.core.prompts.mutant_generator import MUTANT_ANALYSIS
+from mutahunter.core.prompts.mutant_generator import (
+    SYSTEM_PROMPT_MUTANT_ANALYSUS,
+    USER_PROMPT_MUTANT_ANALYSIS,
+)
 from mutahunter.core.report import MutantReport
 from mutahunter.core.router import LLMRouter
 from mutahunter.core.runner import MutantTestRunner
@@ -52,8 +57,11 @@ class MutationTestController:
         self.mutant_report = mutant_report
         self.file_handler = file_handler
 
+        self.current_run_id = None
+
     def run(self) -> None:
         start = time.time()
+        self.current_run_id = self.db.start_new_run(self.config.test_command)
         try:
             self.run_coverage_analysis()
         except CoverageAnalysisError as e:
@@ -67,7 +75,7 @@ class MutationTestController:
             self.generate_report()
         except ReportGenerationError as e:
             logger.error(f"Report generation failed: {str(e)}")
-        # self._run_mutant_analysis()
+        self.run_mutant_analysis()
         logger.info(f"Mutation Testing Ended. Took {round(time.time() - start)}s")
 
     def run_coverage_analysis(self) -> None:
@@ -174,7 +182,7 @@ class MutationTestController:
                 mutant_data["error_msg"] = str(e)
 
             # Write complete mutant data to database
-            self.db.add_mutant(file_version_id, mutant_data)
+            self.db.add_mutant(self.current_run_id, file_version_id, mutant_data)
 
     def test_mutant(
         self,
@@ -217,38 +225,37 @@ class MutationTestController:
             self.mutant_report.generate_report(
                 total_cost=self.router.total_cost,
                 line_rate=self.coverage_processor.line_coverage_rate,
+                run_id=self.current_run_id,
             )
         except Exception as e:
             raise ReportGenerationError(f"Failed to generate report: {str(e)}")
 
-    # def _run_mutant_analysis(self) -> None:
-    #     """
-    #     Runs mutant analysis on the generated mutants.
-    #     """
-    #     survived_mutants = [m for m in self.mutants if m.status == "SURVIVED"]
+    def run_mutant_analysis(self) -> None:
+        """
+        Runs mutant analysis on the generated mutants.
+        """
+        mutants = self.db.get_survived_mutants_by_run_id(run_id=self.current_run_id)
+        mutants_by_files = {}
+        for mutant in mutants:
+            if mutant["file_path"] not in mutants_by_files:
+                mutants_by_files[mutant["file_path"]] = []
+            else:
+                mutants_by_files[mutant["file_path"]].append(mutant)
 
-    #     source_file_paths = []
-    #     for mutant in survived_mutants:
-    #         if mutant.source_path not in source_file_paths:
-    #             source_file_paths.append(mutant.source_path)
-
-    #     src_code_list = []
-    #     for file_path in source_file_paths:
-    #         with open(file_path, "r", encoding="utf-8") as f:
-    #             src_code = f.read()
-    #         src_code_list.append(
-    #             f"## Source File: {file_path}\n```{filename_to_lang(file_path)}\n{src_code}\n```"
-    #         )
-
-    #     prompt = {
-    #         "system": "",
-    #         "user": Template(MUTANT_ANALYSIS).render(
-    #             source_code="\n".join(src_code_list),
-    #             surviving_mutants=survived_mutants,
-    #         ),
-    #     }
-    #     mode_response, _, _ = self.router.generate_response(
-    #         prompt=prompt, streaming=False
-    #     )
-    #     with open("logs/_latest/mutant_analysis.md", "w") as f:
-    #         f.write(mode_response)
+        for k, v in mutants_by_files.items():
+            with open(k, "r", encoding="utf-8") as f:
+                src_code = f.read()
+            prompt = {
+                "system": Template(SYSTEM_PROMPT_MUTANT_ANALYSUS).render(),
+                "user": Template(USER_PROMPT_MUTANT_ANALYSIS).render(
+                    source_code=src_code,
+                    surviving_mutants=json.dumps(v, indent=2),
+                ),
+            }
+            mode_response, _, _ = self.router.generate_response(
+                prompt=prompt, streaming=True
+            )
+            md2pdf(
+                pdf_file_path=f"logs/_latest/llm/audit_{str(uuid4())[:4]}.pdf",
+                md_content=mode_response,
+            )

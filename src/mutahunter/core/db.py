@@ -3,6 +3,7 @@ import os
 import sqlite3
 from contextlib import contextmanager
 from typing import Any, Dict, List, Optional, Tuple
+from datetime import datetime
 
 
 class DatabaseError(Exception):
@@ -44,9 +45,20 @@ class MutationDatabase:
                     UNIQUE (source_file_id, version_hash)
                 );
 
+                CREATE TABLE IF NOT EXISTS Runs (
+                    id INTEGER PRIMARY KEY,
+                    command_line TEXT NOT NULL,
+                    start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    end_time TIMESTAMP,
+                    execution_time REAL,
+                    mutation_score REAL,
+                    line_coverage REAL
+                );
+
                 CREATE TABLE IF NOT EXISTS Mutants (
                     id INTEGER PRIMARY KEY,
                     file_version_id INTEGER,
+                    run_id INTEGER,
                     status TEXT,
                     type TEXT,
                     line_number INTEGER,
@@ -57,10 +69,38 @@ class MutationDatabase:
                     error_msg TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (file_version_id) REFERENCES FileVersions(id)
+                    FOREIGN KEY (run_id) REFERENCES Runs(id)
                 );
             """
             )
             conn.commit()
+
+    def start_new_run(self, command_line: str) -> int:
+        """
+        Start a new run by inserting a record into the Runs table.
+
+        Args:
+            command_line (str): The command line used to start the mutation testing run.
+
+        Returns:
+            int: The ID of the newly created run.
+        """
+        with self.get_connection() as conn:
+            try:
+                cursor = conn.cursor()
+                current_time = datetime.now().isoformat()
+                cursor.execute(
+                    """
+                    INSERT INTO Runs (command_line, start_time)
+                    VALUES (?, ?)
+                """,
+                    (command_line, current_time),
+                )
+                conn.commit()
+                return cursor.lastrowid
+            except sqlite3.Error as e:
+                conn.rollback()
+                raise DatabaseError(f"Failed to start new run: {str(e)}")
 
     def get_file_version(self, file_path: str) -> Tuple[int, int, bool]:
         """
@@ -114,18 +154,19 @@ class MutationDatabase:
                 conn.rollback()
                 raise DatabaseError(f"Error processing file version: {str(e)}")
 
-    def add_mutant(self, file_version_id: int, mutant_data: dict):
+    def add_mutant(self, run_id: int, file_version_id: int, mutant_data: dict):
         with self.get_connection() as conn:
             cursor = conn.cursor()
             try:
                 cursor.execute(
                     """
                     INSERT INTO Mutants (
-                        file_version_id, status, type, line_number, 
+                        run_id, file_version_id, status, type, line_number, 
                         original_code, mutated_code, description, mutant_path, error_msg
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                     (
+                        run_id,
                         file_version_id,
                         mutant_data["status"],
                         mutant_data["type"],
@@ -222,6 +263,44 @@ class MutationDatabase:
             except sqlite3.Error as e:
                 conn.rollback()
                 raise DatabaseError(f"Error updating mutant status: {str(e)}")
+
+    def get_survived_mutants_by_run_id(self, run_id: int) -> List[Dict[str, Any]]:
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            try:
+                cursor.execute(
+                    """
+                    SELECT 
+                        m.id,
+                        sf.file_path,
+                        m.line_number,
+                        m.mutant_path,
+                        m.original_code,
+                        m.mutated_code,
+                        m.description,
+                        m.type
+                    FROM Mutants m
+                    JOIN FileVersions fv ON m.file_version_id = fv.id
+                    JOIN SourceFiles sf ON fv.source_file_id = sf.id
+                    WHERE m.run_id = ? AND m.status = 'SURVIVED'
+                    """,
+                    (run_id,),
+                )
+                return [
+                    {
+                        "id": row[0],
+                        "file_path": row[1],
+                        "line_number": row[2],
+                        "mutant_path": row[3],
+                        "original_code": row[4],
+                        "mutated_code": row[5],
+                        "description": row[6],
+                        "type": row[7],
+                    }
+                    for row in cursor.fetchall()
+                ]
+            except sqlite3.Error as e:
+                raise DatabaseError(f"Error fetching survived mutants: {str(e)}")
 
     def get_survived_mutants(self, source_file_path):
         with self.get_connection() as conn:
@@ -324,40 +403,7 @@ class MutationDatabase:
             except sqlite3.Error as e:
                 raise DatabaseError(f"Error fetching file mutations: {str(e)}")
 
-    def get_file_data(self) -> List[Dict[str, Any]]:
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
-            try:
-                cursor.execute(
-                    """
-                    SELECT 
-                        sf.id,
-                        sf.file_path,
-                        COUNT(m.id) as total_mutants,
-                        SUM(CASE WHEN m.status = 'KILLED' THEN 1 ELSE 0 END) as killed_mutants,
-                        SUM(CASE WHEN m.status = 'SURVIVED' THEN 1 ELSE 0 END) as survived_mutants
-                    FROM SourceFiles sf
-                    JOIN FileVersions fv ON sf.id = fv.source_file_id
-                    JOIN Mutants m ON fv.id = m.file_version_id
-                    GROUP BY sf.file_path
-                """
-                )
-                return [
-                    {
-                        "id": row[0],
-                        "name": row[1],
-                        "totalMutants": row[2],
-                        "mutationCoverage": (
-                            f"{(row[3] / row[2] * 100):.2f}" if row[2] > 0 else "0.00"
-                        ),
-                        "survivedMutants": row[4],
-                    }
-                    for row in cursor.fetchall()
-                ]
-            except sqlite3.Error as e:
-                raise DatabaseError(f"Error fetching file data: {str(e)}")
-
-    def get_mutant_summary(self) -> Dict[str, int]:
+    def get_mutant_summary(self, run_id) -> Dict[str, int]:
         with self.get_connection() as conn:
             cursor = conn.cursor()
             try:
@@ -368,22 +414,81 @@ class MutationDatabase:
                         SUM(CASE WHEN status = 'KILLED' THEN 1 ELSE 0 END) as killed_mutants,
                         SUM(CASE WHEN status = 'SURVIVED' THEN 1 ELSE 0 END) as survived_mutants,
                         SUM(CASE WHEN status = 'TIMEOUT' THEN 1 ELSE 0 END) as timeout_mutants,
-                        SUM(CASE WHEN status = 'COMPILE_ERROR' THEN 1 ELSE 0 END) as compile_error_mutants
+                        SUM(CASE WHEN status = 'COMPILE_ERROR' THEN 1 ELSE 0 END) as compile_error_mutants,
+                        SUM(CASE WHEN status = 'SYNTAX_ERROR' THEN 1 ELSE 0 END) as syntax_error_mutants,
+                        SUM(CASE WHEN status = 'UNEXPECTED_TEST_ERROR' THEN 1 ELSE 0 END) as unexpected_test_error_mutants
                     FROM Mutants
-                """
+                    WHERE run_id = ?
+                """,
+                    (run_id,),
                 )
                 result = cursor.fetchone()
                 if result[0] == 0:
                     return None
+
+                else:
+                    valid_mutants = (
+                        result[0] - result[3] - result[4] - result[5] - result[6]
+                    )
+                    mutation_coverage = (
+                        result[1] / valid_mutants if valid_mutants > 0 else 0.0
+                    )
                 return {
                     "total_mutants": result[0],
                     "killed_mutants": result[1],
                     "survived_mutants": result[2],
                     "timeout_mutants": result[3],
                     "compile_error_mutants": result[4],
+                    "syntax_error_mutants": result[5],
+                    "unexpected_test_error_mutants": result[6],
+                    "mutation_coverage": mutation_coverage,
                 }
             except sqlite3.Error as e:
                 raise DatabaseError(f"Error fetching mutant summary: {str(e)}")
+
+    def get_file_data(self, run_id: int) -> List[Dict[str, Any]]:
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            try:
+                cursor.execute(
+                    """
+                    SELECT 
+                        sf.id,
+                        sf.file_path,
+                        COUNT(m.id) as total_mutants,
+                        SUM(CASE WHEN m.status = 'KILLED' THEN 1 ELSE 0 END) as killed_mutants,
+                        SUM(CASE WHEN m.status = 'SURVIVED' THEN 1 ELSE 0 END) as survived_mutants,
+                        SUM(CASE WHEN m.status = 'TIMEOUT' THEN 1 ELSE 0 END) as timeout_mutants,
+                        SUM(CASE WHEN m.status = 'COMPILE_ERROR' THEN 1 ELSE 0 END) as compile_error_mutants,
+                        SUM(CASE WHEN m.status = 'SYNTAX_ERROR' THEN 1 ELSE 0 END) as syntax_error_mutants,
+                        SUM(CASE WHEN m.status = 'UNEXPECTED_TEST_ERROR' THEN 1 ELSE 0 END) as unexpected_test_error_mutants
+                    FROM SourceFiles sf
+                    JOIN FileVersions fv ON sf.id = fv.source_file_id
+                    JOIN Mutants m ON fv.id = m.file_version_id
+                    WHERE m.run_id = ?
+                    GROUP BY sf.file_path
+                    """,
+                    (run_id,),
+                )
+                return [
+                    {
+                        "id": row[0],
+                        "name": row[1],
+                        "totalMutants": row[2],
+                        "mutationCoverage": (
+                            f"{(row[3] / row[2] * 100):.2f}" if row[2] > 0 else "0.00"
+                        ),
+                        "killedMutants": row[3],
+                        "survivedMutants": row[4],
+                        "timeoutMutants": row[5],
+                        "compileErrorMutants": row[6],
+                        "syntaxErrorMutants": row[7],
+                        "unexpectedTestErrorMutants": row[8],
+                    }
+                    for row in cursor.fetchall()
+                ]
+            except sqlite3.Error as e:
+                raise DatabaseError(f"Error fetching file data: {str(e)}")
 
     def remove_mutants_by_file_version_id(self, file_version_id: int):
         with self.get_connection() as conn:
