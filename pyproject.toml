@@ -18,7 +18,6 @@ dependencies = [
     'litellm',
     "numpy",
     "scipy",
-    'md2pdf',
 ]
 keywords = ["mutahunter", 'test', "testing", "LLM", 'mutant']
 readme = "README.md"
