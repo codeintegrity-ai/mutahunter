@@ -2,8 +2,8 @@ import hashlib
 import os
 import sqlite3
 from contextlib import contextmanager
-from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime
+from typing import Any, Dict, List, Optional, Tuple
 
 
 class DatabaseError(Exception):
@@ -501,6 +501,16 @@ class MutationDatabase:
             except sqlite3.Error as e:
                 conn.rollback()
                 raise DatabaseError(f"Error removing mutants: {str(e)}")
+
+    def get_latest_run_id(self) -> Optional[int]:
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            try:
+                cursor.execute("SELECT id FROM Runs ORDER BY id DESC LIMIT 1")
+                result = cursor.fetchone()
+                return result[0] if result else None
+            except sqlite3.Error as e:
+                raise DatabaseError(f"Error fetching latest run ID: {str(e)}")
 
     def get_mutation_coverage(self) -> float:
         summary = self.get_mutant_summary()

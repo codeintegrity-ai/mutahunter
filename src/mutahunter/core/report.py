@@ -3,15 +3,12 @@ Module for generating mutation testing reports.
 """
 
 import os
+from importlib import resources
 from typing import Any, Dict, List
 
-from jinja2 import (
-    Environment,
-    PackageLoader,
-    FileSystemLoader,
-    select_autoescape,
-)
-from importlib import resources
+from jinja2 import (Environment, FileSystemLoader, PackageLoader,
+                    select_autoescape)
+
 from mutahunter.core.db import MutationDatabase
 from mutahunter.core.logger import logger
 

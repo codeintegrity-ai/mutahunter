@@ -73,16 +73,20 @@ class UnittestGenerator:
         initial_line_coverage_rate = self.coverage_processor.line_coverage_rate
         print("Initial line coverage rate:", initial_line_coverage_rate)
         self.increase_line_coverage()
-        self.mutator.run_coverage_analysis()
-        self.mutator.run_mutation_testing()
-        initial_mutation_coverage_rate = self.db.get_mutation_coverage()
+        self.mutator.run()
+        latest_run_id = self.db.get_latest_run_id()
+        print("Latest run ID:", latest_run_id)
+        data = self.db.get_mutant_summary(latest_run_id)
+        initial_mutation_coverage_rate = data["mutation_coverage"]
         print("Initial mutation coverage rate:", initial_mutation_coverage_rate)
         self.increase_mutation_coverage()
         print(
             f"Line coverage increased from {initial_line_coverage_rate*100:.2f}% to {self.coverage_processor.line_coverage_rate*100:.2f}%"
         )
+        data = self.db.get_mutant_summary(latest_run_id)
+        final_mutation_coverage_rate = data["mutation_coverage"]
         print(
-            f"Mutation coverage increased from {initial_mutation_coverage_rate*100:.2f}% to {self.db.get_mutation_coverage()*100:.2f}%"
+            f"Mutation coverage increased from {initial_mutation_coverage_rate*100:.2f}% to {final_mutation_coverage_rate*100:.2f}%"
         )
 
     def increase_line_coverage(self):
@@ -99,10 +103,12 @@ class UnittestGenerator:
 
     def increase_mutation_coverage(self):
         attempt = 0
-
+        latest_run_id = self.db.get_latest_run_id()
+        data = self.db.get_mutant_summary(latest_run_id)
+        mutation_coverage_rate = data["mutation_coverage"]
         self.failed_unittests = []
         while (
-            self.db.get_mutation_coverage() < self.config.target_mutation_coverage_rate
+            mutation_coverage_rate < self.config.target_mutation_coverage_rate
             and attempt < self.config.max_attempts
         ):
             attempt += 1

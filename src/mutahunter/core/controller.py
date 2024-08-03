@@ -1,34 +1,30 @@
+import json
 import os
 import time
 from subprocess import CompletedProcess
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
-from tqdm import tqdm
-from md2pdf.core import md2pdf
 from jinja2 import Template
-import json
+from md2pdf.core import md2pdf
+from tqdm import tqdm
+
 from mutahunter.core.analyzer import Analyzer
 from mutahunter.core.coverage_processor import CoverageProcessor
 from mutahunter.core.db import MutationDatabase
 from mutahunter.core.entities.config import MutationTestControllerConfig
 from mutahunter.core.error_parser import extract_error_message
-from mutahunter.core.exceptions import (
-    CoverageAnalysisError,
-    MutantKilledError,
-    MutantSurvivedError,
-    MutationTestingError,
-    ReportGenerationError,
-    UnexpectedTestResultError,
-)
+from mutahunter.core.exceptions import (CoverageAnalysisError,
+                                        MutantKilledError, MutantSurvivedError,
+                                        MutationTestingError,
+                                        ReportGenerationError,
+                                        UnexpectedTestResultError)
 from mutahunter.core.git_handler import GitHandler
 from mutahunter.core.io import FileOperationHandler
 from mutahunter.core.llm_mutation_engine import LLMMutationEngine
 from mutahunter.core.logger import logger
 from mutahunter.core.prompts.mutant_generator import (
-    SYSTEM_PROMPT_MUTANT_ANALYSUS,
-    USER_PROMPT_MUTANT_ANALYSIS,
-)
+    SYSTEM_PROMPT_MUTANT_ANALYSUS, USER_PROMPT_MUTANT_ANALYSIS)
 from mutahunter.core.report import MutantReport
 from mutahunter.core.router import LLMRouter
 from mutahunter.core.runner import MutantTestRunner

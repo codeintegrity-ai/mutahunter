@@ -5,10 +5,8 @@ from mutahunter.core.analyzer import Analyzer
 from mutahunter.core.controller import MutationTestController
 from mutahunter.core.coverage_processor import CoverageProcessor
 from mutahunter.core.db import MutationDatabase
-from mutahunter.core.entities.config import (
-    MutationTestControllerConfig,
-    UnittestGeneratorConfig,
-)
+from mutahunter.core.entities.config import (MutationTestControllerConfig,
+                                             UnittestGeneratorConfig)
 from mutahunter.core.error_parser import extract_error_message
 from mutahunter.core.git_handler import GitHandler
 from mutahunter.core.io import FileOperationHandler
