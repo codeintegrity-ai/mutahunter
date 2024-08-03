@@ -32,7 +32,7 @@ class MutationDatabase:
 
     def check_schema(self):
         expected_tables = {
-            "SourcseFiles": ["id", "file_path", "last_modified"],
+            "SourceFiles": ["id", "file_path", "last_modified"],
             "FileVersions": [
                 "id",
                 "sourc_file_id",
