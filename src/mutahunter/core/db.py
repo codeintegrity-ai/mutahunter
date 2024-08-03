@@ -14,6 +14,12 @@ class MutationDatabase:
     def __init__(self, db_path: str = "mutahunter.db"):
         self.db_path = db_path
         self.conn = None
+        if os.path.exists(self.db_path):
+            if not self.check_schema():
+                print(
+                    f"Schema mismatch detected. Removing old database: {self.db_path}"
+                )
+                os.remove(self.db_path)
         self.create_tables()
 
     @contextmanager
@@ -23,6 +29,51 @@ class MutationDatabase:
             yield conn
         finally:
             conn.close()
+
+    def check_schema(self):
+        expected_tables = {
+            "SourcseFiles": ["id", "file_path", "last_modified"],
+            "FileVersions": [
+                "id",
+                "sourc_file_id",
+                "version_hash",
+                "content",
+                "created_at",
+            ],
+            "Runs": [
+                "id",
+                "command_line",
+                "start_time",
+                "end_time",
+                "execution_time",
+                "mutation_score",
+                "line_coverage",
+            ],
+            "Mutants": [
+                "id",
+                "file_version_id",
+                "run_id",
+                "status",
+                "type",
+                "line_number",
+                "mutant_path",
+                "original_code",
+                "mutated_code",
+                "description",
+                "error_msg",
+                "created_at",
+            ],
+        }
+
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            for table, expected_columns in expected_tables.items():
+                cursor.execute(f"PRAGMA table_info({table})")
+                actual_columns = [row[1] for row in cursor.fetchall()]
+                if set(actual_columns) != set(expected_columns):
+                    return False
+
+        return True
 
     def create_tables(self):
         with self.get_connection() as conn:
