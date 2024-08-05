@@ -35,7 +35,7 @@ class MutationDatabase:
             "SourceFiles": ["id", "file_path", "last_modified"],
             "FileVersions": [
                 "id",
-                "sourc_file_id",
+                "source_file_id",
                 "version_hash",
                 "content",
                 "created_at",
