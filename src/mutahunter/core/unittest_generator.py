@@ -81,8 +81,8 @@ class UnittestGenerator:
         self.coverage_processor.parse_coverage_report()
         initial_line_coverage_rate = self.coverage_processor.line_coverage_rate
         logger.info(f"Initial line coverage rate: {initial_line_coverage_rate}")
-        # self.increase_line_coverage()
-        # self.mutator.run()
+        self.increase_line_coverage()
+        self.mutator.run()
         data = self.db.get_mutant_summary(self.latest_run_id)
         logger.info(f"Data: {data}")
         initial_mutation_coverage_rate = data["mutation_coverage"]
@@ -280,12 +280,15 @@ class UnittestGenerator:
     def check_mutant_coverage_increase(self, generated_unittest, test_code):
         runner = MutantTestRunner(test_command=self.config.test_command)
 
-        mutants = self.db.get_survived_mutants_by_file_version_id(
-            file_version_id=self.file_version_id
-        )
+        mutants = self.db.get_survived_mutants_by_run_id(run_id=self.latest_run_id)
+        # logger.info(f"Mutants: {json.dumps(mutants, indent=2)}")
 
         for mutant in mutants:
-            if mutant["id"] == generated_unittest["mutant_id"]:
+            if int(mutant["id"]) == int(generated_unittest["mutant_id"]):
+                logger.info(f"Mutant {mutant['id']} selected for testing")
+                logger.info(f"source file path: {self.config.source_file_path}")
+                logger.info(f"replacement module path: {mutant['mutant_path']}")
+                logger.info(f"test command: {self.config.test_command}")
                 result = runner.run_test(
                     {
                         "module_path": self.config.source_file_path,
@@ -294,7 +297,7 @@ class UnittestGenerator:
                     }
                 )
                 if result.returncode == 0:
-                    logger.info("Mutation coverage did not increase")
+                    logger.info(f"Mutant {mutant['id']} survived: {result.stdout}")
                     self.weak_unittests.append(
                         {
                             "code": test_code,
@@ -302,9 +305,15 @@ class UnittestGenerator:
                         }
                     )
                 else:
-                    logger.info("Mutation coverage increased!")
+                    logger.info(
+                        f"Mutant {mutant['id']} killed: {result.stdout + result.stderr}"
+                    )
                     self.db.update_mutant_status(mutant["id"], "KILLED")
                     return True
+            else:
+                logger.info(
+                    f"Mutant {mutant['id']} not selected for testing. Generated mutant id: {generated_unittest['mutant_id']}"
+                )
         return False
 
     def _handle_failed_test(self, result, test_code):
@@ -315,7 +324,6 @@ class UnittestGenerator:
     def generate_unittests_for_mutants(self) -> None:
         source_code = FileUtils.read_file(self.config.source_file_path)
         language = filename_to_lang(self.config.source_file_path)
-        self.db
         # filter survived mutants
         survived_mutants = self.db.get_survived_mutants_by_file_version_id(
             self.file_version_id
@@ -349,10 +357,80 @@ class UnittestGenerator:
                 else ""
             ),
         )
-        response, _, _ = self.router.generate_response(
-            prompt={"system": "", "user": user_template}, streaming=True
-        )
+        # response, _, _ = self.router.generate_response(
+        #     prompt={"system": "", "user": user_template}, streaming=True
+        # )
+        response = """
+```yaml
+language: java
+insertion_point_marker:
+    class_name: BankAccountTest
+    method_name: testApplyZeroInterestRate
+new_tests:
+    - test_behavior: "Ensure initial balance cannot be zero."
+      mutant_id: "1"
+      test_name: "testInitialBalanceZero"
+      test_code: |
+        @Test
+        void testInitialBalanceZero() {
+            Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+                new BankAccount(0, 500);
+            });
+            assertEquals("Initial balance must be non-negative", exception.getMessage());
+        }
+      new_imports_code: ""
 
+    - test_behavior: "Ensure overdraft limit is set correctly."
+      mutant_id: "4"
+      test_name: "testOverdraftLimitSetCorrectly"
+      test_code: |
+        @Test
+        void testOverdraftLimitSetCorrectly() {
+            BankAccount account = new BankAccount(1000, 500);
+            assertEquals(500, account.getBalance() + 500 - account.getBalance());
+        }
+      new_imports_code: ""
+
+    - test_behavior: "Ensure correct initial transaction message."
+      mutant_id: "6"
+      test_name: "testInitialTransactionMessage"
+      test_code: |
+        @Test
+        void testInitialTransactionMessage() {
+            BankAccount account = new BankAccount(1000, 500);
+            assertTrue(account.getTransactionHistory().contains("Account created with balance: 1000.0"));
+        }
+      new_imports_code: ""
+
+    - test_behavior: "Ensure zero deposit is not allowed."
+      mutant_id: "9"
+      test_name: "testZeroDeposit"
+      test_code: |
+        @Test
+        void testZeroDeposit() {
+            BankAccount account = new BankAccount(1000, 500);
+            Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+                account.deposit(0);
+            });
+            assertEquals("Deposit amount must be positive", exception.getMessage());
+        }
+      new_imports_code: ""
+
+    - test_behavior: "Ensure zero withdrawal is not allowed."
+      mutant_id: "13"
+      test_name: "testZeroWithdrawal"
+      test_code: |
+        @Test
+        void testZeroWithdrawal() {
+            BankAccount account = new BankAccount(1000, 500);
+            Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+                account.withdraw(0);
+            });
+            assertEquals("Withdrawal amount must be positive", exception.getMessage());
+        }
+      new_imports_code: ""
+```
+"""
         resp = self.extract_response(response)
         self._save_yaml(resp, "mutation")
         return resp
@@ -451,12 +529,11 @@ class FileUtils:
             with open(file_path, "w") as file:
                 file.write("\n".join(lines))
 
-            # also write the temp file generate random name
-            import uuid
+            # import uuid
 
-            random_name = str(uuid.uuid4())[:4]
-            with open(f"{random_name}.java", "w") as file:
-                file.write("\n".join(lines))
+            # random_name = str(uuid.uuid4())[:4]
+            # with open(f"{random_name}.java", "w") as file:
+            #     file.write("\n".join(lines))
         except Exception as e:
             raise
 
