@@ -12,14 +12,20 @@ from mutahunter.core.analyzer import Analyzer
 from mutahunter.core.controller import MutationTestController
 from mutahunter.core.coverage_processor import CoverageProcessor
 from mutahunter.core.db import MutationDatabase
-from mutahunter.core.entities.config import (MutationTestControllerConfig,
-                                             UnittestGeneratorConfig)
+from mutahunter.core.entities.config import (
+    MutationTestControllerConfig,
+    UnittestGeneratorConfig,
+)
 from mutahunter.core.error_parser import extract_error_message
 from mutahunter.core.prompts.unittest_generator import (
-    FAILED_TESTS_TEXT, LINE_COV_UNITTEST_GENERATOR_USER_PROMPT,
-    MUTATION_COV_UNITTEST_GENERATOR_USER_PROMPT, MUTATION_WEAK_TESTS_TEXT)
+    FAILED_TESTS_TEXT,
+    LINE_COV_UNITTEST_GENERATOR_USER_PROMPT,
+    MUTATION_COV_UNITTEST_GENERATOR_USER_PROMPT,
+    MUTATION_WEAK_TESTS_TEXT,
+)
 from mutahunter.core.router import LLMRouter
 from mutahunter.core.runner import MutantTestRunner
+from mutahunter.core.logger import logger
 
 SYSTEM_YAML_FIX = """
 Based on the error message, the YAML content provided is not in the correct format. Please ensure the YAML content is in the correct format and try again.
@@ -67,27 +73,29 @@ class UnittestGenerator:
             self.config.source_file_path
         )
         self.file_version_id = file_version_id
+        self.num = 0
+        # self.latest_run_id = self.db.get_latest_run_id()
+        self.latest_run_id = 1
 
     def run(self) -> None:
         self.coverage_processor.parse_coverage_report()
         initial_line_coverage_rate = self.coverage_processor.line_coverage_rate
-        print("Initial line coverage rate:", initial_line_coverage_rate)
-        self.increase_line_coverage()
-        self.mutator.run()
-        latest_run_id = self.db.get_latest_run_id()
-        print("Latest run ID:", latest_run_id)
-        data = self.db.get_mutant_summary(latest_run_id)
+        logger.info(f"Initial line coverage rate: {initial_line_coverage_rate}")
+        # self.increase_line_coverage()
+        # self.mutator.run()
+        data = self.db.get_mutant_summary(self.latest_run_id)
+        logger.info(f"Data: {data}")
         initial_mutation_coverage_rate = data["mutation_coverage"]
-        print("Initial mutation coverage rate:", initial_mutation_coverage_rate)
+        logger.info(f"Initial mutation coverage rate: {initial_mutation_coverage_rate}")
         self.increase_mutation_coverage()
-        print(
-            f"Line coverage increased from {initial_line_coverage_rate*100:.2f}% to {self.coverage_processor.line_coverage_rate*100:.2f}%"
-        )
-        data = self.db.get_mutant_summary(latest_run_id)
-        final_mutation_coverage_rate = data["mutation_coverage"]
-        print(
-            f"Mutation coverage increased from {initial_mutation_coverage_rate*100:.2f}% to {final_mutation_coverage_rate*100:.2f}%"
-        )
+        # logger.info(
+        #     f"Line coverage increased from {initial_line_coverage_rate*100:.2f}% to {self.coverage_processor.line_coverage_rate*100:.2f}%"
+        # )
+        # data = self.db.get_mutant_summary(self.latest_run_id)
+        # final_mutation_coverage_rate = data["mutation_coverage"]
+        # logger.info(
+        #     f"Mutation coverage increased from {initial_mutation_coverage_rate*100:.2f}% to {final_mutation_coverage_rate*100:.2f}%"
+        # )
 
     def increase_line_coverage(self):
         attempt = 0
@@ -103,14 +111,14 @@ class UnittestGenerator:
 
     def increase_mutation_coverage(self):
         attempt = 0
-        latest_run_id = self.db.get_latest_run_id()
-        data = self.db.get_mutant_summary(latest_run_id)
+        data = self.db.get_mutant_summary(self.latest_run_id)
         mutation_coverage_rate = data["mutation_coverage"]
         self.failed_unittests = []
         while (
             mutation_coverage_rate < self.config.target_mutation_coverage_rate
             and attempt < self.config.max_attempts
         ):
+            logger.info(f"Mutation coverage rate: {mutation_coverage_rate}")
             attempt += 1
             response = self.generate_unittests_for_mutants()
             self._process_generated_unittests_for_mutation(response)
@@ -145,9 +153,21 @@ class UnittestGenerator:
                 prompt={"system": "", "user": user_template}, streaming=True
             )
             otuput = self.extract_response(response)
+            self._save_yaml(otuput, "line")
             return otuput
         except Exception as e:
             raise
+
+    def _save_yaml(self, data, type):
+        if not os.path.exists("logs/_latest"):
+            os.makedirs("logs/_latest")
+        if not os.path.exists("logs/_latest/unittest"):
+            os.makedirs("logs/_latest/unittest")
+        if not os.path.exists(f"logs/_latest/unittest/{type}"):
+            os.makedirs(f"logs/_latest/unittest/{type}")
+        output = f"unittest_{self.num}.yaml"
+        with open(os.path.join(f"logs/_latest/unittest/{type}", output), "w") as f:
+            yaml.dump(data, f, default_flow_style=False, indent=2)
 
     def _process_generated_unittests(self, response: dict) -> list:
         generated_unittests = response.get("new_tests", [])
@@ -213,23 +233,36 @@ class UnittestGenerator:
                 cwd=os.getcwd(),
             )
             if result.returncode == 0:
-                print("Test passed")
+
                 prev_line_coverage_rate = self.coverage_processor.line_coverage_rate
                 self.coverage_processor.parse_coverage_report()
 
                 if check_line_coverage:
                     if self.check_line_coverage_increase(prev_line_coverage_rate):
+                        logger.info(f"Test passed and increased line cov:\n{test_code}")
+
                         return True
+                    else:
+                        logger.info(
+                            f"Test passed but failed to increase line cov for\n{test_code}"
+                        )
                 if check_mutantation_coverage:
                     if self.check_mutant_coverage_increase(
                         generated_unittest, test_code
                     ):
+                        logger.info(
+                            f"Test passed and increased mutation cov:\n{test_code}"
+                        )
                         return True
+                    else:
+                        logger.info(
+                            f"Test passed but failed to increase mutation cov for\n{test_code}"
+                        )
             else:
-                print("Test failed")
+                logger.info(f"Test failed for\n{test_code}")
                 self._handle_failed_test(result, test_code)
         except Exception as e:
-            print(f"Failed to validate unittest: {e}")
+            logger.info(f"Failed to validate unittest: {e}")
             raise
         else:
             FileUtils.revert(self.config.test_file_path)
@@ -237,7 +270,7 @@ class UnittestGenerator:
 
     def check_line_coverage_increase(self, prev_line_coverage_rate):
         if self.coverage_processor.line_coverage_rate > prev_line_coverage_rate:
-            print(
+            logger.info(
                 f"Line coverage increased from {prev_line_coverage_rate*100:.2f}% to {self.coverage_processor.line_coverage_rate*100:.2f}%"
             )
             return True
@@ -261,7 +294,7 @@ class UnittestGenerator:
                     }
                 )
                 if result.returncode == 0:
-                    print("Mutation coverage did not increase")
+                    logger.info("Mutation coverage did not increase")
                     self.weak_unittests.append(
                         {
                             "code": test_code,
@@ -269,7 +302,7 @@ class UnittestGenerator:
                         }
                     )
                 else:
-                    print("Mutation coverage increased!")
+                    logger.info("Mutation coverage increased!")
                     self.db.update_mutant_status(mutant["id"], "KILLED")
                     return True
         return False
@@ -317,10 +350,11 @@ class UnittestGenerator:
             ),
         )
         response, _, _ = self.router.generate_response(
-            prompt={"system": "", "user": user_template}, streaming=False
+            prompt={"system": "", "user": user_template}, streaming=True
         )
 
         resp = self.extract_response(response)
+        self._save_yaml(resp, "mutation")
         return resp
 
     def _process_generated_unittests_for_mutation(self, response) -> None:
@@ -392,9 +426,9 @@ class FileUtils:
             with open(path, "r") as file:
                 return file.read()
         except FileNotFoundError:
-            print(f"File not found: {path}")
+            logger.info(f"File not found: {path}")
         except Exception as e:
-            print(f"Error reading file {path}: {e}")
+            logger.info(f"Error reading file {path}: {e}")
             raise
 
     @staticmethod
@@ -403,7 +437,7 @@ class FileUtils:
         try:
             shutil.copyfile(file_path, backup_path)
         except Exception as e:
-            print(f"Failed to create backup file for {file_path}: {e}")
+            logger.info(f"Failed to create backup file for {file_path}: {e}")
             raise
 
     @staticmethod
@@ -416,6 +450,13 @@ class FileUtils:
             lines.insert(position, code)
             with open(file_path, "w") as file:
                 file.write("\n".join(lines))
+
+            # also write the temp file generate random name
+            import uuid
+
+            random_name = str(uuid.uuid4())[:4]
+            with open(f"{random_name}.java", "w") as file:
+                file.write("\n".join(lines))
         except Exception as e:
             raise
 
@@ -426,8 +467,8 @@ class FileUtils:
             if os.path.exists(backup_path):
                 shutil.copyfile(backup_path, file_path)
             else:
-                print(f"No backup file found for {file_path}")
+                logger.info(f"No backup file found for {file_path}")
                 raise FileNotFoundError(f"No backup file found for {file_path}")
         except Exception as e:
-            print(f"Failed to revert file {file_path}: {e}")
+            logger.info(f"Failed to revert file {file_path}: {e}")
             raise
