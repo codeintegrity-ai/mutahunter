@@ -74,28 +74,30 @@ class UnittestGenerator:
         )
         self.file_version_id = file_version_id
         self.num = 0
-        # self.latest_run_id = self.db.get_latest_run_id()
-        self.latest_run_id = 1
 
     def run(self) -> None:
         self.coverage_processor.parse_coverage_report()
         initial_line_coverage_rate = self.coverage_processor.line_coverage_rate
         logger.info(f"Initial line coverage rate: {initial_line_coverage_rate}")
         self.increase_line_coverage()
+        logger.info(
+            f"Line coverage increased from {initial_line_coverage_rate*100:.2f}% to {self.coverage_processor.line_coverage_rate*100:.2f}%"
+        )
         self.mutator.run()
+        self.latest_run_id = self.db.get_latest_run_id()
         data = self.db.get_mutant_summary(self.latest_run_id)
         logger.info(f"Data: {data}")
         initial_mutation_coverage_rate = data["mutation_coverage"]
         logger.info(f"Initial mutation coverage rate: {initial_mutation_coverage_rate}")
         self.increase_mutation_coverage()
-        # logger.info(
-        #     f"Line coverage increased from {initial_line_coverage_rate*100:.2f}% to {self.coverage_processor.line_coverage_rate*100:.2f}%"
-        # )
-        # data = self.db.get_mutant_summary(self.latest_run_id)
-        # final_mutation_coverage_rate = data["mutation_coverage"]
-        # logger.info(
-        #     f"Mutation coverage increased from {initial_mutation_coverage_rate*100:.2f}% to {final_mutation_coverage_rate*100:.2f}%"
-        # )
+        logger.info(
+            f"Line coverage increased from {initial_line_coverage_rate*100:.2f}% to {self.coverage_processor.line_coverage_rate*100:.2f}%"
+        )
+        data = self.db.get_mutant_summary(self.latest_run_id)
+        final_mutation_coverage_rate = data["mutation_coverage"]
+        logger.info(
+            f"Mutation coverage increased from {initial_mutation_coverage_rate*100:.2f}% to {final_mutation_coverage_rate*100:.2f}%"
+        )
 
     def increase_line_coverage(self):
         attempt = 0
@@ -297,7 +299,7 @@ class UnittestGenerator:
                     }
                 )
                 if result.returncode == 0:
-                    logger.info(f"Mutant {mutant['id']} survived: {result.stdout}")
+                    logger.info(f"Mutant {mutant['id']} survived")
                     self.weak_unittests.append(
                         {
                             "code": test_code,
@@ -305,9 +307,7 @@ class UnittestGenerator:
                         }
                     )
                 else:
-                    logger.info(
-                        f"Mutant {mutant['id']} killed: {result.stdout + result.stderr}"
-                    )
+                    logger.info(f"Mutant {mutant['id']} killed")
                     self.db.update_mutant_status(mutant["id"], "KILLED")
                     return True
             else:
@@ -325,8 +325,8 @@ class UnittestGenerator:
         source_code = FileUtils.read_file(self.config.source_file_path)
         language = filename_to_lang(self.config.source_file_path)
         # filter survived mutants
-        survived_mutants = self.db.get_survived_mutants_by_file_version_id(
-            self.file_version_id
+        survived_mutants = self.db.get_survived_mutants_by_run_id(
+            run_id=self.latest_run_id
         )
 
         if not survived_mutants:
@@ -357,80 +357,9 @@ class UnittestGenerator:
                 else ""
             ),
         )
-        # response, _, _ = self.router.generate_response(
-        #     prompt={"system": "", "user": user_template}, streaming=True
-        # )
-        response = """
-```yaml
-language: java
-insertion_point_marker:
-    class_name: BankAccountTest
-    method_name: testApplyZeroInterestRate
-new_tests:
-    - test_behavior: "Ensure initial balance cannot be zero."
-      mutant_id: "1"
-      test_name: "testInitialBalanceZero"
-      test_code: |
-        @Test
-        void testInitialBalanceZero() {
-            Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-                new BankAccount(0, 500);
-            });
-            assertEquals("Initial balance must be non-negative", exception.getMessage());
-        }
-      new_imports_code: ""
-
-    - test_behavior: "Ensure overdraft limit is set correctly."
-      mutant_id: "4"
-      test_name: "testOverdraftLimitSetCorrectly"
-      test_code: |
-        @Test
-        void testOverdraftLimitSetCorrectly() {
-            BankAccount account = new BankAccount(1000, 500);
-            assertEquals(500, account.getBalance() + 500 - account.getBalance());
-        }
-      new_imports_code: ""
-
-    - test_behavior: "Ensure correct initial transaction message."
-      mutant_id: "6"
-      test_name: "testInitialTransactionMessage"
-      test_code: |
-        @Test
-        void testInitialTransactionMessage() {
-            BankAccount account = new BankAccount(1000, 500);
-            assertTrue(account.getTransactionHistory().contains("Account created with balance: 1000.0"));
-        }
-      new_imports_code: ""
-
-    - test_behavior: "Ensure zero deposit is not allowed."
-      mutant_id: "9"
-      test_name: "testZeroDeposit"
-      test_code: |
-        @Test
-        void testZeroDeposit() {
-            BankAccount account = new BankAccount(1000, 500);
-            Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-                account.deposit(0);
-            });
-            assertEquals("Deposit amount must be positive", exception.getMessage());
-        }
-      new_imports_code: ""
-
-    - test_behavior: "Ensure zero withdrawal is not allowed."
-      mutant_id: "13"
-      test_name: "testZeroWithdrawal"
-      test_code: |
-        @Test
-        void testZeroWithdrawal() {
-            BankAccount account = new BankAccount(1000, 500);
-            Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-                account.withdraw(0);
-            });
-            assertEquals("Withdrawal amount must be positive", exception.getMessage());
-        }
-      new_imports_code: ""
-```
-"""
+        response, _, _ = self.router.generate_response(
+            prompt={"system": "", "user": user_template}, streaming=True
+        )
         resp = self.extract_response(response)
         self._save_yaml(resp, "mutation")
         return resp
