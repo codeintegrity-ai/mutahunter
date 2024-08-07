@@ -41,7 +41,7 @@ class NewTest(BaseModel):
     test_behavior: str = Field(..., description="Short description of the behavior the test covers.")
     lines_to_cover: str = Field(..., description="List of line numbers, currently uncovered, that this specific new test aims to cover.")
     test_name: str = Field(..., description="A short unique test name reflecting the test objective.")
-    test_code: str = Field(..., description="A single test function testing the behavioral description.")
+    test_code: str = Field(..., description="A single test function testing the behavioral description. Do not include boilerplate code. Just the test function.")
     new_imports_code: str = Field(..., description="New imports required for the new test function, or an empty string if none.")
     test_tags: List[str] = Field(..., 
         description="Tags for the test such as 'happy path', 'edge case', 'other'.")

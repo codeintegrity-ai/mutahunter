@@ -23,7 +23,7 @@ mutahunter run --test-command "mvn test" --code-coverage-report-path "target/sit
 
 ```bash
 # remove some tests
-mutahunter gen --test-command "mvn test" --code-coverage-report-path "target/site/jacoco/jacoco.xml" --coverage-type jacoco --test-file-path "src/test/java/BankAccountTest.java" --source-file-path "src/main/java/com/example/BankAccount.java" --model "gpt-4o"
+mutahunter gen-line --test-command "mvn test -Dtest=BankAccountTest" --code-coverage-report-path "target/site/jacoco/jacoco.xml" --coverage-type jacoco --test-file-path "src/test/java/BankAccountTest.java" --source-file-path "src/main/java/com/example/BankAccount.java" --model "gpt-4o" --target-line-coverage 0.9 --max-attempts 3
 ```
 
 Check `logs/_latest/html` for mutation report.
