@@ -4,7 +4,7 @@ Module for generating mutation testing reports.
 
 import os
 from importlib import resources
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from jinja2 import (Environment, FileSystemLoader, PackageLoader,
                     select_autoescape)
@@ -32,7 +32,7 @@ class MutantReport:
         assert self.template_env.get_template("report_template.html")
         assert self.template_env.get_template("file_detail_template.html")
 
-    def generate_report(self, total_cost: float, line_rate: float, run_id) -> None:
+    def generate_report(self, total_cost: float, line_rate: float, run_id: int) -> None:
         """
         Generates a comprehensive mutation testing report.
 
@@ -115,7 +115,7 @@ class MutantReport:
         logger.info(f"HTML report generated: {filename}")
 
     def _generate_summary_report(
-        self, data, total_cost: float, line_rate: float
+        self, data: Dict[str, Union[int, float]], total_cost: float, line_rate: float
     ) -> None:
         """
         Generates a summary mutation testing report.

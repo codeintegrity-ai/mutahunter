@@ -9,6 +9,7 @@ import warnings
 from collections import Counter, defaultdict, namedtuple
 from importlib import resources
 from pathlib import Path
+from typing import Any, Iterator, List, Optional, Set
 
 import networkx as nx
 from grep_ast import TreeContext, filename_to_lang
@@ -29,11 +30,11 @@ class RepoMap:
 
     def __init__(
         self,
-        model=None,
-        root=None,
-        map_tokens=1024,
-        max_context_window=None,
-    ):
+        model: Optional[str] = None,
+        root: None = None,
+        map_tokens: int = 1024,
+        max_context_window: None = None,
+    ) -> None:
         if not root:
             root = os.getcwd()
         self.model = model
@@ -42,7 +43,7 @@ class RepoMap:
         self.max_map_tokens = map_tokens
         self.max_context_window = max_context_window
 
-    def token_count(self, string):
+    def token_count(self, string: str) -> int:
         if not string:
             return 0
         return token_counter(
@@ -50,8 +51,12 @@ class RepoMap:
         )
 
     def get_repo_map(
-        self, chat_files, other_files, mentioned_fnames=None, mentioned_idents=None
-    ):
+        self,
+        chat_files: List[Any],
+        other_files: List[str],
+        mentioned_fnames: None = None,
+        mentioned_idents: None = None,
+    ) -> str:
         if self.max_map_tokens <= 0:
             return
         if not other_files:
@@ -101,20 +106,20 @@ class RepoMap:
 
         return repo_content
 
-    def get_rel_fname(self, fname):
+    def get_rel_fname(self, fname: str) -> str:
         return os.path.relpath(fname, self.root)
 
     def split_path(self, path):
         path = os.path.relpath(path, self.root)
         return [path + ":"]
 
-    def get_mtime(self, fname):
+    def get_mtime(self, fname: str) -> float:
         try:
             return os.path.getmtime(fname)
         except FileNotFoundError:
             pass
 
-    def get_tags(self, fname, rel_fname):
+    def get_tags(self, fname: str, rel_fname: str) -> List[Tag]:
         # Check if the file is in the cache and if the modification time has not changed
         file_mtime = self.get_mtime(fname)
         if file_mtime is None:
@@ -123,7 +128,7 @@ class RepoMap:
         data = list(self.get_tags_raw(fname, rel_fname))
         return data
 
-    def get_tags_raw(self, fname, rel_fname):
+    def get_tags_raw(self, fname: str, rel_fname: str) -> Iterator[Tag]:
         lang = filename_to_lang(fname)
         if not lang:
             return
@@ -203,8 +208,12 @@ class RepoMap:
             )
 
     def get_ranked_tags(
-        self, chat_fnames, other_fnames, mentioned_fnames, mentioned_idents
-    ):
+        self,
+        chat_fnames: List[Any],
+        other_fnames: List[str],
+        mentioned_fnames: Set[Any],
+        mentioned_idents: Set[Any],
+    ) -> List[Tag]:
         defines = defaultdict(set)
         references = defaultdict(list)
         definitions = defaultdict(set)
@@ -325,12 +334,12 @@ class RepoMap:
 
     def get_ranked_tags_map(
         self,
-        chat_fnames,
-        other_fnames=None,
-        max_map_tokens=None,
-        mentioned_fnames=None,
-        mentioned_idents=None,
-    ):
+        chat_fnames: List[Any],
+        other_fnames: Optional[List[str]] = None,
+        max_map_tokens: Optional[int] = None,
+        mentioned_fnames: Optional[Set[Any]] = None,
+        mentioned_idents: Optional[Set[Any]] = None,
+    ) -> str:
         if not other_fnames:
             other_fnames = list()
         if not max_map_tokens:
@@ -372,7 +381,7 @@ class RepoMap:
 
         return best_tree
 
-    def render_tree(self, abs_fname, rel_fname, lois):
+    def render_tree(self, abs_fname: str, rel_fname: str, lois: List[int]) -> str:
         key = (rel_fname, tuple(sorted(lois)))
 
         with open(abs_fname, "r", encoding="utf-8") as f:
@@ -400,7 +409,7 @@ class RepoMap:
         res = context.format()
         return res
 
-    def to_tree(self, tags, chat_rel_fnames):
+    def to_tree(self, tags: List[Tag], chat_rel_fnames: List[Any]) -> str:
         if not tags:
             return ""
 

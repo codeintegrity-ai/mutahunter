@@ -8,6 +8,7 @@ from jinja2 import Template
 from mutahunter.core.logger import logger
 from mutahunter.core.prompts.factory import PromptFactory
 from mutahunter.core.repomap import RepoMap
+from mutahunter.core.router import LLMRouter
 
 SYSTEM_YAML_FIX = """
 Based on the error message, the YAML content provided is not in the correct format. Please ensure the YAML content is in the correct format and try again.
@@ -34,9 +35,9 @@ class LLMMutationEngine:
 
     def __init__(
         self,
-        model,
-        router,
-    ):
+        model: str,
+        router: LLMRouter,
+    ) -> None:
         self.model = model
         self.router = router
         self.repo_map = RepoMap(model=self.model)
@@ -135,7 +136,7 @@ class LLMMutationEngine:
         )
         return model_response
 
-    def _get_repo_map(self, cov_files) -> Optional[Dict[str, Any]]:
+    def _get_repo_map(self, cov_files: List[str]) -> Optional[Dict[str, Any]]:
         return self.repo_map.get_repo_map(chat_files=[], other_files=cov_files)
 
     def _add_line_numbers(self, src_code: str) -> str:

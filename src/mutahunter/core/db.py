@@ -3,7 +3,7 @@ import os
 import sqlite3
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 
 class DatabaseError(Exception):
@@ -11,7 +11,7 @@ class DatabaseError(Exception):
 
 
 class MutationDatabase:
-    def __init__(self, db_path: str = "mutahunter.db"):
+    def __init__(self, db_path: str = "mutahunter.db") -> None:
         self.db_path = db_path
         self.conn = None
         if os.path.exists(self.db_path):
@@ -23,7 +23,7 @@ class MutationDatabase:
         self.create_tables()
 
     @contextmanager
-    def get_connection(self):
+    def get_connection(self) -> Iterator[sqlite3.Connection]:
         conn = sqlite3.connect(self.db_path)
         try:
             yield conn
@@ -75,7 +75,7 @@ class MutationDatabase:
 
         return True
 
-    def create_tables(self):
+    def create_tables(self) -> None:
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.executescript(
@@ -205,7 +205,7 @@ class MutationDatabase:
                 conn.rollback()
                 raise DatabaseError(f"Error processing file version: {str(e)}")
 
-    def add_mutant(self, run_id: int, file_version_id: int, mutant_data: dict):
+    def add_mutant(self, run_id: int, file_version_id: int, mutant_data: dict) -> None:
         with self.get_connection() as conn:
             cursor = conn.cursor()
             try:
@@ -454,7 +454,7 @@ class MutationDatabase:
             except sqlite3.Error as e:
                 raise DatabaseError(f"Error fetching file mutations: {str(e)}")
 
-    def get_mutant_summary(self, run_id) -> Dict[str, int]:
+    def get_mutant_summary(self, run_id: int) -> Dict[str, int]:
         with self.get_connection() as conn:
             cursor = conn.cursor()
             try:

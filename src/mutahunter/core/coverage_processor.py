@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 
 
 class CoverageProcessor:
-    def __init__(self, coverage_type, code_coverage_report_path) -> None:
+    def __init__(self, coverage_type: str, code_coverage_report_path: str) -> None:
         """
         Initializes the CoverageProcessor with the given configuration.
 

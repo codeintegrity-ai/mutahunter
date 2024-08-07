@@ -12,20 +12,15 @@ from mutahunter.core.analyzer import Analyzer
 from mutahunter.core.controller import MutationTestController
 from mutahunter.core.coverage_processor import CoverageProcessor
 from mutahunter.core.db import MutationDatabase
-from mutahunter.core.entities.config import (
-    MutationTestControllerConfig,
-    UnittestGeneratorConfig,
-)
+from mutahunter.core.entities.config import (MutationTestControllerConfig,
+                                             UnittestGeneratorConfig)
 from mutahunter.core.error_parser import extract_error_message
+from mutahunter.core.logger import logger
 from mutahunter.core.prompts.unittest_generator import (
-    FAILED_TESTS_TEXT,
-    LINE_COV_UNITTEST_GENERATOR_USER_PROMPT,
-    MUTATION_COV_UNITTEST_GENERATOR_USER_PROMPT,
-    MUTATION_WEAK_TESTS_TEXT,
-)
+    FAILED_TESTS_TEXT, LINE_COV_UNITTEST_GENERATOR_USER_PROMPT,
+    MUTATION_COV_UNITTEST_GENERATOR_USER_PROMPT, MUTATION_WEAK_TESTS_TEXT)
 from mutahunter.core.router import LLMRouter
 from mutahunter.core.runner import MutantTestRunner
-from mutahunter.core.logger import logger
 
 SYSTEM_YAML_FIX = """
 Based on the error message, the YAML content provided is not in the correct format. Please ensure the YAML content is in the correct format and try again.

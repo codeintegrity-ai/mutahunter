@@ -6,7 +6,7 @@ import warnings
 warnings.filterwarnings("ignore", category=FutureWarning, module="tree_sitter")
 
 
-def setup_logger(name):
+def setup_logger(name: str) -> logging.Logger:
     os.makedirs("logs/_latest/mutants", exist_ok=True)
     # Create a custom format for your logs
     log_format = "%(asctime)s %(levelname)s: %(message)s"

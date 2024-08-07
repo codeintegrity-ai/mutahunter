@@ -4,7 +4,7 @@ from litellm import completion, litellm
 
 
 class LLMRouter:
-    def __init__(self, model: str, api_base: str = ""):
+    def __init__(self, model: str, api_base: str = "") -> None:
         """
         Initialize the LLMRouter with a model and optional API base URL.
         """
@@ -56,7 +56,7 @@ class LLMRouter:
             print(f"Error during response generation: {e}")
             return "", 0, 0
 
-    def _validate_prompt(self, prompt: dict):
+    def _validate_prompt(self, prompt: dict) -> None:
         """
         Validate that the prompt contains the required keys.
         """

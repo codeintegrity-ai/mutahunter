@@ -5,7 +5,7 @@ from shlex import split
 
 
 class MutantTestRunner:
-    def __init__(self, test_command):
+    def __init__(self, test_command: str) -> None:
         self.test_command = test_command
 
     def dry_run(self) -> None:
@@ -56,13 +56,13 @@ class MutantTestRunner:
             self.revert_file(module_path, backup_path)
         return result
 
-    def replace_file(self, original, replacement, backup):
+    def replace_file(self, original: str, replacement: str, backup: str) -> None:
         """Backup original file and replace it with the replacement file."""
         if not os.path.exists(backup):
             shutil.copy2(original, backup)
         shutil.copy2(replacement, original)
 
-    def revert_file(self, original, backup):
+    def revert_file(self, original: str, backup: str) -> None:
         """Revert the file to the original using the backup."""
         if os.path.exists(backup):
             shutil.copy2(backup, original)
