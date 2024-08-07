@@ -23,7 +23,6 @@ We'd love to hear your feedback, suggestions, and any thoughts you have on mutat
 
 [![Run on Replit](https://replit.com/badge/github/codeintegrity-ai/mutahunter)](https://replit.com/@raghuramabilash/Mutahunterai)
 
-
 ## Table of Contents
 
 - [Features](#features)
@@ -55,10 +54,10 @@ This tool generates unit tests to increase both line and mutation coverage, insp
 ## go to examples/java_maven
 ## remove some tests from BankAccountTest.java
 
-mutahunter gen --test-command "mvn clean test" --code-coverage-report-path "target/site/jacoco/jacoco.xml" --test-file-path "src/test/java/BankAccountTest.java" --source-file-path "src/main/java/com/example/BankAccount.java" --coverage-type jacoco  --model "gpt-4o"
+mutahunter gen-line --test-command "mvn test -Dtest=BankAccountTest" --code-coverage-report-path "target/site/jacoco/jacoco.xml" --coverage-type jacoco --test-file-path "src/test/java/BankAccountTest.java" --source-file-path "src/main/java/com/example/BankAccount.java" --model "gpt-4o" --target-line-coverage 0.9 --max-attempts 3
 
-Line coverage increased from 47.00% to 100.00%
-Mutation coverage increased from 92.86% to 92.86%
+Line Coverage increased from 47.00% to 100.00%
+Mutation Coverage increased from 92.86% to 92.86%
 ```
 
 ## Getting Started with Mutation Testing
