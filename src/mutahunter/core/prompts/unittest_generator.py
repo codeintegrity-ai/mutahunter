@@ -34,8 +34,8 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 
 class InsertionPointMarker(BaseModel):
-    class_name: str = Field(..., description="The name of the class after which the test should be inserted.")
-    method_name: str = Field(..., description="The last method name after which the test should be inserted in the class.")
+    class_name: Optional[str] = Field(None, description="The name of the class after which the test should be inserted. Optional.")
+    method_name: Optional[str] = Field(None, description="The last method name after which the test should be inserted in the class. Optional.")
 
 class NewTest(BaseModel):
     test_behavior: str = Field(..., description="Short description of the behavior the test covers.")
@@ -70,6 +70,8 @@ new_tests:
 ```
 
 {{ failed_tests_section }}
+
+Output must be in YAML format. No other information should be included in the response.
 """
 
 

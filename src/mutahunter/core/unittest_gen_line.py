@@ -67,9 +67,9 @@ class UnittestGenLine:
 
         logger.info(f"Initial Line Coverage: {initial_line_coverage_rate*100:.2f}%")
         self.increase_line_coverage()
-        # logger.info(
-        #     f"Line coverage increased from {initial_line_coverage_rate*100:.2f}% to {self.current_line_coverage_rate*100:.2f}%"
-        # )
+        logger.info(
+            f"Line coverage increased from {initial_line_coverage_rate*100:.2f}% to {self.current_line_coverage_rate*100:.2f}%"
+        )
 
     def increase_line_coverage(self):
         attempt = 0
@@ -79,7 +79,14 @@ class UnittestGenLine:
         ):
             attempt += 1
             response = self.generate_tests()
-            self._process_generated_tests(response)
+            new_tests = response.get("new_tests", [])
+            insertion_point_marker = response.get("insertion_point_marker", {})
+
+            for generated_unittest in new_tests:
+                self.validate_unittest(
+                    generated_unittest,
+                    insertion_point_marker,
+                )
             self.coverage_processor.parse_coverage_report()
 
     def generate_tests(self):
@@ -126,16 +133,6 @@ class UnittestGenLine:
         with open(os.path.join(f"logs/_latest/unittest/{type}", output), "w") as f:
             yaml.dump(data, f, default_flow_style=False, indent=2)
 
-    def _process_generated_tests(self, response: dict) -> list:
-        new_tests = response.get("new_tests", [])
-        insertion_point_marker = response.get("insertion_point_marker", {})
-
-        for generated_unittest in new_tests:
-            self.validate_unittest(
-                generated_unittest,
-                insertion_point_marker,
-            )
-
     def validate_unittest(
         self,
         generated_unittest: dict,
@@ -147,13 +144,9 @@ class UnittestGenLine:
             test_code = self._reset_indentation(generated_unittest["test_code"])
             new_imports_code = generated_unittest.get("new_imports_code", "")
             FileUtils.backup_code(self.config.test_file_path)
-            if method_name:
-                insertion_node = (
-                    self.analyzer.find_function_block_by_name(
-                        self.config.test_file_path, method_name=method_name
-                    )
-                    if method_name
-                    else None
+            try:
+                insertion_node = self.analyzer.find_function_block_by_name(
+                    self.config.test_file_path, method_name=method_name
                 )
                 test_code = (
                     "\n"
@@ -170,14 +163,33 @@ class UnittestGenLine:
                         FileUtils.read_file(self.config.test_file_path).splitlines()
                     )
                 )
-                FileUtils.insert_code(self.config.test_file_path, test_code, position)
-            else:
+                with open(self.config.test_file_path, "r") as file:
+                    lines = file.read().splitlines()
+                lines.insert(position, test_code)
+                for new_import in new_imports_code.splitlines():
+                    lines.insert(0, new_import)
+                new_code = "\n".join(lines)
+                if self.analyzer.check_syntax(self.config.test_file_path, new_code):
+                    print("ANALYZER CHECKED")
+                    with open(self.config.test_file_path, "w") as file:
+                        file.write(new_code)
+                else:
+                    print("ANALYZER NOT CHECKED")
+            except Exception as e:
+                # NOTE: Add new test code at the end of the file if insertion point is not found
                 test_code = "\n" + test_code + "\n"
-                # just append it to the end of the file
-                FileUtils.insert_code(self.config.test_file_path, test_code, -1)
+                with open(self.config.test_file_path, "r") as file:
+                    lines = file.read().splitlines()
+                position = len(lines)
+                lines.insert(position, test_code)
+                # NOTE: Add new imports at the beginning of the file
+                for new_import in new_imports_code.splitlines():
+                    lines.insert(0, new_import)
 
-            for new_import in new_imports_code.splitlines():
-                FileUtils.insert_code(self.config.test_file_path, new_import, 0)
+                new_code = "\n".join(lines)
+                if self.analyzer.check_syntax(self.config.test_file_path, new_code):
+                    with open(self.config.test_file_path, "w") as file:
+                        file.write(new_code)
 
             result = subprocess.run(
                 self.config.test_command.split(),
@@ -188,7 +200,6 @@ class UnittestGenLine:
             if result.returncode == 0:
                 if self.check_line_coverage_increase():
                     logger.info(f"Test passed and increased line cov:\n{test_code}")
-
                     return True
                 else:
                     logger.info(

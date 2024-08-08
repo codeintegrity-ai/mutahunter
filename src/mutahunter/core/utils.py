@@ -25,25 +25,6 @@ class FileUtils:
             raise
 
     @staticmethod
-    def insert_code(file_path: str, code: str, position: int) -> None:
-        try:
-            with open(file_path, "r") as file:
-                lines = file.read().splitlines()
-            if position == -1:
-                position = len(lines)
-            lines.insert(position, code)
-            with open(file_path, "w") as file:
-                file.write("\n".join(lines))
-
-            # import uuid
-
-            # random_name = str(uuid.uuid4())[:4]
-            # with open(f"{random_name}.java", "w") as file:
-            #     file.write("\n".join(lines))
-        except Exception as e:
-            raise
-
-    @staticmethod
     def revert(file_path: str) -> None:
         backup_path = f"{file_path}.bak"
         try:
