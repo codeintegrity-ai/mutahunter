@@ -179,3 +179,14 @@ class CoverageProcessor:
         )
 
         return source_file_exec_lines, source_file_not_exec_lines, line_coverage_rate
+
+    def get_line_coverage_for_file(self, src_file: str):
+        lines_executed = self.file_lines_executed.get(src_file, [])
+        lines_not_executed = self.file_lines_not_executed.get(src_file, [])
+        if len(lines_executed) + len(lines_not_executed) == 0:
+            line_cov = 0.0
+        else:
+            line_cov = len(lines_executed) / (
+                len(lines_executed) + len(lines_not_executed)
+            )
+        return line_cov
