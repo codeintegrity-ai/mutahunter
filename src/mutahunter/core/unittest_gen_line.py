@@ -17,6 +17,7 @@ from mutahunter.core.prompts.unittest_generator import (
     LINE_COV_UNITTEST_GENERATOR_USER_PROMPT,
 )
 from mutahunter.core.router import LLMRouter
+from mutahunter.core.utils import FileUtils
 
 SYSTEM_YAML_FIX = """
 Based on the error message, the YAML content provided is not in the correct format. Please ensure the YAML content is in the correct format and try again.
@@ -51,32 +52,37 @@ class UnittestGenLine:
         self.analyzer = analyzer
         self.router = router
 
-        self.failed_unittests = []
+        self.failed_tests = []
 
         self.num = 0
 
+        self.current_line_coverage_rate = 0.0
+
     def run(self) -> None:
         self.coverage_processor.parse_coverage_report()
-        initial_line_coverage_rate = self.coverage_processor.line_coverage_rate
+        initial_line_coverage_rate = self.coverage_processor.get_line_coverage_for_file(
+            self.config.source_file_path
+        )
+        self.current_line_coverage_rate = initial_line_coverage_rate
+
         logger.info(f"Initial Line Coverage: {initial_line_coverage_rate*100:.2f}%")
         self.increase_line_coverage()
-        logger.info(
-            f"Line coverage increased from {initial_line_coverage_rate*100:.2f}% to {self.coverage_processor.line_coverage_rate*100:.2f}%"
-        )
+        # logger.info(
+        #     f"Line coverage increased from {initial_line_coverage_rate*100:.2f}% to {self.current_line_coverage_rate*100:.2f}%"
+        # )
 
     def increase_line_coverage(self):
         attempt = 0
         while (
-            self.coverage_processor.line_coverage_rate
-            < self.config.target_line_coverage_rate
+            self.current_line_coverage_rate < self.config.target_line_coverage_rate
             and attempt < self.config.max_attempts
         ):
             attempt += 1
-            response = self.generate_unittests()
-            self._process_generated_unittests(response)
+            response = self.generate_tests()
+            self._process_generated_tests(response)
             self.coverage_processor.parse_coverage_report()
 
-    def generate_unittests(self):
+    def generate_tests(self):
         try:
             source_code = FileUtils.read_file(self.config.source_file_path)
             test_code = FileUtils.read_file(self.config.test_file_path)
@@ -94,11 +100,9 @@ class UnittestGenLine:
                 lines_to_cover=lines_to_cover,
                 failed_tests_section=(
                     Template(FAILED_TESTS_TEXT).render(
-                        failed_test_runs=json.dumps(
-                            self.failed_unittests[:-5], indent=2
-                        )
+                        failed_test_runs=json.dumps(self.failed_tests[:-5], indent=2)
                     )
-                    if self.failed_unittests
+                    if self.failed_tests
                     else ""
                 ),
             )
@@ -122,22 +126,20 @@ class UnittestGenLine:
         with open(os.path.join(f"logs/_latest/unittest/{type}", output), "w") as f:
             yaml.dump(data, f, default_flow_style=False, indent=2)
 
-    def _process_generated_unittests(self, response: dict) -> list:
-        generated_unittests = response.get("new_tests", [])
+    def _process_generated_tests(self, response: dict) -> list:
+        new_tests = response.get("new_tests", [])
         insertion_point_marker = response.get("insertion_point_marker", {})
 
-        for generated_unittest in generated_unittests:
+        for generated_unittest in new_tests:
             self.validate_unittest(
                 generated_unittest,
                 insertion_point_marker,
-                check_line_coverage=True,
             )
 
     def validate_unittest(
         self,
         generated_unittest: dict,
         insertion_point_marker,
-        check_line_coverage=True,
     ) -> None:
         try:
             class_name = insertion_point_marker.get("class_name")
@@ -184,19 +186,14 @@ class UnittestGenLine:
                 cwd=os.getcwd(),
             )
             if result.returncode == 0:
+                if self.check_line_coverage_increase():
+                    logger.info(f"Test passed and increased line cov:\n{test_code}")
 
-                prev_line_coverage_rate = self.coverage_processor.line_coverage_rate
-                self.coverage_processor.parse_coverage_report()
-
-                if check_line_coverage:
-                    if self.check_line_coverage_increase(prev_line_coverage_rate):
-                        logger.info(f"Test passed and increased line cov:\n{test_code}")
-
-                        return True
-                    else:
-                        logger.info(
-                            f"Test passed but failed to increase line cov for\n{test_code}"
-                        )
+                    return True
+                else:
+                    logger.info(
+                        f"Test passed but failed to increase line cov for\n{test_code}"
+                    )
             else:
                 logger.info(f"Test failed for\n{test_code}")
                 self._handle_failed_test(result, test_code)
@@ -207,11 +204,16 @@ class UnittestGenLine:
             FileUtils.revert(self.config.test_file_path)
             return False
 
-    def check_line_coverage_increase(self, prev_line_coverage_rate):
-        if self.coverage_processor.line_coverage_rate > prev_line_coverage_rate:
+    def check_line_coverage_increase(self):
+        self.coverage_processor.parse_coverage_report()
+        new_line_coverage_rate = self.coverage_processor.get_line_coverage_for_file(
+            self.config.source_file_path
+        )
+        if new_line_coverage_rate > self.current_line_coverage_rate:
             logger.info(
-                f"Line coverage increased from {prev_line_coverage_rate*100:.2f}% to {self.coverage_processor.line_coverage_rate*100:.2f}%"
+                f"Line coverage increased from {self.current_line_coverage_rate*100:.2f}% to {new_line_coverage_rate*100:.2f}%"
             )
+            self.current_line_coverage_rate = new_line_coverage_rate
             return True
         else:
             return False
@@ -219,7 +221,7 @@ class UnittestGenLine:
     def _handle_failed_test(self, result, test_code):
         lang = self.analyzer.get_language_by_filename(self.config.test_file_path)
         error_msg = extract_error_message(lang, result.stdout + result.stderr)
-        self.failed_unittests.append({"code": test_code, "error_message": error_msg})
+        self.failed_tests.append({"code": test_code, "error_message": error_msg})
 
     @staticmethod
     def _number_lines(code: str) -> str:
@@ -270,57 +272,3 @@ class UnittestGenLine:
         lines = code.splitlines()
         adjusted_lines = [" " * indent_level + line for line in lines]
         return "\n".join(adjusted_lines)
-
-
-class FileUtils:
-    @staticmethod
-    def read_file(path: str) -> str:
-        try:
-            with open(path, "r") as file:
-                return file.read()
-        except FileNotFoundError:
-            logger.info(f"File not found: {path}")
-        except Exception as e:
-            logger.info(f"Error reading file {path}: {e}")
-            raise
-
-    @staticmethod
-    def backup_code(file_path: str) -> None:
-        backup_path = f"{file_path}.bak"
-        try:
-            shutil.copyfile(file_path, backup_path)
-        except Exception as e:
-            logger.info(f"Failed to create backup file for {file_path}: {e}")
-            raise
-
-    @staticmethod
-    def insert_code(file_path: str, code: str, position: int) -> None:
-        try:
-            with open(file_path, "r") as file:
-                lines = file.read().splitlines()
-            if position == -1:
-                position = len(lines)
-            lines.insert(position, code)
-            with open(file_path, "w") as file:
-                file.write("\n".join(lines))
-
-            # import uuid
-
-            # random_name = str(uuid.uuid4())[:4]
-            # with open(f"{random_name}.java", "w") as file:
-            #     file.write("\n".join(lines))
-        except Exception as e:
-            raise
-
-    @staticmethod
-    def revert(file_path: str) -> None:
-        backup_path = f"{file_path}.bak"
-        try:
-            if os.path.exists(backup_path):
-                shutil.copyfile(backup_path, file_path)
-            else:
-                logger.info(f"No backup file found for {file_path}")
-                raise FileNotFoundError(f"No backup file found for {file_path}")
-        except Exception as e:
-            logger.info(f"Failed to revert file {file_path}: {e}")
-            raise
