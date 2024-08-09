@@ -26,7 +26,7 @@ from mutahunter.core.io import FileOperationHandler
 from mutahunter.core.llm_mutation_engine import LLMMutationEngine
 from mutahunter.core.logger import logger
 from mutahunter.core.prompts.mutant_generator import (
-    SYSTEM_PROMPT_MUTANT_ANALYSUS,
+    SYSTEM_PROMPT_MUTANT_ANALYSIS,
     USER_PROMPT_MUTANT_ANALYSIS,
 )
 from mutahunter.core.report import MutantReport
@@ -246,7 +246,7 @@ class MutationTestController:
             with open(k, "r", encoding="utf-8") as f:
                 src_code = f.read()
             prompt = {
-                "system": Template(SYSTEM_PROMPT_MUTANT_ANALYSUS).render(),
+                "system": Template(SYSTEM_PROMPT_MUTANT_ANALYSIS).render(),
                 "user": Template(USER_PROMPT_MUTANT_ANALYSIS).render(
                     source_code=src_code,
                     surviving_mutants=json.dumps(v, indent=2),
