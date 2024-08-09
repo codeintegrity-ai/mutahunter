@@ -1,0 +1,45 @@
+Analyze the following mutation testing results and produce a concise, professional report:
+
+## Source Code:
+```
+{{source_code}}
+```
+
+## Surviving Mutants:
+```json
+{{surviving_mutants}}
+```
+Report Structure:
+1. Executive Summary (50 words)
+Briefly outline key findings and their potential impact on software quality.
+2. Critical Findings (100 words)
+Highlight the most significant vulnerabilities and test gaps discovered.
+3. Detailed Analysis (400 words)
+   a. Vulnerable Code Areas
+      - Identify and rank critical sections susceptible to undetected mutations.
+      - Cite specific surviving mutants as evidence.
+   b. Test Coverage Gaps
+      - Provide concrete examples from the surviving mutants for each gap.
+4. Recommendations (300 words)
+   a. Test Suite Enhancements
+      - Suggest specific new test cases or modifications.
+      - Prioritize based on impact and implementation ease.
+      - Include pseudo-code or test case outlines where applicable.
+   b. Code Refactoring Suggestions
+      - Propose refactoring to improve mutation resistance.
+      - Explain how each suggestion reduces surviving mutants.
+5. Risk Assessment (100 words)
+Evaluate the potential impact of unaddressed vulnerabilities on system integrity and security.
+6. Conclusion (50 words)
+Summarize key actions needed to improve code quality and test coverage.
+
+Format Requirements:
+
+Use markdown for easy readability.
+Limit the report to a maximum of 2 pages (approximately 1000 words).
+Use concise bullet points where appropriate.
+Support each point with specific references to the surviving mutants data.
+Focus on critical findings and high-impact recommendations.
+Maintain a professional tone throughout the report.
+
+Ensure the report provides clear, actionable insights for both technical and non-technical stakeholders.

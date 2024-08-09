@@ -6,9 +6,9 @@ from grep_ast import filename_to_lang
 from jinja2 import Template
 
 from mutahunter.core.logger import logger
-from mutahunter.core.prompts.factory import PromptFactory
 from mutahunter.core.repomap import RepoMap
 from mutahunter.core.router import LLMRouter
+from mutahunter.core.prompt_factory import MutationTestingPrompt
 
 SYSTEM_YAML_FIX = """
 Based on the error message, the YAML content provided is not in the correct format. Please ensure the YAML content is in the correct format and try again.
@@ -37,13 +37,13 @@ class LLMMutationEngine:
         self,
         model: str,
         router: LLMRouter,
+        prompt: MutationTestingPrompt,
     ) -> None:
         self.model = model
         self.router = router
         self.repo_map = RepoMap(model=self.model)
-        self.prompt = PromptFactory.get_prompt()
+        self.prompt = prompt
         os.makedirs("logs/_latest/llm", exist_ok=True)
-
         self.num = 0
 
     def get_source_code(self, source_file_path: str) -> str:
@@ -65,14 +65,23 @@ class LLMMutationEngine:
         src_code = self.get_source_code(source_file_path)
         src_code_with_line_num = self._add_line_numbers(src_code)
 
-        system_template = Template(self.prompt.system_prompt).render(language=language)
-        user_template = Template(self.prompt.user_prompt).render(
-            language=language,
-            ast=repo_map_result,
-            covered_lines=executed_lines,
-            src_code_with_line_num=src_code_with_line_num,
-            maximum_num_of_mutants_per_function_block=2,
+        system_template = self.prompt.mutator_system_prompt.render(
+            {
+                "language": language,
+            }
         )
+        user_template = self.prompt.mutator_user_prompt.render(
+            {
+                "language": language,
+                "ast": repo_map_result,
+                "covered_lines": executed_lines,
+                "src_code_with_line_num": src_code_with_line_num,
+                "maximum_num_of_mutants_per_function_block": 2,
+            }
+        )
+        print("system_template", system_template)
+        print("user_template", user_template)
+        exit(2)
         prompt = {"system": system_template, "user": user_template}
         model_response, _, _ = self.router.generate_response(
             prompt=prompt, streaming=True
@@ -84,7 +93,7 @@ class LLMMutationEngine:
     ) -> Dict[str, Any]:
         repo_map_result = self._get_repo_map(cov_files=cov_files)
         if not repo_map_result:
-            logger.error("No repository map found.")
+            logger.info("Current language is not supported for retrieving AST.")
 
         response = self.generate_mutant(
             repo_map_result, source_file_path, executed_lines

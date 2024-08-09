@@ -17,7 +17,10 @@ from mutahunter.core.router import LLMRouter
 from mutahunter.core.runner import MutantTestRunner
 from mutahunter.core.unittest_gen_line import UnittestGenLine
 from mutahunter.core.unittest_gen_mutation import UnittestGenMutation
-from mutahunter.core.prompt_factory import TestGenerationPromptFactory
+from mutahunter.core.prompt_factory import (
+    TestGenerationPromptFactory,
+    MutationTestingPromptFactory,
+)
 
 
 def add_mutation_testing_subparser(subparsers):
@@ -230,11 +233,9 @@ def create_run_mutation_testing_controller(
     )
     analyzer = Analyzer()
     test_runner = MutantTestRunner(test_command=config.test_command)
+    prompt = MutationTestingPromptFactory.get_prompt()
     router = LLMRouter(model=config.model, api_base=config.api_base)
-    engine = LLMMutationEngine(
-        model=config.model,
-        router=router,
-    )
+    engine = LLMMutationEngine(model=config.model, router=router, prompt=prompt)
     db = MutationDatabase()
     mutant_report = MutantReport(db=db)
     file_handler = FileOperationHandler()
@@ -249,6 +250,7 @@ def create_run_mutation_testing_controller(
         db=db,
         mutant_report=mutant_report,
         file_handler=file_handler,
+        prompt=prompt,
     )
 
 

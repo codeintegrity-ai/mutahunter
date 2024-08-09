@@ -1,0 +1,52 @@
+{% if ast %}
+## Abstract Syntax Tree (AST) for context
+```ast
+{{ast}}
+```
+{% endif %}
+
+## Output Format
+Provide a YAML object matching the $Mutants schema:
+```python
+class SingleMutant(BaseModel):
+    function_name: str = Field(..., description="The name of the function where the mutation was applied.")
+    type: str = Field(..., description="The type of the mutation operator used.")
+    description: str = Field(..., description="A brief description detailing the mutation applied.")
+    line_number: int = Field(..., description="Line number where the mutation was applied.")
+    original_code: str = Field(..., description="The original line of code before mutation. Ensure proper formatting for YAML literal block scalar.
+    mutated_code: Ones Field(..., description="The mutated line of code. Please annotate with a {{language}} syntax comment explaining the mutation. Ensure proper formatting for YAML literal block scalar.")
+
+class Mutants(BaseModel):
+    source_file: str = Field(..., description="The name of the source file where mutations were applied.")
+    mutants: List[SingleMutant] = Field(..., description="A list of SingleMutant instances each representing a specific mutation change.")
+```
+
+## Source Code to Mutate: {{src_code_file}}
+Covered Lines: {{covered_lines}}. 
+```{{language}}
+{{src_code_with_line_num}}
+```
+
+## Task
+1. Analyze the source code line by line.
+2. Generate mutations for each covered lines ({{covered_lines}}).
+3. Focus on function blocks and critical areas.
+4. Ensure mutations provide insights into code quality and test coverage.
+5. Organize output by ascending line numbers.
+6. Do not include manually added line numbers in your response.
+7. Generate single-line mutations only.
+
+## Example Output
+```yaml
+source_file: {{src_code_file}}
+mutants:
+  - function_name: <function name>
+    type: <mutation type>
+    description: <brief mutation description>
+    line_number: <line number>
+    original_code: |
+      <original code>
+    mutated_code: |
+      <mutated code and {{language}} comment explaining mutation>
+``` 
+Produce mutants that challenge the robustness of the code without breaking core functionality. Provide only the YAML output. Do not include any additional explanations or comments.
