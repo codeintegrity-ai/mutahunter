@@ -85,11 +85,15 @@ def test_parse_coverage_report_cobertura(mock_parse, config, cobertura_xml_conte
 
 
 @patch("xml.etree.ElementTree.parse")
-def test_parse_coverage_report_jacoco(mock_parse, config, jacoco_xml_content):
+@patch("mutahunter.core.coverage_processor.CoverageProcessor.find_source_file")
+def test_parse_coverage_report_jacoco(
+    mock_find_source_file, mock_parse, config, jacoco_xml_content
+):
     config.coverage_type = "jacoco"
     mock_tree = Mock()
     mock_tree.getroot.return_value = ET.fromstring(jacoco_xml_content)
     mock_parse.return_value = mock_tree
+    mock_find_source_file.return_value = "src/main/java/com/example/TestFile.java"
 
     cov_processor = CoverageProcessor(
         coverage_type=config.coverage_type,
