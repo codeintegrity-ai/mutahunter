@@ -189,7 +189,7 @@ class CoverageProcessor:
     def find_source_file(self, filename: str):
         for root, dirs, files in os.walk(os.getcwd()):
             for file in files:
-                if filename == file:
+                if "src" in root and filename in file:
                     return os.path.join(root, file)
 
     def get_line_coverage_for_file(self, src_file: str):
