@@ -14,6 +14,10 @@ pytest --cov=. --cov-report=xml --cov-report=term
 ```bash
 export OPENAI_API_KEY=your-key-goes-here
 mutahunter run --test-command "pytest" --code-coverage-report-path "coverage.xml" --only-mutate-file-paths "app.py" --model "gpt-4o-mini"
+
+
+mutahunter gen-line --test-command "pytest --cov=. --cov-report=xml --cov-report=term" --code-coverage-report-path "coverage.xml" --coverage-type cobertura --test-file-path "tests/test_app.py" --source-file-path "app.py" --model "gpt-4o" --target-line-coverage 0.9 --max-attempts 3
+
 ```
 
 Check `logs/_latest/html` for mutation report.
