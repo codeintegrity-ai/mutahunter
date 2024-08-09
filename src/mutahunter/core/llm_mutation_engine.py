@@ -79,9 +79,6 @@ class LLMMutationEngine:
                 "maximum_num_of_mutants_per_function_block": 2,
             }
         )
-        print("system_template", system_template)
-        print("user_template", user_template)
-        exit(2)
         prompt = {"system": system_template, "user": user_template}
         model_response, _, _ = self.router.generate_response(
             prompt=prompt, streaming=True
