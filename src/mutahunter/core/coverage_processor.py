@@ -1,5 +1,6 @@
 import xml.etree.ElementTree as ET
 from typing import Any, Dict, List
+import os
 
 
 class CoverageProcessor:
@@ -82,10 +83,12 @@ class CoverageProcessor:
         total_missed_lines = sum(
             len(lines) for lines in source_file_not_exec_lines.values()
         )
-
-        line_coverage_rate = round(
-            total_executed_lines / (total_executed_lines + total_missed_lines), 2
-        )
+        if total_executed_lines + total_missed_lines == 0:
+            line_coverage_rate = 0.0
+        else:
+            line_coverage_rate = round(
+                total_executed_lines / (total_executed_lines + total_missed_lines), 2
+            )
         return (
             source_file_exec_lines,
             source_file_not_exec_lines,
@@ -123,10 +126,12 @@ class CoverageProcessor:
         total_missed_lines = sum(
             len(lines) for lines in source_file_not_exec_lines.values()
         )
-
-        line_coverage_rate = round(
-            total_executed_lines / (total_executed_lines + total_missed_lines), 2
-        )
+        if total_executed_lines + total_missed_lines == 0:
+            line_coverage_rate = 0.0
+        else:
+            line_coverage_rate = round(
+                total_executed_lines / (total_executed_lines + total_missed_lines), 2
+            )
         return (
             source_file_exec_lines,
             source_file_not_exec_lines,
@@ -149,10 +154,8 @@ class CoverageProcessor:
             package_name = package.get("name").replace("/", ".")
             for sourcefile in package.findall(".//sourcefile"):
                 filename = sourcefile.get("name")
-                # Construct the full file path with the src/main/java directory
-                full_filename = (
-                    f"src/main/java/{package_name.replace('.', '/')}/{filename}"
-                )
+                full_filename = self.find_source_file(filename)
+                full_filename = full_filename.replace(os.getcwd() + "/", "")
                 if full_filename not in source_file_exec_lines:
                     source_file_exec_lines[full_filename] = []
                 if full_filename not in source_file_not_exec_lines:
@@ -174,11 +177,20 @@ class CoverageProcessor:
         total_missed_lines = sum(
             len(lines) for lines in source_file_not_exec_lines.values()
         )
-        line_coverage_rate = round(
-            total_executed_lines / (total_executed_lines + total_missed_lines), 2
-        )
+        if total_executed_lines + total_missed_lines == 0:
+            line_coverage_rate = 0.0
+        else:
+            line_coverage_rate = round(
+                total_executed_lines / (total_executed_lines + total_missed_lines), 2
+            )
 
         return source_file_exec_lines, source_file_not_exec_lines, line_coverage_rate
+
+    def find_source_file(self, filename: str):
+        for root, dirs, files in os.walk(os.getcwd()):
+            for file in files:
+                if filename in file:
+                    return os.path.join(root, file)
 
     def get_line_coverage_for_file(self, src_file: str):
         lines_executed = self.file_lines_executed.get(src_file, [])
