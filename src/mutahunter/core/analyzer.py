@@ -194,6 +194,7 @@ class Analyzer:
         language = get_language(lang)
 
         tree = parser.parse(source_code)
+
         query_scm = self._load_query_scm(lang)
         if not query_scm:
             return []
@@ -279,3 +280,28 @@ class Analyzer:
         """
         node_text = source_code[node.start_byte : node.end_byte].decode("utf8")
         return method_name in node_text
+
+    def get_test_nodes(self, source_file_path: str) -> List[Any]:
+        """
+        Retrieves test nodes from a given file.
+
+        Args:
+            source_file_path (str): The name of the file being analyzed.
+
+        Returns:
+            List[Any]: A list of test nodes.
+        """
+        source_code = self._read_source_file(source_file_path)
+        return self.find_test_nodes(source_file_path, source_code)
+
+    def find_test_nodes(self, source_file_path: str, source_code: bytes) -> List[Any]:
+        """
+        Finds test nodes in the provided source code.
+
+        Args:
+            source_code (bytes): The source code to analyze.
+
+        Returns:
+            List[Any]: A list of test nodes.
+        """
+        return self._find_blocks_nodes(source_file_path, source_code, ["test.method"])

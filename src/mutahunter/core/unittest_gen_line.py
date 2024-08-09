@@ -2,7 +2,7 @@ import json
 import os
 import shutil
 import subprocess
-
+import json
 import yaml
 from grep_ast import filename_to_lang
 from jinja2 import Template
@@ -18,6 +18,10 @@ from mutahunter.core.prompts.unittest_generator import (
 )
 from mutahunter.core.router import LLMRouter
 from mutahunter.core.utils import FileUtils
+from mutahunter.core.prompts.analysis import (
+    ANALYZER_DEFAULT_SYSTEM_PROMPT,
+    ANALYZER_DEFAULT_USER_PROMPT,
+)
 
 SYSTEM_YAML_FIX = """
 Based on the error message, the YAML content provided is not in the correct format. Please ensure the YAML content is in the correct format and try again.
@@ -59,6 +63,7 @@ class UnittestGenLine:
         self.current_line_coverage_rate = 0.0
 
     def run(self) -> None:
+
         self.coverage_processor.parse_coverage_report()
         initial_line_coverage_rate = self.coverage_processor.get_line_coverage_for_file(
             self.config.source_file_path
@@ -68,8 +73,32 @@ class UnittestGenLine:
         logger.info(f"Initial Line Coverage: {initial_line_coverage_rate*100:.2f}%")
         self.increase_line_coverage()
         logger.info(
-            f"Line coverage increased from {initial_line_coverage_rate*100:.2f}% to {self.current_line_coverage_rate*100:.2f}%"
+            f"Coverage increased from {initial_line_coverage_rate*100:.2f}% to {self.current_line_coverage_rate*100:.2f}%"
         )
+
+    def analyze_code(self):
+        system_template = Template(ANALYZER_DEFAULT_SYSTEM_PROMPT).render()
+        src_code = FileUtils.read_file(self.config.source_file_path)
+        language = filename_to_lang(self.config.source_file_path)
+        source_file_numbered = self._number_lines(src_code)
+        lines_to_cover = self.coverage_processor.file_lines_not_executed.get(
+            self.config.source_file_path, []
+        )
+        test_code = FileUtils.read_file(self.config.test_file_path)
+        user_template = Template(ANALYZER_DEFAULT_USER_PROMPT).render(
+            language=language,
+            source_file_name=self.config.source_file_path,
+            source_file_numbered=source_file_numbered,
+            lines_to_cover=lines_to_cover,
+            test_file_name=self.config.test_file_path,
+            test_file=test_code,
+        )
+        response, _, _ = self.router.generate_response(
+            prompt={"system": system_template, "user": user_template}, streaming=True
+        )
+        output = self.extract_response(response)
+        self._save_yaml(output, "line")
+        return output
 
     def increase_line_coverage(self):
         attempt = 0
@@ -78,33 +107,35 @@ class UnittestGenLine:
             and attempt < self.config.max_attempts
         ):
             attempt += 1
-            response = self.generate_tests()
+            test_plan = self.analyze_code()
+
+            response = self.generate_tests(test_plan)
             new_tests = response.get("new_tests", [])
-            insertion_point_marker = response.get("insertion_point_marker", {})
+
+            # insertion_point_marker = response.get("insertion_point_marker", {})
 
             for generated_unittest in new_tests:
                 self.validate_unittest(
                     generated_unittest,
-                    insertion_point_marker,
+                    # insertion_point_marker,
                 )
+                self.check_line_coverage_increase()
             self.coverage_processor.parse_coverage_report()
 
-    def generate_tests(self):
+    def generate_tests(self, test_plan: dict = None) -> dict:
         try:
             source_code = FileUtils.read_file(self.config.source_file_path)
             test_code = FileUtils.read_file(self.config.test_file_path)
-            source_code_with_lines = self._number_lines(source_code)
             language = filename_to_lang(self.config.source_file_path)
-            lines_to_cover = self.coverage_processor.file_lines_not_executed.get(
-                self.config.source_file_path, []
-            )
+
             user_template = Template(LINE_COV_UNITTEST_GENERATOR_USER_PROMPT).render(
                 language=language,
-                source_file_numbered=source_code_with_lines,
+                source_code=source_code,
                 source_file_name=self.config.source_file_path,
+                test_framework=test_plan.get("test_framework", ""),
                 test_file_name=self.config.test_file_path,
                 test_file=test_code,
-                lines_to_cover=lines_to_cover,
+                test_plan=json.dumps(test_plan, indent=2),
                 failed_tests_section=(
                     Template(FAILED_TESTS_TEXT).render(
                         failed_test_runs=json.dumps(self.failed_tests[:-5], indent=2)
@@ -113,6 +144,7 @@ class UnittestGenLine:
                     else ""
                 ),
             )
+            print("user_template", user_template)
             response, _, _ = self.router.generate_response(
                 prompt={"system": "", "user": user_template}, streaming=True
             )
@@ -136,57 +168,51 @@ class UnittestGenLine:
     def validate_unittest(
         self,
         generated_unittest: dict,
-        insertion_point_marker,
     ) -> None:
         try:
-            class_name = insertion_point_marker.get("class_name")
-            method_name = insertion_point_marker.get("method_name")
-            test_code = self._reset_indentation(generated_unittest["test_code"])
+            new_test_code = self._reset_indentation(generated_unittest["test_code"])
             new_imports_code = generated_unittest.get("new_imports_code", "")
             FileUtils.backup_code(self.config.test_file_path)
-            try:
-                insertion_node = self.analyzer.find_function_block_by_name(
-                    self.config.test_file_path, method_name=method_name
+            test_block_nodes = self.analyzer.get_test_nodes(
+                source_file_path=self.config.test_file_path
+            )
+            # get last test block node
+            last_test_block_node = test_block_nodes[-1] if test_block_nodes else None
+            test_file_code = FileUtils.read_file(self.config.test_file_path)
+            test_code_split = test_file_code.splitlines()
+            if last_test_block_node:
+                # get last test node's line number and indentation to insert new test
+                indent_level_to_indent = (
+                    last_test_block_node.start_point[1] if last_test_block_node else 0
                 )
-                test_code = (
-                    "\n"
-                    + self._adjust_indentation(
-                        test_code,
-                        insertion_node.start_point[1] if insertion_node else 0,
-                    )
-                    + "\n"
+                line_number_to_insert = (
+                    last_test_block_node.end_point[0] + 1
+                    if last_test_block_node
+                    else len(test_code_split)
                 )
-                position = (
-                    insertion_node.end_point[0] + 1
-                    if insertion_node
-                    else len(
-                        FileUtils.read_file(self.config.test_file_path).splitlines()
-                    )
+                # print("indent_level_to_indent", indent_level_to_indent)
+                # print("line_number_to_insert", line_number_to_insert)
+
+                test_code = "\n" + self._adjust_indentation(
+                    new_test_code, indent_level_to_indent
                 )
-                with open(self.config.test_file_path, "r") as file:
-                    lines = file.read().splitlines()
-                lines.insert(position, test_code)
+                test_code_split.insert(line_number_to_insert, test_code)
                 for new_import in new_imports_code.splitlines():
-                    lines.insert(0, new_import)
-                new_code = "\n".join(lines)
+                    test_code_split.insert(0, new_import)
+
+                new_code = "\n".join(test_code_split)
                 if self.analyzer.check_syntax(self.config.test_file_path, new_code):
-                    print("ANALYZER CHECKED")
                     with open(self.config.test_file_path, "w") as file:
                         file.write(new_code)
-                else:
-                    print("ANALYZER NOT CHECKED")
-            except Exception as e:
-                # NOTE: Add new test code at the end of the file if insertion point is not found
-                test_code = "\n" + test_code + "\n"
-                with open(self.config.test_file_path, "r") as file:
-                    lines = file.read().splitlines()
-                position = len(lines)
-                lines.insert(position, test_code)
+            else:
+                # TODO:// Find a better way to handle this case
+                test_code = "\n" + new_test_code + "\n"
+                test_code_split.insert(len(test_code_split), test_code)
                 # NOTE: Add new imports at the beginning of the file
                 for new_import in new_imports_code.splitlines():
-                    lines.insert(0, new_import)
+                    test_code_split.insert(0, new_import)
 
-                new_code = "\n".join(lines)
+                new_code = "\n".join(test_code_split)
                 if self.analyzer.check_syntax(self.config.test_file_path, new_code):
                     with open(self.config.test_file_path, "w") as file:
                         file.write(new_code)
@@ -198,13 +224,8 @@ class UnittestGenLine:
                 cwd=os.getcwd(),
             )
             if result.returncode == 0:
-                if self.check_line_coverage_increase():
-                    logger.info(f"Test passed and increased line cov:\n{test_code}")
-                    return True
-                else:
-                    logger.info(
-                        f"Test passed but failed to increase line cov for\n{test_code}"
-                    )
+                logger.info(f"Generated test passed")
+                return
             else:
                 logger.info(f"Test failed for\n{test_code}")
                 self._handle_failed_test(result, test_code)
