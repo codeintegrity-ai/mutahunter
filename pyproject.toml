@@ -40,4 +40,5 @@ mutahunter = "mutahunter.main:run"
 mutahunter = [
     'src/mutahunter/core/queries/*.scm',
     'src/mutahunter/core/templates/*.html',
+    'src/mutahunter/core/templates/*.txt',
 ]
