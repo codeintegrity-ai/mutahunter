@@ -1,6 +1,6 @@
+import os
 import xml.etree.ElementTree as ET
 from typing import Any, Dict, List
-import os
 
 
 class CoverageProcessor:

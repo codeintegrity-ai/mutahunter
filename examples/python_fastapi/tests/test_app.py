@@ -1,5 +1,5 @@
 from datetime import date
-from datetime import date
+
 import pytest
 from fastapi.testclient import TestClient
 

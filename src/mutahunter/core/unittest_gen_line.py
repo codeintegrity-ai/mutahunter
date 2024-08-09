@@ -2,7 +2,7 @@ import json
 import os
 import shutil
 import subprocess
-import json
+
 import yaml
 from grep_ast import filename_to_lang
 from jinja2 import Template
@@ -12,16 +12,12 @@ from mutahunter.core.coverage_processor import CoverageProcessor
 from mutahunter.core.entities.config import UnittestGeneratorLineConfig
 from mutahunter.core.error_parser import extract_error_message
 from mutahunter.core.logger import logger
+from mutahunter.core.prompts.analysis import (ANALYZER_DEFAULT_SYSTEM_PROMPT,
+                                              ANALYZER_DEFAULT_USER_PROMPT)
 from mutahunter.core.prompts.unittest_generator import (
-    FAILED_TESTS_TEXT,
-    LINE_COV_UNITTEST_GENERATOR_USER_PROMPT,
-)
+    FAILED_TESTS_TEXT, LINE_COV_UNITTEST_GENERATOR_USER_PROMPT)
 from mutahunter.core.router import LLMRouter
 from mutahunter.core.utils import FileUtils
-from mutahunter.core.prompts.analysis import (
-    ANALYZER_DEFAULT_SYSTEM_PROMPT,
-    ANALYZER_DEFAULT_USER_PROMPT,
-)
 
 SYSTEM_YAML_FIX = """
 Based on the error message, the YAML content provided is not in the correct format. Please ensure the YAML content is in the correct format and try again.
@@ -63,7 +59,6 @@ class UnittestGenLine:
         self.current_line_coverage_rate = 0.0
 
     def run(self) -> None:
-
         self.coverage_processor.parse_coverage_report()
         initial_line_coverage_rate = self.coverage_processor.get_line_coverage_for_file(
             self.config.source_file_path
@@ -112,12 +107,9 @@ class UnittestGenLine:
             response = self.generate_tests(test_plan)
             new_tests = response.get("new_tests", [])
 
-            # insertion_point_marker = response.get("insertion_point_marker", {})
-
             for generated_unittest in new_tests:
                 self.validate_unittest(
                     generated_unittest,
-                    # insertion_point_marker,
                 )
                 self.check_line_coverage_increase()
             self.coverage_processor.parse_coverage_report()
@@ -144,7 +136,6 @@ class UnittestGenLine:
                     else ""
                 ),
             )
-            print("user_template", user_template)
             response, _, _ = self.router.generate_response(
                 prompt={"system": "", "user": user_template}, streaming=True
             )
@@ -223,8 +214,8 @@ class UnittestGenLine:
                 text=True,
                 cwd=os.getcwd(),
             )
+            # print("result", result)
             if result.returncode == 0:
-                logger.info(f"Generated test passed")
                 return
             else:
                 logger.info(f"Test failed for\n{test_code}")

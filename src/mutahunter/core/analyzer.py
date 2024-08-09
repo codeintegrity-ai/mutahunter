@@ -195,12 +195,23 @@ class Analyzer:
 
         tree = parser.parse(source_code)
 
+        # def traverse_tree(node, depth=0):
+        #     print("  " * depth + f"{node.type}: {node.text.decode('utf8')}")
+        #     for child in node.children:
+        #         traverse_tree(child, depth + 1)
+
+        # traverse_tree(tree.root_node)
+
         query_scm = self._load_query_scm(lang)
         if not query_scm:
             return []
 
         query = language.query(query_scm)
         captures = query.captures(tree.root_node)
+        # for node, tag in captures:
+        #     print(node, tag)
+        # print code
+        # print(source_code[node.start_byte : node.end_byte].decode("utf8"))
 
         if not captures:
             logger.error("Tree-sitter query failed to find any captures.")
