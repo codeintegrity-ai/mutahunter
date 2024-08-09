@@ -33,7 +33,7 @@ class CoverageProcessor:
 
         if self.coverage_type in coverage_type_parsers:
             coverage_type_parsers[self.coverage_type]()
-            self.calculate_line_coverage_rate()
+            self.line_coverage_rate = self.calculate_line_coverage_rate()
         else:
             raise ValueError(
                 "Invalid coverage tool. Please specify either 'cobertura', 'jacoco', or 'lcov'."
