@@ -1,0 +1,43 @@
+# Test Plan Generation for {{ source_file_name }}
+## Source File
+Below is the source file for which you will write tests. Line numbers are added for reference only.
+```{{ language }}
+{{ source_file_numbered }}
+```
+
+{% if lines_to_cover %}
+## Uncovered Lines
+Generate tests to cover these line numbers:
+{{ lines_to_cover }}
+{% endif %}
+
+## Existing Test Suite ({{ test_file_name }})
+Analyze this file to understand existing tests, structure, and conventions:
+```{{ language }}
+{{ test_file }}
+```
+
+## Output Requirements
+1. Format: YAML object
+2. Structure: Must conform to the $TestPlan type
+3. Content: Include only new test cases to add
+
+### $TestPlan Structure
+```python
+class TestCase(BaseModel):
+    name: str
+    description: str
+    type: Literal["positive", "negative", "edge", "boundary"]
+    expected_result: str
+
+class TestPlan(BaseModel):
+    test_cases_to_add: List[TestCase]
+    conventions: List[str]
+    test_framework: str
+    language: str
+```
+
+## Response Guidelines
+1. Focus on covering uncovered lines
+2. Analyze and follow existing test suite conventions
+3. Provide only the YAML output, no additional explanations

@@ -1,42 +1,18 @@
 import json
 import os
-import shutil
 import subprocess
 
 import yaml
 from grep_ast import filename_to_lang
-from jinja2 import Template
 
 from mutahunter.core.analyzer import Analyzer
 from mutahunter.core.coverage_processor import CoverageProcessor
 from mutahunter.core.entities.config import UnittestGeneratorLineConfig
 from mutahunter.core.error_parser import extract_error_message
 from mutahunter.core.logger import logger
-from mutahunter.core.prompts.analysis import (ANALYZER_DEFAULT_SYSTEM_PROMPT,
-                                              ANALYZER_DEFAULT_USER_PROMPT)
-from mutahunter.core.prompts.unittest_generator import (
-    FAILED_TESTS_TEXT, LINE_COV_UNITTEST_GENERATOR_USER_PROMPT)
 from mutahunter.core.router import LLMRouter
 from mutahunter.core.utils import FileUtils
-
-SYSTEM_YAML_FIX = """
-Based on the error message, the YAML content provided is not in the correct format. Please ensure the YAML content is in the correct format and try again.
-"""
-
-USER_YAML_FIX = """
-YAML content:
-```yaml
-{{yaml_content}}
-```
-
-Error:
-{{error}}
-
-Output must be wrapped in triple backticks and in YAML format:
-```yaml
-...fix the yaml content here...
-```
-"""
+from mutahunter.core.prompt_factory import TestGenerationPrompt
 
 
 class UnittestGenLine:
@@ -46,6 +22,7 @@ class UnittestGenLine:
         coverage_processor: CoverageProcessor,
         analyzer: Analyzer,
         router: LLMRouter,
+        prompt: TestGenerationPrompt,
     ):
         self.config = config
         self.coverage_processor = coverage_processor
@@ -53,47 +30,23 @@ class UnittestGenLine:
         self.router = router
 
         self.failed_tests = []
-
         self.num = 0
-
         self.current_line_coverage_rate = 0.0
+        self.prompt = prompt
 
     def run(self) -> None:
         self.coverage_processor.parse_coverage_report()
-        initial_line_coverage_rate = self.coverage_processor.get_line_coverage_for_file(
-            self.config.source_file_path
+        initial_line_coverage_rate = (
+            self.coverage_processor.calculate_line_coverage_rate_for_file(
+                self.config.source_file_path
+            )
         )
         self.current_line_coverage_rate = initial_line_coverage_rate
-
         logger.info(f"Initial Line Coverage: {initial_line_coverage_rate*100:.2f}%")
         self.increase_line_coverage()
         logger.info(
             f"Coverage increased from {initial_line_coverage_rate*100:.2f}% to {self.current_line_coverage_rate*100:.2f}%"
         )
-
-    def analyze_code(self):
-        system_template = Template(ANALYZER_DEFAULT_SYSTEM_PROMPT).render()
-        src_code = FileUtils.read_file(self.config.source_file_path)
-        language = filename_to_lang(self.config.source_file_path)
-        source_file_numbered = self._number_lines(src_code)
-        lines_to_cover = self.coverage_processor.file_lines_not_executed.get(
-            self.config.source_file_path, []
-        )
-        test_code = FileUtils.read_file(self.config.test_file_path)
-        user_template = Template(ANALYZER_DEFAULT_USER_PROMPT).render(
-            language=language,
-            source_file_name=self.config.source_file_path,
-            source_file_numbered=source_file_numbered,
-            lines_to_cover=lines_to_cover,
-            test_file_name=self.config.test_file_path,
-            test_file=test_code,
-        )
-        response, _, _ = self.router.generate_response(
-            prompt={"system": system_template, "user": user_template}, streaming=True
-        )
-        output = self.extract_response(response)
-        self._save_yaml(output, "line")
-        return output
 
     def increase_line_coverage(self):
         attempt = 0
@@ -114,30 +67,61 @@ class UnittestGenLine:
                 self.check_line_coverage_increase()
             self.coverage_processor.parse_coverage_report()
 
+    def analyze_code(self):
+        system_template = self.prompt.analyzer_system_prompt.render()
+        src_code = FileUtils.read_file(self.config.source_file_path)
+        language = filename_to_lang(self.config.source_file_path)
+        source_file_numbered = self._number_lines(src_code)
+        lines_to_cover = self.coverage_processor.file_lines_not_executed.get(
+            self.config.source_file_path, []
+        )
+        test_code = FileUtils.read_file(self.config.test_file_path)
+        user_template = self.prompt.analyzer_user_prompt.render(
+            {
+                "language": language,
+                "source_file_name": self.config.source_file_path,
+                "source_file_numbered": source_file_numbered,
+                "lines_to_cover": lines_to_cover,
+                "test_file_name": self.config.test_file_path,
+                "test_file": test_code,
+            }
+        )
+        response, _, _ = self.router.generate_response(
+            prompt={"system": system_template, "user": user_template}, streaming=True
+        )
+        output = self.extract_response(response)
+        self._save_yaml(output, "line")
+        return output
+
     def generate_tests(self, test_plan: dict = None) -> dict:
         try:
+            test_plan = self.extract_response(test_plan)
             source_code = FileUtils.read_file(self.config.source_file_path)
             test_code = FileUtils.read_file(self.config.test_file_path)
             language = filename_to_lang(self.config.source_file_path)
 
-            user_template = Template(LINE_COV_UNITTEST_GENERATOR_USER_PROMPT).render(
+            system_prompt = self.prompt.test_generator_system_prompt.render(
+                {
+                    "test_framework": test_plan.get("test_framework", ""),
+                    "language": language,
+                }
+            )
+            user_prompt = self.prompt.test_generator_user_prompt.render(
                 language=language,
                 source_code=source_code,
                 source_file_name=self.config.source_file_path,
-                test_framework=test_plan.get("test_framework", ""),
+                test_framework=test_plan.get("test_framework", None),
                 test_file_name=self.config.test_file_path,
                 test_file=test_code,
-                test_plan=json.dumps(test_plan, indent=2),
-                failed_tests_section=(
-                    Template(FAILED_TESTS_TEXT).render(
-                        failed_test_runs=json.dumps(self.failed_tests[:-5], indent=2)
-                    )
+                test_plan=json.dumps(test_plan, indent=2) if test_plan else None,
+                failed_tests=(
+                    json.dumps(self.failed_tests, indent=2)
                     if self.failed_tests
-                    else ""
+                    else None
                 ),
             )
             response, _, _ = self.router.generate_response(
-                prompt={"system": "", "user": user_template}, streaming=True
+                prompt={"system": system_prompt, "user": user_prompt}, streaming=True
             )
             output = self.extract_response(response)
             self._save_yaml(output, "line")
@@ -229,8 +213,10 @@ class UnittestGenLine:
 
     def check_line_coverage_increase(self):
         self.coverage_processor.parse_coverage_report()
-        new_line_coverage_rate = self.coverage_processor.get_line_coverage_for_file(
-            self.config.source_file_path
+        new_line_coverage_rate = (
+            self.coverage_processor.calculate_line_coverage_rate_for_file(
+                self.config.source_file_path
+            )
         )
         if new_line_coverage_rate > self.current_line_coverage_rate:
             logger.info(
@@ -264,17 +250,14 @@ class UnittestGenLine:
                     return {"new_tests": []}
 
     def fix_format(self, error, content):
-        system_template = Template(SYSTEM_YAML_FIX).render()
-        user_template = Template(USER_YAML_FIX).render(
-            yaml_content=content,
-            error=error,
+        user_prompt = self.prompt.yaml_fixer_user_prompt.render(
+            {
+                "yaml_content": content,
+                "error": error,
+            }
         )
-        prompt = {
-            "system": system_template,
-            "user": user_template,
-        }
         model_response, _, _ = self.router.generate_response(
-            prompt=prompt, streaming=False
+            prompt={"system": "", "user": user_prompt}, streaming=False
         )
         return model_response
 

@@ -2,6 +2,8 @@
 Module for generating prompts based on the programming language.
 """
 
+from jinja2 import Template, Environment, FileSystemLoader, PackageLoader
+from importlib import resources
 from mutahunter.core.prompts.mutant_generator import SYSTEM_PROMPT, USER_PROMPT
 
 

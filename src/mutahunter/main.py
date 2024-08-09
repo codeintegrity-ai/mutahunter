@@ -5,9 +5,11 @@ from mutahunter.core.analyzer import Analyzer
 from mutahunter.core.controller import MutationTestController
 from mutahunter.core.coverage_processor import CoverageProcessor
 from mutahunter.core.db import MutationDatabase
-from mutahunter.core.entities.config import (MutationTestControllerConfig,
-                                             UnittestGeneratorLineConfig,
-                                             UnittestGeneratorMutationConfig)
+from mutahunter.core.entities.config import (
+    MutationTestControllerConfig,
+    UnittestGeneratorLineConfig,
+    UnittestGeneratorMutationConfig,
+)
 from mutahunter.core.io import FileOperationHandler
 from mutahunter.core.llm_mutation_engine import LLMMutationEngine
 from mutahunter.core.report import MutantReport
@@ -15,6 +17,7 @@ from mutahunter.core.router import LLMRouter
 from mutahunter.core.runner import MutantTestRunner
 from mutahunter.core.unittest_gen_line import UnittestGenLine
 from mutahunter.core.unittest_gen_mutation import UnittestGenMutation
+from mutahunter.core.prompt_factory import TestGenerationPromptFactory
 
 
 def add_mutation_testing_subparser(subparsers):
@@ -267,12 +270,14 @@ def create_gen_line_controller(args: argparse.Namespace) -> UnittestGenLine:
     )
     analyzer = Analyzer()
     router = LLMRouter(model=config.model, api_base=config.api_base)
+    prompt = TestGenerationPromptFactory.get_prompt()
 
     return UnittestGenLine(
         config=config,
         coverage_processor=coverage_processor,
         analyzer=analyzer,
         router=router,
+        prompt=prompt,
     )
 
 
