@@ -2,7 +2,7 @@ Based on the error message, the YAML content provided is not in the correct form
 
 YAML content:
 ```yaml
-{{ yaml_content }}
+{{ content }}
 ```
 
 Error:

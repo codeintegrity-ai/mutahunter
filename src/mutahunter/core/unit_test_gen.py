@@ -70,7 +70,7 @@ class UnittestGenLine:
         system_template = self.prompt.analyzer_system_prompt.render()
         src_code = FileUtils.read_file(self.config.source_file_path)
         language = filename_to_lang(self.config.source_file_path)
-        source_file_numbered = self._number_lines(src_code)
+        source_file_numbered = FileUtils.number_lines(src_code)
         lines_to_cover = self.coverage_processor.file_lines_not_executed.get(
             self.config.source_file_path, []
         )
@@ -88,13 +88,10 @@ class UnittestGenLine:
         response, _, _ = self.router.generate_response(
             prompt={"system": system_template, "user": user_template}, streaming=True
         )
-        output = self.extract_response(response)
-        self._save_yaml(output, "line")
-        return output
+        return self.router.extract_yaml_from_response(response)
 
     def generate_tests(self, test_plan: dict = None) -> dict:
         try:
-            test_plan = self.extract_response(test_plan)
             source_code = FileUtils.read_file(self.config.source_file_path)
             test_code = FileUtils.read_file(self.config.test_file_path)
             language = filename_to_lang(self.config.source_file_path)
@@ -122,39 +119,30 @@ class UnittestGenLine:
             response, _, _ = self.router.generate_response(
                 prompt={"system": system_prompt, "user": user_prompt}, streaming=True
             )
-            output = self.extract_response(response)
-            self._save_yaml(output, "line")
-            return output
+            response = self.router.extract_yaml_from_response(response)
+            print("rgenerate_tests esponse", response)
+            return response
         except Exception as e:
             raise
-
-    def _save_yaml(self, data, type):
-        if not os.path.exists("logs/_latest"):
-            os.makedirs("logs/_latest")
-        if not os.path.exists("logs/_latest/unittest"):
-            os.makedirs("logs/_latest/unittest")
-        if not os.path.exists(f"logs/_latest/unittest/{type}"):
-            os.makedirs(f"logs/_latest/unittest/{type}")
-        output = f"unittest_{self.num}.yaml"
-        with open(os.path.join(f"logs/_latest/unittest/{type}", output), "w") as f:
-            yaml.dump(data, f, default_flow_style=False, indent=2)
 
     def validate_unittest(
         self,
         generated_unittest: dict,
     ) -> None:
         try:
+
+            # pretty print the generated unittest
             new_test_code = generated_unittest.get("test_code", "")
             new_imports_code = generated_unittest.get("new_imports_code", "")
             assert (
                 new_test_code != ""
             ), "New test code is empty in the generated unittest"
-
             FileUtils.backup_code(self.config.test_file_path)
             test_file_code = FileUtils.read_file(self.config.test_file_path)
             test_block_nodes = self.analyzer.get_test_nodes(
                 source_file_path=self.config.test_file_path
             )
+            print("test_block_nodes", test_block_nodes)
             # get last test block node
             if len(test_block_nodes) > 0:
                 last_test_block_node = test_block_nodes[-1]
@@ -168,13 +156,14 @@ class UnittestGenLine:
                     indent_level=indent_level,
                     line_number=line_number,
                 )
-                for new_import in new_imports_code.splitlines():
-                    modified_src_code = merge_code(
-                        code_to_insert=new_import,
-                        org_src_code=modified_src_code,
-                        indent_level=0,
-                        line_number=0,
-                    )
+                # for new_import in new_imports_code.splitlines():
+                #     new_import = new_import.strip().lstrip()
+                #     modified_src_code = merge_code(
+                #         code_to_insert=new_import,
+                #         org_src_code=modified_src_code,
+                #         indent_level=0,
+                #         line_number=0,
+                #     )
             else:
                 # TODO:// Find a better way to handle this case
                 modified_src_code = merge_code(
@@ -183,13 +172,14 @@ class UnittestGenLine:
                     indent_level=0,
                     line_number=-1,
                 )
-                for new_import in new_imports_code.splitlines():
-                    modified_src_code = merge_code(
-                        code_to_insert=new_import,
-                        org_src_code=modified_src_code,
-                        indent_level=0,
-                        line_number=0,
-                    )
+                # for new_import in new_imports_code.splitlines():
+                #     modified_src_code = merge_code(
+                #         code_to_insert=new_import,
+                #         org_src_code=modified_src_code,
+                #         indent_level=0,
+                #         line_number=0,
+                #     )
+
             if self.analyzer.check_syntax(
                 self.config.test_file_path, modified_src_code
             ):
@@ -201,12 +191,14 @@ class UnittestGenLine:
                     text=True,
                     cwd=os.getcwd(),
                 )
+                print("______result", result)
                 if result.returncode == 0:
+                    logger.info(f"Test passed for\n{new_test_code}")
                     return
                 else:
                     logger.info(f"Test failed for\n{new_test_code}")
                     self._handle_failed_test(result, new_test_code)
-            raise Exception("Failed to validate unittest")
+                    FileUtils.revert(self.config.test_file_path)
         except Exception as e:
             logger.info(f"Failed to validate unittest: {e}")
             FileUtils.revert(self.config.test_file_path)
@@ -232,32 +224,3 @@ class UnittestGenLine:
         lang = self.analyzer.get_language_by_filename(self.config.test_file_path)
         error_msg = extract_error_message(lang, result.stdout + result.stderr)
         self.failed_tests.append({"code": test_code, "error_message": error_msg})
-
-    @staticmethod
-    def _number_lines(code: str) -> str:
-        return "\n".join(f"{i + 1} {line}" for i, line in enumerate(code.splitlines()))
-
-    def extract_response(self, response: str) -> dict:
-        retries = 2
-        for attempt in range(retries):
-            try:
-                response = response.strip().removeprefix("```yaml").rstrip("`")
-                data = yaml.safe_load(response)
-                return data
-            except Exception as e:
-                if attempt < retries - 1:
-                    response = self.fix_format(e, response)
-                else:
-                    return {"new_tests": []}
-
-    def fix_format(self, error, content):
-        user_prompt = self.prompt.yaml_fixer_user_prompt.render(
-            {
-                "yaml_content": content,
-                "error": error,
-            }
-        )
-        model_response, _, _ = self.router.generate_response(
-            prompt={"system": "", "user": user_prompt}, streaming=False
-        )
-        return model_response

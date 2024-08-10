@@ -21,25 +21,6 @@ from mutahunter.core.runner import MutantTestRunner
 from mutahunter.core.prompt_factory import TestGenerationWithMutationPrompt
 from mutahunter.core.utils import FileUtils
 
-SYSTEM_YAML_FIX = """
-Based on the error message, the YAML content provided is not in the correct format. Please ensure the YAML content is in the correct format and try again.
-"""
-
-USER_YAML_FIX = """
-YAML content:
-```yaml
-{{yaml_content}}
-```
-
-Error:
-{{error}}
-
-Output must be wrapped in triple backticks and in YAML format:
-```yaml
-...fix the yaml content here...
-```
-"""
-
 
 class UnittestGenMutation:
     def __init__(
@@ -142,9 +123,7 @@ class UnittestGenMutation:
         response, _, _ = self.router.generate_response(
             prompt={"system": system_prompt, "user": user_prompt}, streaming=True
         )
-        resp = self.extract_response(response)
-        self._save_yaml(resp, "mutation")
-        return resp
+        return self.router.extract_yaml_from_response(response)
 
     def validate_unittest(
         self,
@@ -276,45 +255,6 @@ class UnittestGenMutation:
                     f"Mutant {mutant['id']} not selected for testing. Generated mutant id: {mutant_id}"
                 )
         return False
-
-    def extract_response(self, response: str) -> dict:
-        retries = 2
-        for attempt in range(retries):
-            try:
-                response = response.strip().removeprefix("```yaml").rstrip("`")
-                data = yaml.safe_load(response)
-                return data
-            except Exception as e:
-                if attempt < retries - 1:
-                    response = self.fix_format(e, response)
-                else:
-                    return {"new_tests": []}
-
-    def fix_format(self, error, content):
-        system_template = Template(SYSTEM_YAML_FIX).render()
-        user_template = Template(USER_YAML_FIX).render(
-            yaml_content=content,
-            error=error,
-        )
-        prompt = {
-            "system": system_template,
-            "user": user_template,
-        }
-        model_response, _, _ = self.router.generate_response(
-            prompt=prompt, streaming=False
-        )
-        return model_response
-
-    def _save_yaml(self, data, type):
-        if not os.path.exists("logs/_latest"):
-            os.makedirs("logs/_latest")
-        if not os.path.exists("logs/_latest/unittest"):
-            os.makedirs("logs/_latest/unittest")
-        if not os.path.exists(f"logs/_latest/unittest/{type}"):
-            os.makedirs(f"logs/_latest/unittest/{type}")
-        output = f"unittest_{self.num}.yaml"
-        with open(os.path.join(f"logs/_latest/unittest/{type}", output), "w") as f:
-            yaml.dump(data, f, default_flow_style=False, indent=2)
 
     def _handle_failed_test(self, result, test_code):
         lang = self.analyzer.get_language_by_filename(self.config.test_file_path)

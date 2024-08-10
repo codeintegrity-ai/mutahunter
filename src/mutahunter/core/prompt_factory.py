@@ -33,9 +33,6 @@ class TestGenerationPrompt:
         self.test_generator_user_prompt = env.get_template(
             "test_generation/test_generator_user.txt"
         )
-        self.yaml_fixer_user_prompt = env.get_template(
-            "test_generation/yaml_fixer_user.txt"
-        )
 
 
 class TestGenerationWithMutationPromptFactory:
@@ -98,3 +95,21 @@ class MutationTestingPrompt:
         self.mutator_user_prompt = env.get_template(
             "mutant_generation/mutator_user.txt"
         )
+
+
+class YAMLFixerPromptFactory:
+    @staticmethod
+    def get_prompt():
+        return YAMLFixerPrompt()
+
+
+class YAMLFixerPrompt:
+    def __init__(self):
+        env = Environment(
+            loader=FileSystemLoader(
+                resources.files(__package__).joinpath(
+                    "templates",
+                )
+            )
+        )
+        self.yaml_fixer_user_prompt = env.get_template("utils/yaml_fixer_user.txt")

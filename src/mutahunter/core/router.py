@@ -1,6 +1,8 @@
 import time
 
 from litellm import completion, litellm
+import yaml
+from mutahunter.core.prompt_factory import YAMLFixerPromptFactory
 
 
 class LLMRouter:
@@ -12,6 +14,7 @@ class LLMRouter:
         self.api_base = api_base
         self.total_cost = 0
         litellm.success_callback = [self.track_cost_callback]
+        self.yaml_prompt = YAMLFixerPromptFactory().get_prompt()
 
     def track_cost_callback(
         self,
@@ -132,3 +135,29 @@ class LLMRouter:
         prompt_tokens = int(model_response["usage"]["prompt_tokens"])
         completion_tokens = int(model_response["usage"]["completion_tokens"])
         return content, prompt_tokens, completion_tokens
+
+    def extract_yaml_from_response(self, response: str) -> dict:
+        response = response.strip().removeprefix("```yaml").removesuffix("```")
+        max_retries = 3
+
+        for attempt in range(max_retries):
+            try:
+                return yaml.safe_load(response)
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    print("attempting to fix yaml")
+                    response = self._attempt_yaml_fix(str(e), response)
+                else:
+                    return []
+
+    def _attempt_yaml_fix(self, error, content):
+        user_prompt = self.yaml_prompt.yaml_fixer_user_prompt.render(
+            {
+                "content": content,
+                "error": error,
+            }
+        )
+        fix_response, _, _ = self.generate_response(
+            prompt={"system": "", "user": user_prompt}, streaming=False
+        )
+        return fix_response

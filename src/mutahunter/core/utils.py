@@ -17,6 +17,10 @@ class FileUtils:
             raise
 
     @staticmethod
+    def number_lines(code: str) -> str:
+        return "\n".join(f"{i + 1} {line}" for i, line in enumerate(code.splitlines()))
+
+    @staticmethod
     def backup_code(file_path: str) -> None:
         backup_path = f"{file_path}.bak"
         try:
