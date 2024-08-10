@@ -62,8 +62,8 @@ class UnittestGenMutation:
         self.mutator = mutator
         self.prompt = prompt
 
-        self.failed_unittests = []
-        self.weak_unittests = []
+        self.failed_unit_tests = []
+        self.weak_unit_tests = []
 
         self.num = 0
 
@@ -75,7 +75,9 @@ class UnittestGenMutation:
         data = self.db.get_mutant_summary(self.latest_run_id)
         logger.info(f"Data: {data}")
         initial_mutation_coverage_rate = data["mutation_coverage"]
-        logger.info(f"Initial Mutation Coverage: {initial_mutation_coverage_rate*100:.2f}%")
+        logger.info(
+            f"Initial Mutation Coverage: {initial_mutation_coverage_rate*100:.2f}%"
+        )
         self.increase_mutation_coverage()
         data = self.db.get_mutant_summary(self.latest_run_id)
         final_mutation_coverage_rate = data["mutation_coverage"]
@@ -92,7 +94,7 @@ class UnittestGenMutation:
             and attempt < self.config.max_attempts
         ):
             attempt += 1
-            response = self.generate_unittests_for_mutants()
+            response = self.generate_unit_tests()
             test_cases = response.get("test_cases", [])
             for test_case in test_cases:
                 self.validate_unittest(
@@ -100,16 +102,49 @@ class UnittestGenMutation:
                 )
             logger.info(f"Mutation coverage rate: {mutation_coverage_rate*100:.2f}%")
 
-    def _save_yaml(self, data, type):
-        if not os.path.exists("logs/_latest"):
-            os.makedirs("logs/_latest")
-        if not os.path.exists("logs/_latest/unittest"):
-            os.makedirs("logs/_latest/unittest")
-        if not os.path.exists(f"logs/_latest/unittest/{type}"):
-            os.makedirs(f"logs/_latest/unittest/{type}")
-        output = f"unittest_{self.num}.yaml"
-        with open(os.path.join(f"logs/_latest/unittest/{type}", output), "w") as f:
-            yaml.dump(data, f, default_flow_style=False, indent=2)
+    def generate_unit_tests(self) -> None:
+        source_code = FileUtils.read_file(self.config.source_file_path)
+        language = filename_to_lang(self.config.source_file_path)
+        # filter survived mutants
+        survived_mutants = self.db.get_survived_mutants_by_run_id(
+            run_id=self.latest_run_id
+        )
+
+        if not survived_mutants:
+            raise Exception("No survived mutants found")
+
+        system_prompt = self.prompt.test_generator_system_prompt.render(
+            {
+                "language": language,
+            }
+        )
+        user_prompt = self.prompt.test_generator_user_prompt.render(
+            language=language,
+            source_file_name=self.config.source_file_path,
+            source_code=source_code,
+            test_file_name=self.config.test_file_path,
+            test_file=FileUtils.read_file(self.config.test_file_path),
+            survived_mutants=json.dumps(
+                survived_mutants,
+                indent=2,
+            ),
+            weak_tests=(
+                {json.dumps(self.weak_unit_tests, indent=2)}
+                if self.weak_unit_tests
+                else None
+            ),
+            failed_test=(
+                json.dumps(self.failed_unit_tests, indent=2)
+                if self.failed_unit_tests
+                else None
+            ),
+        )
+        response, _, _ = self.router.generate_response(
+            prompt={"system": system_prompt, "user": user_prompt}, streaming=True
+        )
+        resp = self.extract_response(response)
+        self._save_yaml(resp, "mutation")
+        return resp
 
     def validate_unittest(
         self,
@@ -124,7 +159,9 @@ class UnittestGenMutation:
                 mutant_id is not None
             ), "Mutant id is not present in the generated unittest"
             # check if new_test_code is not empty string
-            assert new_test_code != "", "New test code is empty in the generated unittest"
+            assert (
+                new_test_code != ""
+            ), "New test code is empty in the generated unittest"
 
             print("NEW TEST CODE:", new_test_code)
             print("NEW IMPORTS CODE:", new_imports_code)
@@ -173,7 +210,9 @@ class UnittestGenMutation:
                         indent_level=0,
                         line_number=0,
                     )
-            if self.analyzer.check_syntax(self.config.test_file_path, modified_src_code):
+            if self.analyzer.check_syntax(
+                self.config.test_file_path, modified_src_code
+            ):
                 with open(self.config.test_file_path, "w") as file:
                     file.write(modified_src_code)
 
@@ -187,7 +226,9 @@ class UnittestGenMutation:
             if result.returncode == 0:
                 self.coverage_processor.parse_coverage_report()
                 if self.check_mutant_coverage_increase(mutant_id, new_test_code):
-                    logger.info(f"Test passed and increased mutation cov:\n{new_test_code}")
+                    logger.info(
+                        f"Test passed and increased mutation cov:\n{new_test_code}"
+                    )
                     return True
                 else:
                     logger.info(
@@ -223,7 +264,7 @@ class UnittestGenMutation:
                 )
                 if result.returncode == 0:
                     logger.info(f"Mutant {mutant['id']} survived")
-                    self.weak_unittests.append(
+                    self.weak_unit_tests.append(
                         {
                             "code": test_code,
                             "survived_mutant_id": f"Mutant {mutant['id']} not killed",
@@ -238,51 +279,6 @@ class UnittestGenMutation:
                     f"Mutant {mutant['id']} not selected for testing. Generated mutant id: {mutant_id}"
                 )
         return False
-
-    def _handle_failed_test(self, result, test_code):
-        lang = self.analyzer.get_language_by_filename(self.config.test_file_path)
-        error_msg = extract_error_message(lang, result.stdout + result.stderr)
-        self.failed_unittests.append({"code": test_code, "error_message": error_msg})
-
-    def generate_unittests_for_mutants(self) -> None:
-        source_code = FileUtils.read_file(self.config.source_file_path)
-        language = filename_to_lang(self.config.source_file_path)
-        # filter survived mutants
-        survived_mutants = self.db.get_survived_mutants_by_run_id(run_id=self.latest_run_id)
-
-        if not survived_mutants:
-            raise Exception("No survived mutants found")
-
-        system_prompt = self.prompt.test_generator_system_prompt.render(
-            {
-                "language": language,
-            }
-        )
-        user_prompt = self.prompt.test_generator_user_prompt.render(
-            language=language,
-            source_file_name=self.config.source_file_path,
-            source_code=source_code,
-            test_file_name=self.config.test_file_path,
-            test_file=FileUtils.read_file(self.config.test_file_path),
-            survived_mutants=json.dumps(
-                survived_mutants,
-                indent=2,
-            ),
-            weak_tests=(
-                {json.dumps(self.weak_unittests, indent=2)} if self.weak_unittests else None
-            ),
-            failed_test=(
-                json.dumps(self.failed_unittests, indent=2)
-                if self.failed_unittests
-                else None
-            ),
-        )
-        response, _, _ = self.router.generate_response(
-            prompt={"system": system_prompt, "user": user_prompt}, streaming=True
-        )
-        resp = self.extract_response(response)
-        self._save_yaml(resp, "mutation")
-        return resp
 
     def extract_response(self, response: str) -> dict:
         retries = 2
@@ -307,5 +303,23 @@ class UnittestGenMutation:
             "system": system_template,
             "user": user_template,
         }
-        model_response, _, _ = self.router.generate_response(prompt=prompt, streaming=False)
+        model_response, _, _ = self.router.generate_response(
+            prompt=prompt, streaming=False
+        )
         return model_response
+
+    def _save_yaml(self, data, type):
+        if not os.path.exists("logs/_latest"):
+            os.makedirs("logs/_latest")
+        if not os.path.exists("logs/_latest/unittest"):
+            os.makedirs("logs/_latest/unittest")
+        if not os.path.exists(f"logs/_latest/unittest/{type}"):
+            os.makedirs(f"logs/_latest/unittest/{type}")
+        output = f"unittest_{self.num}.yaml"
+        with open(os.path.join(f"logs/_latest/unittest/{type}", output), "w") as f:
+            yaml.dump(data, f, default_flow_style=False, indent=2)
+
+    def _handle_failed_test(self, result, test_code):
+        lang = self.analyzer.get_language_by_filename(self.config.test_file_path)
+        error_msg = extract_error_message(lang, result.stdout + result.stderr)
+        self.failed_unit_tests.append({"code": test_code, "error_message": error_msg})

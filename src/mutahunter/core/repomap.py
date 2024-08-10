@@ -1,10 +1,7 @@
 # This file uses the 'aider' library by Paul Gauthier, licensed under the Apache-2.0 license.
 # For more information, see https://github.com/paul-gauthier/aider/blob/main/aider/repomap.py
 
-import colorsys
 import os
-import random
-import sys
 import warnings
 from collections import Counter, defaultdict, namedtuple
 from importlib import resources
@@ -47,7 +44,7 @@ class RepoMap:
         if not string:
             return 0
         return token_counter(
-            model=self.model, messages=[{"user": "role", "content": "hihi"}]
+            model=self.model, messages=[{"user": "role", "content": string}]
         )
 
     def get_repo_map(
