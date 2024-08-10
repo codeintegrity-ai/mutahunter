@@ -2,8 +2,9 @@
 Module for generating prompts based on the programming language.
 """
 
-from jinja2 import Environment, FileSystemLoader
 from importlib import resources
+
+from jinja2 import Environment, FileSystemLoader
 
 
 class TestGenerationPromptFactory:

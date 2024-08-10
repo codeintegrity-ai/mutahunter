@@ -25,10 +25,10 @@ from mutahunter.core.git_handler import GitHandler
 from mutahunter.core.io import FileOperationHandler
 from mutahunter.core.llm_mutation_engine import LLMMutationEngine
 from mutahunter.core.logger import logger
+from mutahunter.core.prompt_factory import MutationTestingPrompt
 from mutahunter.core.report import MutantReport
 from mutahunter.core.router import LLMRouter
 from mutahunter.core.runner import MutantTestRunner
-from mutahunter.core.prompt_factory import MutationTestingPrompt
 
 
 class MutationTestController:

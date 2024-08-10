@@ -1,7 +1,8 @@
 import time
 
-from litellm import completion, litellm
 import yaml
+from litellm import completion, litellm
+
 from mutahunter.core.prompt_factory import YAMLFixerPromptFactory
 
 

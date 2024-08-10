@@ -6,9 +6,9 @@ from grep_ast import filename_to_lang
 from jinja2 import Template
 
 from mutahunter.core.logger import logger
+from mutahunter.core.prompt_factory import MutationTestingPrompt
 from mutahunter.core.repomap import RepoMap
 from mutahunter.core.router import LLMRouter
-from mutahunter.core.prompt_factory import MutationTestingPrompt
 
 SYSTEM_YAML_FIX = """
 Based on the error message, the YAML content provided is not in the correct format. Please ensure the YAML content is in the correct format and try again.
