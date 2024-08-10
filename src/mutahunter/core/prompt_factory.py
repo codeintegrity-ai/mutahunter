@@ -60,10 +60,10 @@ class TestGenerationWithMutationPrompt:
             "test_generation/analyzer_user.txt"
         )
         self.test_generator_system_prompt = env.get_template(
-            "test_generation_with_mutation_system.txt"
+            "test_generation/test_generator_with_mutants_system.txt"
         )
         self.test_generator_user_prompt = env.get_template(
-            "test_generation_with_mutation_user.txt"
+            "test_generation/test_generator_with_mutants_user.txt"
         )
 
 

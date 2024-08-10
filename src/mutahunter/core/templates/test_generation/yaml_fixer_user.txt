@@ -8,4 +8,4 @@ YAML content:
 Error:
 {{error}}
 
-Fix the yaml content based on the error. Output must be a valid YAML object. No other information should be included in the response. 
+Provide only the YAML output. Do not include any additional explanations or comments.

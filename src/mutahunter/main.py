@@ -15,10 +15,11 @@ from mutahunter.core.llm_mutation_engine import LLMMutationEngine
 from mutahunter.core.report import MutantReport
 from mutahunter.core.router import LLMRouter
 from mutahunter.core.runner import MutantTestRunner
-from mutahunter.core.unittest_gen_line import UnittestGenLine
-from mutahunter.core.unittest_gen_mutation import UnittestGenMutation
+from mutahunter.core.unittest_gen import UnittestGenLine
+from mutahunter.core.unittest_gen_with_mutants import UnittestGenMutation
 from mutahunter.core.prompt_factory import (
     TestGenerationPromptFactory,
+    TestGenerationWithMutationPromptFactory,
     MutationTestingPromptFactory,
 )
 
@@ -304,6 +305,7 @@ def crete_gen_mutation_controller(
     analyzer = Analyzer()
     test_runner = MutantTestRunner(test_command=config.test_command)
     router = LLMRouter(model=config.model, api_base=config.api_base)
+    prompt = TestGenerationWithMutationPromptFactory.get_prompt()
 
     db = MutationDatabase()
 
@@ -320,6 +322,7 @@ def crete_gen_mutation_controller(
         router=router,
         db=db,
         mutator=mutator,
+        prompt=prompt,
     )
 
 

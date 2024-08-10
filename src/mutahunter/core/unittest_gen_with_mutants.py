@@ -13,18 +13,13 @@ from mutahunter.core.controller import MutationTestController
 from mutahunter.core.coverage_processor import CoverageProcessor
 from mutahunter.core.db import MutationDatabase
 from mutahunter.core.entities.config import (
-    MutationTestControllerConfig,
     UnittestGeneratorMutationConfig,
 )
 from mutahunter.core.error_parser import extract_error_message
 from mutahunter.core.logger import logger
-from mutahunter.core.prompts.unittest_generator import (
-    FAILED_TESTS_TEXT,
-    MUTATION_COV_UNITTEST_GENERATOR_USER_PROMPT,
-    MUTATION_WEAK_TESTS_TEXT,
-)
 from mutahunter.core.router import LLMRouter
 from mutahunter.core.runner import MutantTestRunner
+from mutahunter.core.prompt_factory import TestGenerationWithMutationPrompt
 
 SYSTEM_YAML_FIX = """
 Based on the error message, the YAML content provided is not in the correct format. Please ensure the YAML content is in the correct format and try again.
@@ -56,6 +51,7 @@ class UnittestGenMutation:
         router: LLMRouter,
         db: MutationDatabase,
         mutator: MutationTestController,
+        prompt: TestGenerationWithMutationPrompt,
     ):
         self.config = config
         self.db = db
@@ -64,6 +60,7 @@ class UnittestGenMutation:
         self.test_runner = test_runner
         self.router = router
         self.mutator = mutator
+        self.prompt = prompt
 
         self.failed_unittests = []
         self.weak_unittests = []
@@ -76,9 +73,6 @@ class UnittestGenMutation:
 
     def run(self) -> None:
         self.coverage_processor.parse_coverage_report()
-        initial_line_coverage_rate = self.coverage_processor.line_coverage_rate
-        logger.info(f"Initial Line Coverage: {initial_line_coverage_rate*100:.2f}%")
-
         self.mutator.run()
         self.latest_run_id = self.db.get_latest_run_id()
         data = self.db.get_mutant_summary(self.latest_run_id)
@@ -98,7 +92,6 @@ class UnittestGenMutation:
         attempt = 0
         data = self.db.get_mutant_summary(self.latest_run_id)
         mutation_coverage_rate = data["mutation_coverage"]
-        self.failed_unittests = []
         while (
             mutation_coverage_rate < self.config.target_mutation_coverage_rate
             and attempt < self.config.max_attempts
@@ -122,46 +115,52 @@ class UnittestGenMutation:
     def validate_unittest(
         self,
         generated_unittest: dict,
-        insertion_point_marker,
-        check_mutantation_coverage=False,
     ) -> None:
         try:
-            class_name = insertion_point_marker.get("class_name")
-            method_name = insertion_point_marker.get("method_name")
-            test_code = self._reset_indentation(generated_unittest["test_code"])
+            new_test_code = self._reset_indentation(generated_unittest["test_code"])
             new_imports_code = generated_unittest.get("new_imports_code", "")
             FileUtils.backup_code(self.config.test_file_path)
-            if method_name:
-                insertion_node = (
-                    self.analyzer.find_function_block_by_name(
-                        self.config.test_file_path, method_name=method_name
-                    )
-                    if method_name
-                    else None
+            test_block_nodes = self.analyzer.get_test_nodes(
+                source_file_path=self.config.test_file_path
+            )
+            # get last test block node
+            last_test_block_node = test_block_nodes[-1] if test_block_nodes else None
+            test_file_code = FileUtils.read_file(self.config.test_file_path)
+            test_code_split = test_file_code.splitlines()
+            if last_test_block_node:
+                # get last test node's line number and indentation to insert new test
+                indent_level_to_indent = (
+                    last_test_block_node.start_point[1] if last_test_block_node else 0
                 )
-                test_code = (
-                    "\n"
-                    + self._adjust_indentation(
-                        test_code,
-                        insertion_node.start_point[1] if insertion_node else 0,
-                    )
-                    + "\n"
+                line_number_to_insert = (
+                    last_test_block_node.end_point[0] + 1
+                    if last_test_block_node
+                    else len(test_code_split)
                 )
-                position = (
-                    insertion_node.end_point[0] + 1
-                    if insertion_node
-                    else len(
-                        FileUtils.read_file(self.config.test_file_path).splitlines()
-                    )
-                )
-                FileUtils.insert_code(self.config.test_file_path, test_code, position)
-            else:
-                test_code = "\n" + test_code + "\n"
-                # just append it to the end of the file
-                FileUtils.insert_code(self.config.test_file_path, test_code, -1)
 
-            for new_import in new_imports_code.splitlines():
-                FileUtils.insert_code(self.config.test_file_path, new_import, 0)
+                test_code = "\n" + self._adjust_indentation(
+                    new_test_code, indent_level_to_indent
+                )
+                test_code_split.insert(line_number_to_insert, test_code)
+                for new_import in new_imports_code.splitlines():
+                    test_code_split.insert(0, new_import)
+
+                new_code = "\n".join(test_code_split)
+                if self.analyzer.check_syntax(self.config.test_file_path, new_code):
+                    with open(self.config.test_file_path, "w") as file:
+                        file.write(new_code)
+            else:
+                # TODO:// Find a better way to handle this case
+                test_code = "\n" + new_test_code + "\n"
+                test_code_split.insert(len(test_code_split), test_code)
+                # NOTE: Add new imports at the beginning of the file
+                for new_import in new_imports_code.splitlines():
+                    test_code_split.insert(0, new_import)
+
+                new_code = "\n".join(test_code_split)
+                if self.analyzer.check_syntax(self.config.test_file_path, new_code):
+                    with open(self.config.test_file_path, "w") as file:
+                        file.write(new_code)
 
             result = subprocess.run(
                 self.config.test_command.split(),
@@ -170,22 +169,14 @@ class UnittestGenMutation:
                 cwd=os.getcwd(),
             )
             if result.returncode == 0:
-
-                prev_line_coverage_rate = self.coverage_processor.line_coverage_rate
                 self.coverage_processor.parse_coverage_report()
-
-                if check_mutantation_coverage:
-                    if self.check_mutant_coverage_increase(
-                        generated_unittest, test_code
-                    ):
-                        logger.info(
-                            f"Test passed and increased mutation cov:\n{test_code}"
-                        )
-                        return True
-                    else:
-                        logger.info(
-                            f"Test passed but failed to increase mutation cov for\n{test_code}"
-                        )
+                if self.check_mutant_coverage_increase(generated_unittest, test_code):
+                    logger.info(f"Test passed and increased mutation cov:\n{test_code}")
+                    return True
+                else:
+                    logger.info(
+                        f"Test passed but failed to increase mutation cov for\n{test_code}"
+                    )
             else:
                 logger.info(f"Test failed for\n{test_code}")
                 self._handle_failed_test(result, test_code)
@@ -200,7 +191,7 @@ class UnittestGenMutation:
         runner = MutantTestRunner(test_command=self.config.test_command)
 
         mutants = self.db.get_survived_mutants_by_run_id(run_id=self.latest_run_id)
-        # logger.info(f"Mutants: {json.dumps(mutants, indent=2)}")
+        logger.info(f"Mutants: {json.dumps(mutants, indent=2)}")
 
         for mutant in mutants:
             if int(mutant["id"]) == int(generated_unittest["mutant_id"]):
@@ -249,7 +240,14 @@ class UnittestGenMutation:
         if not survived_mutants:
             raise Exception("No survived mutants found")
 
-        user_template = Template(MUTATION_COV_UNITTEST_GENERATOR_USER_PROMPT).render(
+        system_prompt = self.prompt.test_generator_system_prompt.render(
+            {
+                "language": language,
+            }
+        )
+        print("self.weak_unittests", self.weak_unittests)
+        print("self.failed_unittests", self.failed_unittests)
+        user_prompt = self.prompt.test_generator_user_prompt.render(
             language=language,
             source_file_name=self.config.source_file_path,
             source_code=source_code,
@@ -259,36 +257,31 @@ class UnittestGenMutation:
                 survived_mutants,
                 indent=2,
             ),
-            weak_tests_section=(
-                Template(MUTATION_WEAK_TESTS_TEXT).render(
-                    weak_tests=f"{json.dumps(self.weak_unittests, indent=2)}"
-                )
+            weak_tests=(
+                {json.dumps(self.weak_unittests, indent=2)}
                 if self.weak_unittests
-                else ""
+                else None
             ),
-            failed_tests_section=(
-                Template(FAILED_TESTS_TEXT).render(
-                    failed_test=json.dumps(self.failed_unittests[:-5], indent=2)
-                )
+            failed_test=(
+                json.dumps(self.failed_unittests, indent=2)
                 if self.failed_unittests
-                else ""
+                else None
             ),
         )
+        print(system_prompt)
+        print(user_prompt)
         response, _, _ = self.router.generate_response(
-            prompt={"system": "", "user": user_template}, streaming=True
+            prompt={"system": system_prompt, "user": user_prompt}, streaming=True
         )
         resp = self.extract_response(response)
         self._save_yaml(resp, "mutation")
         return resp
 
     def _process_generated_unittests_for_mutation(self, response) -> None:
-        generated_unittests = response.get("new_tests", [])
-        insertion_point_marker = response.get("insertion_point_marker", {})
+        generated_unittests = response.get("test_cases", [])
         for generated_unittest in generated_unittests:
             self.validate_unittest(
                 generated_unittest,
-                insertion_point_marker,
-                check_mutantation_coverage=True,
             )
 
     @staticmethod

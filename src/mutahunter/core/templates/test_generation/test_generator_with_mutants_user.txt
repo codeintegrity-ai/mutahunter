@@ -33,10 +33,14 @@ class NewTests(BaseModel):
     test_cases: List[TestCase] = Field(..., description="List of new tests to be added.", max_items=5)
 ```
 
-{% if weak_tests_section %}
-{{ weak_tests_section }}
+{% if weak_tests %}
+## Previously generated tests that passed but did not kill any mutants
+{{ weak_tests }}
 {% endif %}
 
-{% if failed_tests_section %}
-{{ failed_tests_section }}
+{% if failed_test %}
+# Previously generated tests that failed on the original code
+{{ failed_test }}
 {% endif %}
+
+Provide only the YAML output. Do not include any additional explanations or comments.
