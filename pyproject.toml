@@ -39,6 +39,6 @@ mutahunter = "mutahunter.main:run"
 [tool.setuptools.package-data]
 mutahunter = [
     'src/mutahunter/core/queries/*.scm',
-    'src/mutahunter/core/templates/*.html',
-    'src/mutahunter/core/templates/*.txt',
+    'src/mutahunter/core/templates/**/*.html',
+    'src/mutahunter/core/templates/**/*.txt',
 ]
