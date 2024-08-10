@@ -1,0 +1,11 @@
+Based on the error message, the YAML content provided is not in the correct format. Please ensure the YAML content is in the correct format and try again.
+
+YAML content:
+```yaml
+{{ content }}
+```
+
+Error:
+{{error}}
+
+Provide only the YAML output. Do not include any additional explanations or comments.

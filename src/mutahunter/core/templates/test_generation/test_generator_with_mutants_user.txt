@@ -1,0 +1,46 @@
+## Overview
+You task is to generate additional unit tests in {{ language }} to kill the surviving mutants. To kill a mutant, you need to write a test that triggers the fault introduced by the mutant but passes for the original code.
+
+## Source Code
+Here is the source code you will be writing tests against, called `{{ source_file_name }}`.
+```{{ language }}
+{{ source_code }}
+```
+
+## Test File
+Here is the file that contains the existing tests, called `{{ test_file_name }}`
+```{{ language }}
+{{ test_file }}
+```
+
+## Survived Mutants
+Below is a list of survived mutants.
+```json
+{{ survived_mutants }}
+```
+
+## Output Format
+The output should be formatted as a YAML object that corresponds accurately with the $NewTests type as defined in our system's schema. Below are the Pydantic class definitions that outline the structure and details required for the YAML output.
+```python
+class TestCase(BaseModel):
+    test_behavior: str = Field(..., description="Short description of the behavior the test covers.")
+    mutant_id: int = Field(..., description="The ID of the mutant that the test should kill.")
+    test_name: str = Field(..., description="A short unique test name reflecting the test objective.")
+    test_code: str = Field(..., description="A single test function testing the behavioral description.Full test code, following the existing test style.")
+    new_imports_code: str = Field(..., description="New imports required for the new test function, or an empty string if none.")
+
+class NewTests(BaseModel):
+    test_cases: List[TestCase] = Field(..., description="List of new tests to be added.", max_items=5)
+```
+
+{% if weak_tests %}
+## Previously generated tests that passed but did not kill any mutants
+{{ weak_tests }}
+{% endif %}
+
+{% if failed_test %}
+# Previously generated tests that failed on the original code
+{{ failed_test }}
+{% endif %}
+
+Provide only the YAML output. Do not include any additional explanations or comments.

@@ -12,11 +12,16 @@ from mutahunter.core.entities.config import (
 )
 from mutahunter.core.io import FileOperationHandler
 from mutahunter.core.llm_mutation_engine import LLMMutationEngine
+from mutahunter.core.prompt_factory import (
+    MutationTestingPromptFactory,
+    TestGenerationPromptFactory,
+    TestGenerationWithMutationPromptFactory,
+)
 from mutahunter.core.report import MutantReport
 from mutahunter.core.router import LLMRouter
 from mutahunter.core.runner import MutantTestRunner
-from mutahunter.core.unittest_gen_line import UnittestGenLine
-from mutahunter.core.unittest_gen_mutation import UnittestGenMutation
+from mutahunter.core.unit_test_gen import UnittestGenLine
+from mutahunter.core.unit_test_gen_with_mutants import UnittestGenMutation
 
 
 def add_mutation_testing_subparser(subparsers):
@@ -79,9 +84,7 @@ def add_mutation_testing_subparser(subparsers):
 
 
 def add_gen_line_subparser(subparsers):
-    parser = subparsers.add_parser(
-        "gen-line", help="Generate test cases for line coverage."
-    )
+    parser = subparsers.add_parser("gen", help="Generate test cases for line coverage.")
     parser.add_argument(
         "--test-file-path",
     )
@@ -137,7 +140,7 @@ def add_gen_line_subparser(subparsers):
 
 def add_gen_mutation_subparser(subparsers):
     parser = subparsers.add_parser(
-        "gen-mutation", help="Generate test cases for mutation coverage."
+        "gen-mutate", help="Generate test cases for mutation coverage."
     )
     parser.add_argument(
         "--test-file-path",
@@ -205,7 +208,7 @@ def parse_arguments():
     subparsers = parser.add_subparsers(title="commands", dest="command")
     add_mutation_testing_subparser(subparsers)
     add_gen_line_subparser(subparsers)
-    add_gen_mutation_subparser(subparsers)
+    # add_gen_mutation_subparser(subparsers)
 
     return parser.parse_args()
 
@@ -229,11 +232,9 @@ def create_run_mutation_testing_controller(
     )
     analyzer = Analyzer()
     test_runner = MutantTestRunner(test_command=config.test_command)
+    prompt = MutationTestingPromptFactory.get_prompt()
     router = LLMRouter(model=config.model, api_base=config.api_base)
-    engine = LLMMutationEngine(
-        model=config.model,
-        router=router,
-    )
+    engine = LLMMutationEngine(model=config.model, router=router, prompt=prompt)
     db = MutationDatabase()
     mutant_report = MutantReport(db=db)
     file_handler = FileOperationHandler()
@@ -248,6 +249,7 @@ def create_run_mutation_testing_controller(
         db=db,
         mutant_report=mutant_report,
         file_handler=file_handler,
+        prompt=prompt,
     )
 
 
@@ -269,12 +271,14 @@ def create_gen_line_controller(args: argparse.Namespace) -> UnittestGenLine:
     )
     analyzer = Analyzer()
     router = LLMRouter(model=config.model, api_base=config.api_base)
+    prompt = TestGenerationPromptFactory.get_prompt()
 
     return UnittestGenLine(
         config=config,
         coverage_processor=coverage_processor,
         analyzer=analyzer,
         router=router,
+        prompt=prompt,
     )
 
 
@@ -299,6 +303,7 @@ def crete_gen_mutation_controller(
     analyzer = Analyzer()
     test_runner = MutantTestRunner(test_command=config.test_command)
     router = LLMRouter(model=config.model, api_base=config.api_base)
+    prompt = TestGenerationWithMutationPromptFactory.get_prompt()
 
     db = MutationDatabase()
 
@@ -315,6 +320,7 @@ def crete_gen_mutation_controller(
         router=router,
         db=db,
         mutator=mutator,
+        prompt=prompt,
     )
 
 
@@ -324,12 +330,12 @@ def run():
         controller = create_run_mutation_testing_controller(args)
         controller.run()
         pass
-    elif args.command == "gen-line":
+    elif args.command == "gen":
         controller = create_gen_line_controller(args)
         controller.run()
-    elif args.command == "gen-mutation":
-        controller = crete_gen_mutation_controller(args)
-        controller.run()
+    # elif args.command == "gen-mutate":
+    #     controller = crete_gen_mutation_controller(args)
+    #     controller.run()
     else:
         print("Invalid command.")
         sys.exit(1)

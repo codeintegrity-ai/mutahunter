@@ -19,26 +19,15 @@
 
 (superclass (type_identifier) @name.reference.class) @reference.class
 
-;; For extreme mutation testing
+; Query to find method declarations annotated with @Test
+(method_declaration
+  (modifiers
+    (marker_annotation
+      name: (identifier) @annotation.test
+      (#eq? @annotation.test "Test")))) @test.method
 
-;; Match if statements
-(if_statement
-  condition: (_) @condition
-  consequence: (block) @consequence
-  alternative: (block)? @alternative) @if_statement
-
-;; Match for loops
-(for_statement
-  body: (block) @loop_body) @loop
-
-;; Match while loops
-(while_statement
-  body: (block) @loop_body) @loop
-
-;; Match do-while loops
-(do_statement
-  body: (block) @loop_body) @loop
-
-(return_statement
-  "return"
-  (_)? @return_value) @return
+(method_declaration
+  (modifiers
+    (marker_annotation
+      name: (identifier) @annotation.test
+      (#eq? @annotation.test "ParameterizedTest")))) @test.method

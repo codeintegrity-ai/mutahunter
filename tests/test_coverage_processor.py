@@ -66,64 +66,6 @@ LH:2
 end_of_record"""
 
 
-@patch("xml.etree.ElementTree.parse")
-def test_parse_coverage_report_cobertura(mock_parse, config, cobertura_xml_content):
-    config.coverage_type = "cobertura"
-    mock_tree = Mock()
-    mock_tree.getroot.return_value = ET.fromstring(cobertura_xml_content)
-    mock_parse.return_value = mock_tree
-
-    cov_processor = CoverageProcessor(
-        coverage_type=config.coverage_type,
-        code_coverage_report_path=config.code_coverage_report_path,
-    )
-    cov_processor.parse_coverage_report()
-
-    assert cov_processor.file_lines_executed == {"test_file.py": [1, 3]}
-    assert cov_processor.file_lines_not_executed == {"test_file.py": [2]}
-    assert cov_processor.line_coverage_rate == 0.67
-
-
-@patch("xml.etree.ElementTree.parse")
-def test_parse_coverage_report_jacoco(mock_parse, config, jacoco_xml_content):
-    config.coverage_type = "jacoco"
-    mock_tree = Mock()
-    mock_tree.getroot.return_value = ET.fromstring(jacoco_xml_content)
-    mock_parse.return_value = mock_tree
-
-    cov_processor = CoverageProcessor(
-        coverage_type=config.coverage_type,
-        code_coverage_report_path=config.code_coverage_report_path,
-    )
-    cov_processor.parse_coverage_report()
-
-    assert cov_processor.file_lines_executed == {
-        "src/main/java/com/example/TestFile.java": [1, 3]
-    }
-    assert cov_processor.file_lines_not_executed == {
-        "src/main/java/com/example/TestFile.java": [2]
-    }
-    assert cov_processor.line_coverage_rate == 0.67
-
-
-@patch("builtins.open", new_callable=mock_open)
-def test_parse_coverage_report_lcov(mock_open, config, lcov_content):
-    config.coverage_type = "lcov"
-    mock_open.return_value.readlines.return_value = lcov_content.splitlines(
-        keepends=True
-    )
-
-    cov_processor = CoverageProcessor(
-        coverage_type=config.coverage_type,
-        code_coverage_report_path=config.code_coverage_report_path,
-    )
-    cov_processor.parse_coverage_report()
-
-    assert cov_processor.file_lines_executed == {"test_file.py": [1, 3]}
-    assert cov_processor.file_lines_not_executed == {"test_file.py": [2]}
-    assert cov_processor.line_coverage_rate == 0.67
-
-
 def test_invalid_coverage_type(config):
     config.coverage_type = "invalid_type"
 
@@ -135,4 +77,286 @@ def test_invalid_coverage_type(config):
             coverage_type=config.coverage_type,
             code_coverage_report_path=config.code_coverage_report_path,
         )
+        cov_processor.parse_coverage_report()
+
+
+def test_check_file_exists():
+    cov_processor = CoverageProcessor(
+        coverage_type="lcov", code_coverage_report_path="dummy_path"
+    )
+    with pytest.raises(FileNotFoundError):
+        cov_processor._check_file_exists("non_existent_file")
+
+
+def test_check_file_extension():
+    cov_processor = CoverageProcessor(
+        coverage_type="lcov", code_coverage_report_path="dummy_path"
+    )
+    with pytest.raises(ValueError):
+        cov_processor._check_file_extension([".xml"], "dummy_path.info")
+
+
+def test_calculate_line_coverage_rate_for_file():
+    cov_processor = CoverageProcessor(
+        coverage_type="lcov", code_coverage_report_path="dummy_path"
+    )
+    cov_processor.file_lines_executed = {"test_file.py": [1, 3]}
+    cov_processor.file_lines_not_executed = {"test_file.py": [2]}
+    rate = cov_processor.calculate_line_coverage_rate_for_file("test_file.py")
+    assert rate == 2 / 3
+
+
+def test_calculate_line_coverage_rate():
+    cov_processor = CoverageProcessor(
+        coverage_type="lcov", code_coverage_report_path="dummy_path"
+    )
+    cov_processor.file_lines_executed = {"test_file.py": [1, 3], "another_file.py": [1]}
+    cov_processor.file_lines_not_executed = {
+        "test_file.py": [2],
+        "another_file.py": [2, 3],
+    }
+    rate = cov_processor.calculate_line_coverage_rate()
+    assert rate == 0.5
+
+
+@patch("os.walk")
+def test_find_source_file(mock_walk):
+    mock_walk.return_value = [
+        ("/home/user/project/src", [], ["test_file.py"]),
+        ("/home/user/project/tests", [], ["test_file_test.py"]),
+    ]
+    cov_processor = CoverageProcessor(
+        coverage_type="lcov", code_coverage_report_path="dummy_path"
+    )
+    file_path = cov_processor.find_source_file("test_file.py")
+    assert file_path == "/home/user/project/src/test_file.py"
+
+
+def test_calculate_line_coverage_rate_for_file_no_lines():
+    cov_processor = CoverageProcessor(
+        coverage_type="lcov", code_coverage_report_path="dummy_path"
+    )
+    rate = cov_processor.calculate_line_coverage_rate_for_file("empty_file.py")
+    assert rate == 0.00
+
+
+def test_calculate_line_coverage_rate_no_lines():
+    cov_processor = CoverageProcessor(
+        coverage_type="lcov", code_coverage_report_path="dummy_path"
+    )
+    rate = cov_processor.calculate_line_coverage_rate()
+    assert rate == 0.00
+
+
+def test_check_file_exists():
+    cov_processor = CoverageProcessor(
+        coverage_type="lcov", code_coverage_report_path="dummy_path"
+    )
+    with pytest.raises(FileNotFoundError):
+        cov_processor._check_file_exists("non_existent_file")
+
+
+def test_check_file_extension_valid():
+    cov_processor = CoverageProcessor(
+        coverage_type="lcov", code_coverage_report_path="dummy_path"
+    )
+    try:
+        cov_processor._check_file_extension([".info"], "dummy_path.info")
+    except ValueError:
+        pytest.fail("ValueError raised unexpectedly!")
+
+
+@patch("os.path.exists", return_value=True)
+def test_check_file_exists_valid(mock_exists):
+    cov_processor = CoverageProcessor(
+        coverage_type="lcov", code_coverage_report_path="dummy_path"
+    )
+    try:
+        cov_processor._check_file_exists("dummy_path")
+    except FileNotFoundError:
+        pytest.fail("FileNotFoundError raised unexpectedly!")
+
+
+def test_check_file_extension_invalid():
+    cov_processor = CoverageProcessor(
+        coverage_type="lcov", code_coverage_report_path="dummy_path"
+    )
+    with pytest.raises(ValueError):
+        cov_processor._check_file_extension([".xml"], "dummy_path.info")
+
+
+def test_parse_coverage_report_file_not_found():
+    cov_processor = CoverageProcessor(
+        coverage_type="lcov", code_coverage_report_path="non_existent_file.info"
+    )
+    with pytest.raises(
+        FileNotFoundError, match="File 'non_existent_file.info' not found."
+    ):
+        cov_processor.parse_coverage_report()
+
+
+def test_parse_coverage_report_lcov_invalid_file():
+    cov_processor = CoverageProcessor(
+        coverage_type="lcov", code_coverage_report_path="non_existent_file.info"
+    )
+    with pytest.raises(
+        FileNotFoundError, match="File 'non_existent_file.info' not found."
+    ):
+        cov_processor.parse_coverage_report()
+
+
+def test_parse_coverage_report_cobertura_invalid_file():
+    cov_processor = CoverageProcessor(
+        coverage_type="cobertura", code_coverage_report_path="non_existent_file.xml"
+    )
+    with pytest.raises(
+        FileNotFoundError, match="File 'non_existent_file.xml' not found."
+    ):
+        cov_processor.parse_coverage_report()
+
+
+def test_parse_coverage_report_jacoco_invalid_file():
+    cov_processor = CoverageProcessor(
+        coverage_type="jacoco", code_coverage_report_path="non_existent_file.xml"
+    )
+    with pytest.raises(
+        FileNotFoundError, match="File 'non_existent_file.xml' not found."
+    ):
+        cov_processor.parse_coverage_report()
+
+
+def test_calculate_line_coverage_rate_no_executed_lines():
+    cov_processor = CoverageProcessor(
+        coverage_type="lcov", code_coverage_report_path="dummy_path"
+    )
+    cov_processor.file_lines_executed = {"test_file.py": []}
+    cov_processor.file_lines_not_executed = {"test_file.py": [1, 2, 3]}
+    rate = cov_processor.calculate_line_coverage_rate()
+    assert rate == 0.00
+
+
+def test_parse_coverage_report_invalid_type():
+    cov_processor = CoverageProcessor(
+        coverage_type="invalid_type", code_coverage_report_path="dummy_path"
+    )
+    with pytest.raises(
+        ValueError,
+        match="Invalid coverage tool. Please specify either 'cobertura', 'jacoco', or 'lcov'.",
+    ):
+        cov_processor.parse_coverage_report()
+
+
+@patch("os.path.exists", return_value=True)
+def test_check_file_exists_valid(mock_exists):
+    cov_processor = CoverageProcessor(
+        coverage_type="lcov", code_coverage_report_path="dummy_path"
+    )
+    try:
+        cov_processor._check_file_exists("dummy_path")
+    except FileNotFoundError:
+        pytest.fail("FileNotFoundError raised unexpectedly!")
+
+
+def test_calculate_line_coverage_rate_all_executed_lines():
+    cov_processor = CoverageProcessor(
+        coverage_type="lcov", code_coverage_report_path="dummy_path"
+    )
+    cov_processor.file_lines_executed = {"test_file.py": [1, 2, 3]}
+    cov_processor.file_lines_not_executed = {"test_file.py": []}
+    rate = cov_processor.calculate_line_coverage_rate()
+    assert rate == 1.00
+
+
+def test_calculate_line_coverage_rate_all_executed():
+    cov_processor = CoverageProcessor(
+        coverage_type="lcov", code_coverage_report_path="dummy_path"
+    )
+    cov_processor.file_lines_executed = {"test_file.py": [1, 2, 3]}
+    cov_processor.file_lines_not_executed = {"test_file.py": []}
+    rate = cov_processor.calculate_line_coverage_rate()
+    assert rate == 1.00
+
+
+def test_calculate_line_coverage_rate_all_missed():
+    cov_processor = CoverageProcessor(
+        coverage_type="lcov", code_coverage_report_path="dummy_path"
+    )
+    cov_processor.file_lines_executed = {"test_file.py": []}
+    cov_processor.file_lines_not_executed = {"test_file.py": [1, 2, 3]}
+    rate = cov_processor.calculate_line_coverage_rate()
+    assert rate == 0.00
+
+
+@patch(
+    "builtins.open",
+    new_callable=mock_open,
+    read_data="SF:test_file.py\nDA:1,1\nDA:2,0\nDA:3,1\nLF:3\nLH:2\nend_of_record",
+)
+@patch("os.path.exists", return_value=True)
+def test_parse_coverage_report_lcov(mock_exists, mock_file):
+    cov_processor = CoverageProcessor(
+        coverage_type="lcov", code_coverage_report_path="dummy_path.info"
+    )
+    cov_processor.parse_coverage_report()
+    assert cov_processor.file_lines_executed == {"test_file.py": [1, 3]}
+    assert cov_processor.file_lines_not_executed == {"test_file.py": [2]}
+
+
+@patch(
+    "builtins.open",
+    new_callable=mock_open,
+    read_data="""<?xml version="1.0" ?>
+<coverage line-rate="0.8">
+    <packages>
+        <package>
+            <classes>
+                <class filename="test_file.py">
+                    <lines>
+                        <line number="1" hits="1"/>
+                        <line number="2" hits="0"/>
+                        <line number="3" hits="1"/>
+                    </lines>
+                </class>
+            </classes>
+        </package>
+    </packages>
+</coverage>""",
+)
+@patch("os.path.exists", return_value=True)
+def test_parse_coverage_report_cobertura(mock_exists, mock_file):
+    cov_processor = CoverageProcessor(
+        coverage_type="cobertura", code_coverage_report_path="dummy_path.xml"
+    )
+    cov_processor.parse_coverage_report()
+    assert cov_processor.file_lines_executed == {"test_file.py": [1, 3]}
+    assert cov_processor.file_lines_not_executed == {"test_file.py": [2]}
+
+
+def test_parse_coverage_report_lcov_file_not_found():
+    cov_processor = CoverageProcessor(
+        coverage_type="lcov", code_coverage_report_path="non_existent_file.info"
+    )
+    with pytest.raises(
+        FileNotFoundError, match="File 'non_existent_file.info' not found."
+    ):
+        cov_processor.parse_coverage_report()
+
+
+def test_parse_coverage_report_cobertura_file_not_found():
+    cov_processor = CoverageProcessor(
+        coverage_type="cobertura", code_coverage_report_path="non_existent_file.xml"
+    )
+    with pytest.raises(
+        FileNotFoundError, match="File 'non_existent_file.xml' not found."
+    ):
+        cov_processor.parse_coverage_report()
+
+
+def test_parse_coverage_report_jacoco_file_not_found():
+    cov_processor = CoverageProcessor(
+        coverage_type="jacoco", code_coverage_report_path="non_existent_file.xml"
+    )
+    with pytest.raises(
+        FileNotFoundError, match="File 'non_existent_file.xml' not found."
+    ):
         cov_processor.parse_coverage_report()

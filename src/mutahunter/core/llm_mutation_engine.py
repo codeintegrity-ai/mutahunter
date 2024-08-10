@@ -6,7 +6,7 @@ from grep_ast import filename_to_lang
 from jinja2 import Template
 
 from mutahunter.core.logger import logger
-from mutahunter.core.prompts.factory import PromptFactory
+from mutahunter.core.prompt_factory import MutationTestingPrompt
 from mutahunter.core.repomap import RepoMap
 from mutahunter.core.router import LLMRouter
 
@@ -37,13 +37,12 @@ class LLMMutationEngine:
         self,
         model: str,
         router: LLMRouter,
+        prompt: MutationTestingPrompt,
     ) -> None:
         self.model = model
         self.router = router
         self.repo_map = RepoMap(model=self.model)
-        self.prompt = PromptFactory.get_prompt()
-        os.makedirs("logs/_latest/llm", exist_ok=True)
-
+        self.prompt = prompt
         self.num = 0
 
     def get_source_code(self, source_file_path: str) -> str:
@@ -65,32 +64,24 @@ class LLMMutationEngine:
         src_code = self.get_source_code(source_file_path)
         src_code_with_line_num = self._add_line_numbers(src_code)
 
-        system_template = Template(self.prompt.system_prompt).render(language=language)
-        user_template = Template(self.prompt.user_prompt).render(
-            language=language,
-            ast=repo_map_result,
-            covered_lines=executed_lines,
-            src_code_with_line_num=src_code_with_line_num,
-            maximum_num_of_mutants_per_function_block=2,
+        system_template = self.prompt.mutator_system_prompt.render(
+            {
+                "language": language,
+            }
+        )
+        user_template = self.prompt.mutator_user_prompt.render(
+            {
+                "language": language,
+                "ast": repo_map_result,
+                "covered_lines": executed_lines,
+                "src_code_with_line_num": src_code_with_line_num,
+                "maximum_num_of_mutants_per_function_block": 2,
+            }
         )
         prompt = {"system": system_template, "user": user_template}
         model_response, _, _ = self.router.generate_response(
             prompt=prompt, streaming=True
         )
-        #         model_response = """
-        # ```yaml
-        # source_file: src/main/java/com/example/Calculator.java
-        # mutants:
-        #   - function_name: add
-        #     type: Modify Core Logic
-        #     description: Changed the addition operation to a subtraction operation, introducing incorrect logic.
-        #     line_number: 7
-        #     original_code: |
-        #       return a + b;
-        #     mutated_code: |
-        #       return a - b; // Mutated to subtract instead of add
-        # ```
-        #         """
         return model_response
 
     def generate(
@@ -98,8 +89,7 @@ class LLMMutationEngine:
     ) -> Dict[str, Any]:
         repo_map_result = self._get_repo_map(cov_files=cov_files)
         if not repo_map_result:
-            logger.error("No repository map found.")
-            return {"mutants": []}
+            logger.info("Current language is not supported for retrieving AST.")
 
         response = self.generate_mutant(
             repo_map_result, source_file_path, executed_lines

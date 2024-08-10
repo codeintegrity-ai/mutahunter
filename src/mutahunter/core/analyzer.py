@@ -194,12 +194,24 @@ class Analyzer:
         language = get_language(lang)
 
         tree = parser.parse(source_code)
+
+        # def traverse_tree(node, depth=0):
+        #     print("  " * depth + f"{node.type}: {node.text.decode('utf8')}")
+        #     for child in node.children:
+        #         traverse_tree(child, depth + 1)
+
+        # traverse_tree(tree.root_node)
+
         query_scm = self._load_query_scm(lang)
         if not query_scm:
             return []
 
         query = language.query(query_scm)
         captures = query.captures(tree.root_node)
+        # for node, tag in captures:
+        #     print(node, tag)
+        # print code
+        # print(source_code[node.start_byte : node.end_byte].decode("utf8"))
 
         if not captures:
             logger.error("Tree-sitter query failed to find any captures.")
@@ -279,3 +291,29 @@ class Analyzer:
         """
         node_text = source_code[node.start_byte : node.end_byte].decode("utf8")
         return method_name in node_text
+
+    def get_import_nodes(self, source_file_path: str) -> List[Any]:
+        """
+        Retrieves import nodes from a given file.
+
+        Args:
+            source_file_path (str): The name of the file being analyzed.
+
+        Returns:
+            List[Any]: A list of import nodes.
+        """
+        source_code = self._read_source_file(source_file_path)
+        return self._find_blocks_nodes(source_file_path, source_code, ["import"])
+
+    def get_test_nodes(self, source_file_path: str) -> List[Any]:
+        """
+        Retrieves test nodes from a given file.
+
+        Args:
+            source_file_path (str): The name of the file being analyzed.
+
+        Returns:
+            List[Any]: A list of test nodes.
+        """
+        source_code = self._read_source_file(source_file_path)
+        return self._find_blocks_nodes(source_file_path, source_code, ["test.method"])

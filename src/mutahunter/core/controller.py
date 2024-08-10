@@ -25,10 +25,7 @@ from mutahunter.core.git_handler import GitHandler
 from mutahunter.core.io import FileOperationHandler
 from mutahunter.core.llm_mutation_engine import LLMMutationEngine
 from mutahunter.core.logger import logger
-from mutahunter.core.prompts.mutant_generator import (
-    SYSTEM_PROMPT_MUTANT_ANALYSUS,
-    USER_PROMPT_MUTANT_ANALYSIS,
-)
+from mutahunter.core.prompt_factory import MutationTestingPrompt
 from mutahunter.core.report import MutantReport
 from mutahunter.core.router import LLMRouter
 from mutahunter.core.runner import MutantTestRunner
@@ -46,6 +43,7 @@ class MutationTestController:
         db: MutationDatabase,
         mutant_report: MutantReport,
         file_handler: FileOperationHandler,
+        prompt: MutationTestingPrompt,
     ) -> None:
         self.config = config
         self.coverage_processor = coverage_processor
@@ -56,6 +54,7 @@ class MutationTestController:
         self.db = db
         self.mutant_report = mutant_report
         self.file_handler = file_handler
+        self.prompt = prompt
 
         self.current_run_id = None
 
@@ -246,17 +245,19 @@ class MutationTestController:
             with open(k, "r", encoding="utf-8") as f:
                 src_code = f.read()
             prompt = {
-                "system": Template(SYSTEM_PROMPT_MUTANT_ANALYSUS).render(),
-                "user": Template(USER_PROMPT_MUTANT_ANALYSIS).render(
-                    source_code=src_code,
-                    surviving_mutants=json.dumps(v, indent=2),
+                "system": self.prompt.analyzer_system_prompt.render(),
+                "user": self.prompt.analyzer_user_prompt.render(
+                    {
+                        "source_code": src_code,
+                        "surviving_mutants": json.dumps(v, indent=2) if v else None,
+                    }
                 ),
             }
             mode_response, _, _ = self.router.generate_response(
-                prompt=prompt, streaming=True
+                prompt=prompt, streaming=False
             )
-            # write markdown file
+            current_time = time.strftime("%Y-%m-%d-%H-%M-%S")
             with open(
-                f"logs/_latest/llm/audit_{str(uuid4())[:4]}.md", "w", encoding="utf-8"
+                f"logs/_latest/llm/audit_{current_time}.md", "w", encoding="utf-8"
             ) as f:
                 f.write(mode_response)

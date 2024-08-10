@@ -1,0 +1,63 @@
+# Unit Test Generator for {{ language }} using {{ test_framework }}
+
+## Task
+Generate additional unit tests for the given source code based on the provided test plan.
+
+## Test Plan
+```json
+{{ test_plan }}
+```
+
+## Source File
+```{{ language }}
+{{ source_code }}
+```
+
+## Existing Test File {{ test_file_name }}
+```{{ language }}
+{{ test_file }}
+```
+## Output Format
+Provide a YAML object conforming to the $NewTests type:
+```python
+class TestCases(BaseModel):
+    test_behavior: str
+    test_name: str
+    test_code: str 
+    new_imports_code: str
+    test_tags: List[str]
+
+class NewTests(BaseModel):
+    new_tests: List[TestCases]
+```
+
+## Requirements
+1. Write a test code for each test case in the test plan
+2. Test code must assert one concept per test case.
+3. Test code must be full complete function in {{ language }} using {{ test_framework }}.
+4. Focus on testing a single behavior or outcome per test case.
+5. Include only the test function, not boilerplate code
+6. Specify new imports if needed. 
+7. Use appropriate test tags
+8. Double check the test code for correctness
+9. Double check all the necessary imports are included
+
+## Example Output
+```yaml
+new_tests:
+  - test_behavior: "Verify user login with valid credentials"
+    test_name: "test_valid_user_login"
+    test_code: |
+      ...
+    new_imports_code: |
+        ...
+        ...
+    test_tags: ["happy path", "authentication"]
+```
+{% if failed_tests %}
+## Failed Tests
+The following tests failed in the test suite:
+{{ failed_tests }}
+{% endif %}
+
+Provide only the YAML output. Do not include any additional explanations or comments.
