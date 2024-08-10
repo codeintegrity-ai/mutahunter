@@ -25,7 +25,7 @@ from mutahunter.core.prompt_factory import (
 
 
 def add_mutation_testing_subparser(subparsers):
-    parser = subparsers.add_parser("mutate", help="Run the mutation testing process.")
+    parser = subparsers.add_parser("run", help="Run the mutation testing process.")
     parser.add_argument(
         "--model",
         type=str,
@@ -208,7 +208,7 @@ def parse_arguments():
     subparsers = parser.add_subparsers(title="commands", dest="command")
     add_mutation_testing_subparser(subparsers)
     add_gen_line_subparser(subparsers)
-    add_gen_mutation_subparser(subparsers)
+    # add_gen_mutation_subparser(subparsers)
 
     return parser.parse_args()
 
@@ -326,16 +326,16 @@ def crete_gen_mutation_controller(
 
 def run():
     args = parse_arguments()
-    if args.command == "mutate":
+    if args.command == "run":
         controller = create_run_mutation_testing_controller(args)
         controller.run()
         pass
     elif args.command == "gen":
         controller = create_gen_line_controller(args)
         controller.run()
-    elif args.command == "gen-mutate":
-        controller = crete_gen_mutation_controller(args)
-        controller.run()
+    # elif args.command == "gen-mutate":
+    #     controller = crete_gen_mutation_controller(args)
+    #     controller.run()
     else:
         print("Invalid command.")
         sys.exit(1)

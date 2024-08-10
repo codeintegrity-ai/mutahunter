@@ -23,7 +23,7 @@ export OPENAI_API_KEY=your-key-goes-here
 
 mutahunter run --test-command "go test" --code-coverage-report-path "coverage.xml" --only-mutate-file-paths "app.go" --model "gpt-4o-mini"
 
-mutahunter gen-line --test-command "go test -coverprofile=coverage.out" --code-coverage-report-path "coverage.xml" --coverage-type cobertura --test-file-path "app_test.go" --source-file-path "app.go" --model "gpt-4o" --target-line-coverage 0.9 --max-attempts 3
+mutahunter gen --test-command "go test -coverprofile=coverage.out" --code-coverage-report-path "coverage.xml" --coverage-type cobertura --test-file-path "app_test.go" --source-file-path "app.go" --model "gpt-4o" --target-line-coverage 0.9 --max-attempts 3
 
 gocov convert coverage.out | gocov-xml > coverage.xml # as there is no easy way to get direct coverage report from go test
 ```

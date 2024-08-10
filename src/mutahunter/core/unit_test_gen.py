@@ -120,7 +120,6 @@ class UnittestGenLine:
                 prompt={"system": system_prompt, "user": user_prompt}, streaming=True
             )
             response = self.router.extract_yaml_from_response(response)
-            print("rgenerate_tests esponse", response)
             return response
         except Exception as e:
             raise
@@ -141,9 +140,9 @@ class UnittestGenLine:
             test_block_nodes = self.analyzer.get_test_nodes(
                 source_file_path=self.config.test_file_path
             )
-            import_nodes = self.analyzer.get_import_nodes(
-                source_file_path=self.config.test_file_path
-            )
+            # import_nodes = self.analyzer.get_import_nodes(
+            #     source_file_path=self.config.test_file_path
+            # )
             # imports_lists = []
             # for import_node in import_nodes:
             #     imports_lists.append(import_node.text.decode("utf-8"))

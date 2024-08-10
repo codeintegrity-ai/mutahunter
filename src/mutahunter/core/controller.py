@@ -254,7 +254,7 @@ class MutationTestController:
                 ),
             }
             mode_response, _, _ = self.router.generate_response(
-                prompt=prompt, streaming=True
+                prompt=prompt, streaming=False
             )
             current_time = time.strftime("%Y-%m-%d-%H-%M-%S")
             with open(
