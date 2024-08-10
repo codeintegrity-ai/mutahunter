@@ -163,18 +163,16 @@ class UnittestGenMutation:
                 new_test_code != ""
             ), "New test code is empty in the generated unittest"
 
-            print("NEW TEST CODE:", new_test_code)
-            print("NEW IMPORTS CODE:", new_imports_code)
+            # print("NEW TEST CODE:", new_test_code)
+            # print("NEW IMPORTS CODE:", new_imports_code)
 
             FileUtils.backup_code(self.config.test_file_path)
             test_file_code = FileUtils.read_file(self.config.test_file_path)
             test_block_nodes = self.analyzer.get_test_nodes(
                 source_file_path=self.config.test_file_path
             )
-            test_block_nodes = []
             # get last test block node
             if len(test_block_nodes) > 0:
-                print("test_block_nodes:", test_block_nodes)
                 last_test_block_node = test_block_nodes[-1]
 
                 indent_level = last_test_block_node.start_point[1]
@@ -193,8 +191,6 @@ class UnittestGenMutation:
                         indent_level=0,
                         line_number=0,
                     )
-                print("MODIFIED SRC CODE:\n", modified_src_code)
-                exit(2)
             else:
                 # TODO:// Find a better way to handle this case
                 modified_src_code = merge_code(
@@ -215,30 +211,31 @@ class UnittestGenMutation:
             ):
                 with open(self.config.test_file_path, "w") as file:
                     file.write(modified_src_code)
-
-            result = subprocess.run(
-                self.config.test_command.split(),
-                capture_output=True,
-                text=True,
-                cwd=os.getcwd(),
-            )
-            # print("result:", result)
-            if result.returncode == 0:
-                self.coverage_processor.parse_coverage_report()
-                if self.check_mutant_coverage_increase(mutant_id, new_test_code):
-                    logger.info(
-                        f"Test passed and increased mutation cov:\n{new_test_code}"
-                    )
-                    return True
+                result = subprocess.run(
+                    self.config.test_command.split(),
+                    capture_output=True,
+                    text=True,
+                    cwd=os.getcwd(),
+                )
+                # print("result:", result)
+                if result.returncode == 0:
+                    self.coverage_processor.parse_coverage_report()
+                    if self.check_mutant_coverage_increase(mutant_id, new_test_code):
+                        logger.info(
+                            f"Test passed and increased mutation cov:\n{new_test_code}"
+                        )
+                        return True
+                    else:
+                        logger.info(
+                            f"Test passed but failed to increase mutation cov for\n{new_test_code}"
+                        )
                 else:
-                    logger.info(
-                        f"Test passed but failed to increase mutation cov for\n{new_test_code}"
-                    )
-            else:
-                logger.info(f"Test failed for\n{new_test_code}")
-                self._handle_failed_test(result, new_test_code)
+                    logger.info(f"Test failed for\n{new_test_code}")
+                    self._handle_failed_test(result, new_test_code)
+            raise Exception("Failed to validate unittest")
         except Exception as e:
             logger.info(f"Failed to validate unittest: {e}")
+            FileUtils.revert(self.config.test_file_path)
             raise
         else:
             FileUtils.revert(self.config.test_file_path)

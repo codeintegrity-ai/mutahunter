@@ -23,7 +23,7 @@ Provide a YAML object conforming to the $NewTests type:
 class TestCases(BaseModel):
     test_behavior: str
     test_name: str
-    test_code: str
+    test_code: str 
     new_imports_code: str
     test_tags: List[str]
 
@@ -34,7 +34,7 @@ class NewTests(BaseModel):
 ## Requirements
 1. Write a test code for each test case in the test plan
 2. Test code must assert one concept per test case.
-3. Test code must be full complete function.
+3. Test code must be full complete function in {{ language }} using {{ test_framework }}.
 4. Focus on testing a single behavior or outcome per test case.
 5. Include only the test function, not boilerplate code
 6. Specify new imports if needed. 

@@ -13,6 +13,7 @@ from mutahunter.core.logger import logger
 from mutahunter.core.router import LLMRouter
 from mutahunter.core.utils import FileUtils
 from mutahunter.core.prompt_factory import TestGenerationPrompt
+from mutahunter.core.code_merger import merge_code
 
 
 class UnittestGenLine:
@@ -45,7 +46,7 @@ class UnittestGenLine:
         logger.info(f"Initial Line Coverage: {initial_line_coverage_rate*100:.2f}%")
         self.increase_line_coverage()
         logger.info(
-            f"Coverage increased from {initial_line_coverage_rate*100:.2f}% to {self.current_line_coverage_rate*100:.2f}%"
+            f"Line Coverage increased from {initial_line_coverage_rate*100:.2f}% to {self.current_line_coverage_rate*100:.2f}%"
         )
 
     def increase_line_coverage(self):
@@ -56,13 +57,11 @@ class UnittestGenLine:
         ):
             attempt += 1
             test_plan = self.analyze_code()
-
             response = self.generate_tests(test_plan)
             new_tests = response.get("new_tests", [])
-
-            for generated_unittest in new_tests:
+            for new_test in new_tests:
                 self.validate_unittest(
-                    generated_unittest,
+                    new_test,
                 )
                 self.check_line_coverage_increase()
             self.coverage_processor.parse_coverage_report()
@@ -145,71 +144,73 @@ class UnittestGenLine:
         generated_unittest: dict,
     ) -> None:
         try:
-            new_test_code = self._reset_indentation(generated_unittest["test_code"])
+            new_test_code = generated_unittest.get("test_code", "")
             new_imports_code = generated_unittest.get("new_imports_code", "")
+            assert (
+                new_test_code != ""
+            ), "New test code is empty in the generated unittest"
+
             FileUtils.backup_code(self.config.test_file_path)
+            test_file_code = FileUtils.read_file(self.config.test_file_path)
             test_block_nodes = self.analyzer.get_test_nodes(
                 source_file_path=self.config.test_file_path
             )
             # get last test block node
-            last_test_block_node = test_block_nodes[-1] if test_block_nodes else None
-            test_file_code = FileUtils.read_file(self.config.test_file_path)
-            test_code_split = test_file_code.splitlines()
-            if last_test_block_node:
-                # get last test node's line number and indentation to insert new test
-                indent_level_to_indent = (
-                    last_test_block_node.start_point[1] if last_test_block_node else 0
-                )
-                line_number_to_insert = (
-                    last_test_block_node.end_point[0] + 1
-                    if last_test_block_node
-                    else len(test_code_split)
-                )
-                # print("indent_level_to_indent", indent_level_to_indent)
-                # print("line_number_to_insert", line_number_to_insert)
+            if len(test_block_nodes) > 0:
+                last_test_block_node = test_block_nodes[-1]
 
-                test_code = "\n" + self._adjust_indentation(
-                    new_test_code, indent_level_to_indent
+                indent_level = last_test_block_node.start_point[1]
+                line_number = last_test_block_node.end_point[0] + 1
+
+                modified_src_code = merge_code(
+                    code_to_insert=new_test_code,
+                    org_src_code=test_file_code,
+                    indent_level=indent_level,
+                    line_number=line_number,
                 )
-                test_code_split.insert(line_number_to_insert, test_code)
                 for new_import in new_imports_code.splitlines():
-                    test_code_split.insert(0, new_import)
-
-                new_code = "\n".join(test_code_split)
-                if self.analyzer.check_syntax(self.config.test_file_path, new_code):
-                    with open(self.config.test_file_path, "w") as file:
-                        file.write(new_code)
+                    modified_src_code = merge_code(
+                        code_to_insert=new_import,
+                        org_src_code=modified_src_code,
+                        indent_level=0,
+                        line_number=0,
+                    )
             else:
                 # TODO:// Find a better way to handle this case
-                test_code = "\n" + new_test_code + "\n"
-                test_code_split.insert(len(test_code_split), test_code)
-                # NOTE: Add new imports at the beginning of the file
+                modified_src_code = merge_code(
+                    code_to_insert=new_test_code,
+                    org_src_code=test_file_code,
+                    indent_level=0,
+                    line_number=-1,
+                )
                 for new_import in new_imports_code.splitlines():
-                    test_code_split.insert(0, new_import)
-
-                new_code = "\n".join(test_code_split)
-                if self.analyzer.check_syntax(self.config.test_file_path, new_code):
-                    with open(self.config.test_file_path, "w") as file:
-                        file.write(new_code)
-
-            result = subprocess.run(
-                self.config.test_command.split(),
-                capture_output=True,
-                text=True,
-                cwd=os.getcwd(),
-            )
-            # print("result", result)
-            if result.returncode == 0:
-                return
-            else:
-                logger.info(f"Test failed for\n{test_code}")
-                self._handle_failed_test(result, test_code)
+                    modified_src_code = merge_code(
+                        code_to_insert=new_import,
+                        org_src_code=modified_src_code,
+                        indent_level=0,
+                        line_number=0,
+                    )
+            if self.analyzer.check_syntax(
+                self.config.test_file_path, modified_src_code
+            ):
+                with open(self.config.test_file_path, "w") as file:
+                    file.write(modified_src_code)
+                result = subprocess.run(
+                    self.config.test_command.split(),
+                    capture_output=True,
+                    text=True,
+                    cwd=os.getcwd(),
+                )
+                if result.returncode == 0:
+                    return
+                else:
+                    logger.info(f"Test failed for\n{new_test_code}")
+                    self._handle_failed_test(result, new_test_code)
+            raise Exception("Failed to validate unittest")
         except Exception as e:
             logger.info(f"Failed to validate unittest: {e}")
-            raise
-        else:
             FileUtils.revert(self.config.test_file_path)
-            return False
+            raise
 
     def check_line_coverage_increase(self):
         self.coverage_processor.parse_coverage_report()
@@ -260,21 +261,3 @@ class UnittestGenLine:
             prompt={"system": "", "user": user_prompt}, streaming=False
         )
         return model_response
-
-    @staticmethod
-    def _reset_indentation(code: str) -> str:
-        """Reset the indentation of the given code to zero-based indentation."""
-        lines = code.splitlines()
-        if not lines:
-            return code
-        min_indent = min(
-            len(line) - len(line.lstrip()) for line in lines if line.strip()
-        )
-        return "\n".join(line[min_indent:] if line.strip() else line for line in lines)
-
-    @staticmethod
-    def _adjust_indentation(code: str, indent_level: int) -> str:
-        """Adjust the given code to the specified base indentation level."""
-        lines = code.splitlines()
-        adjusted_lines = [" " * indent_level + line for line in lines]
-        return "\n".join(adjusted_lines)

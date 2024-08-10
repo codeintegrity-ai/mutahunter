@@ -15,8 +15,8 @@ from mutahunter.core.llm_mutation_engine import LLMMutationEngine
 from mutahunter.core.report import MutantReport
 from mutahunter.core.router import LLMRouter
 from mutahunter.core.runner import MutantTestRunner
-from mutahunter.core.unittest_gen import UnittestGenLine
-from mutahunter.core.unittest_gen_with_mutants import UnittestGenMutation
+from mutahunter.core.unit_test_gen import UnittestGenLine
+from mutahunter.core.unit_test_gen_with_mutants import UnittestGenMutation
 from mutahunter.core.prompt_factory import (
     TestGenerationPromptFactory,
     TestGenerationWithMutationPromptFactory,
@@ -25,7 +25,7 @@ from mutahunter.core.prompt_factory import (
 
 
 def add_mutation_testing_subparser(subparsers):
-    parser = subparsers.add_parser("run", help="Run the mutation testing process.")
+    parser = subparsers.add_parser("mutate", help="Run the mutation testing process.")
     parser.add_argument(
         "--model",
         type=str,
@@ -84,9 +84,7 @@ def add_mutation_testing_subparser(subparsers):
 
 
 def add_gen_line_subparser(subparsers):
-    parser = subparsers.add_parser(
-        "gen-line", help="Generate test cases for line coverage."
-    )
+    parser = subparsers.add_parser("gen", help="Generate test cases for line coverage.")
     parser.add_argument(
         "--test-file-path",
     )
@@ -142,7 +140,7 @@ def add_gen_line_subparser(subparsers):
 
 def add_gen_mutation_subparser(subparsers):
     parser = subparsers.add_parser(
-        "gen-mutation", help="Generate test cases for mutation coverage."
+        "gen-mutate", help="Generate test cases for mutation coverage."
     )
     parser.add_argument(
         "--test-file-path",
@@ -328,14 +326,14 @@ def crete_gen_mutation_controller(
 
 def run():
     args = parse_arguments()
-    if args.command == "run":
+    if args.command == "mutate":
         controller = create_run_mutation_testing_controller(args)
         controller.run()
         pass
-    elif args.command == "gen-line":
+    elif args.command == "gen":
         controller = create_gen_line_controller(args)
         controller.run()
-    elif args.command == "gen-mutation":
+    elif args.command == "gen-mutate":
         controller = crete_gen_mutation_controller(args)
         controller.run()
     else:
