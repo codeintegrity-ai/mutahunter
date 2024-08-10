@@ -43,7 +43,6 @@ class LLMMutationEngine:
         self.router = router
         self.repo_map = RepoMap(model=self.model)
         self.prompt = prompt
-        os.makedirs("logs/_latest/llm", exist_ok=True)
         self.num = 0
 
     def get_source_code(self, source_file_path: str) -> str:

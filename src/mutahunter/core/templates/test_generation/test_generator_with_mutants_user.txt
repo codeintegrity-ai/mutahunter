@@ -24,7 +24,7 @@ The output should be formatted as a YAML object that corresponds accurately with
 ```python
 class TestCase(BaseModel):
     test_behavior: str = Field(..., description="Short description of the behavior the test covers.")
-    mutant_id: str = Field(..., description="The ID of the mutant that the test should kill.")
+    mutant_id: int = Field(..., description="The ID of the mutant that the test should kill.")
     test_name: str = Field(..., description="A short unique test name reflecting the test objective.")
     test_code: str = Field(..., description="A single test function testing the behavioral description.Full test code, following the existing test style.")
     new_imports_code: str = Field(..., description="New imports required for the new test function, or an empty string if none.")

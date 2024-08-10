@@ -6,8 +6,7 @@ import os
 from importlib import resources
 from typing import Any, Dict, List, Union
 
-from jinja2 import (Environment, FileSystemLoader, PackageLoader,
-                    select_autoescape)
+from jinja2 import Environment, FileSystemLoader, PackageLoader, select_autoescape
 
 from mutahunter.core.db import MutationDatabase
 from mutahunter.core.logger import logger
