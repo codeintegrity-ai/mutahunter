@@ -131,7 +131,6 @@ class UnittestGenLine:
     ) -> None:
         try:
 
-            # pretty print the generated unittest
             new_test_code = generated_unittest.get("test_code", "")
             new_imports_code = generated_unittest.get("new_imports_code", "")
             assert (
@@ -142,7 +141,12 @@ class UnittestGenLine:
             test_block_nodes = self.analyzer.get_test_nodes(
                 source_file_path=self.config.test_file_path
             )
-            print("test_block_nodes", test_block_nodes)
+            import_nodes = self.analyzer.get_import_nodes(
+                source_file_path=self.config.test_file_path
+            )
+            # imports_lists = []
+            # for import_node in import_nodes:
+            #     imports_lists.append(import_node.text.decode("utf-8"))
             # get last test block node
             if len(test_block_nodes) > 0:
                 last_test_block_node = test_block_nodes[-1]
@@ -156,14 +160,14 @@ class UnittestGenLine:
                     indent_level=indent_level,
                     line_number=line_number,
                 )
-                # for new_import in new_imports_code.splitlines():
-                #     new_import = new_import.strip().lstrip()
-                #     modified_src_code = merge_code(
-                #         code_to_insert=new_import,
-                #         org_src_code=modified_src_code,
-                #         indent_level=0,
-                #         line_number=0,
-                #     )
+                for new_import in new_imports_code.splitlines():
+                    if new_import not in test_file_code:
+                        modified_src_code = merge_code(
+                            code_to_insert=new_import,
+                            org_src_code=modified_src_code,
+                            indent_level=0,
+                            line_number=1,
+                        )
             else:
                 # TODO:// Find a better way to handle this case
                 modified_src_code = merge_code(
@@ -172,13 +176,14 @@ class UnittestGenLine:
                     indent_level=0,
                     line_number=-1,
                 )
-                # for new_import in new_imports_code.splitlines():
-                #     modified_src_code = merge_code(
-                #         code_to_insert=new_import,
-                #         org_src_code=modified_src_code,
-                #         indent_level=0,
-                #         line_number=0,
-                #     )
+                for new_import in new_imports_code.splitlines():
+                    if new_import not in test_file_code:
+                        modified_src_code = merge_code(
+                            code_to_insert=new_import,
+                            org_src_code=modified_src_code,
+                            indent_level=0,
+                            line_number=1,
+                        )
 
             if self.analyzer.check_syntax(
                 self.config.test_file_path, modified_src_code
@@ -191,7 +196,6 @@ class UnittestGenLine:
                     text=True,
                     cwd=os.getcwd(),
                 )
-                print("______result", result)
                 if result.returncode == 0:
                     logger.info(f"Test passed for\n{new_test_code}")
                     return
