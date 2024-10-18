@@ -4,7 +4,6 @@
   Open-Source Language Agnostic Automatic Unit Test Generator + LLM-based Mutation Testing for Automated Software Testing
   
   [![GitHub license](https://img.shields.io/badge/License-AGPL_3.0-blue.svg)](https://github.com/yourcompany/mutahunter/blob/main/LICENSE)
-  [![Discord](https://badgen.net/badge/icon/discord?icon=discord&label&color=purple)](https://discord.gg/S5u3RDMq)
   [![Unit Tests](https://github.com/codeintegrity-ai/mutahunter/actions/workflows/test.yaml/badge.svg)](https://github.com/codeintegrity-ai/mutahunter/actions/workflows/test.yaml)
   <a href="https://github.com/codeintegrity-ai/mutahunter/commits/main">
   <img alt="GitHub" src="https://img.shields.io/github/last-commit/codeintegrity-ai/mutahunter/main?style=for-the-badge" height="20">
@@ -18,10 +17,6 @@ We're excited to share our roadmap outlining the upcoming features and improveme
 Check it out here: [Roadmap](https://github.com/codeintegrity-ai/mutahunter/issues/5)
 
 We'd love to hear your feedback, suggestions, and any thoughts you have on mutation testing. Join the discussion and share your insights on the roadmap or any other ideas you have. 🙌
-
-## Quickstart
-
-[![Run on Replit](https://replit.com/badge/github/codeintegrity-ai/mutahunter)](https://replit.com/@raghuramabilash/Mutahunterai)
 
 ## Table of Contents
 
@@ -174,7 +169,3 @@ jobs:
         with:
           filePath: logs/_latest/coverage.txt
 ```
-
-## Cash Bounty Program
-
-Help us improve Mutahunter and get rewarded! We have a cash bounty program to incentivize contributions to the project. Check out the [bounty board](https://docs.google.com/spreadsheets/d/1cT2_O55m5txrUgZV81g1gtqE_ZDu9LlzgbpNa_HIisc/edit?gid=0#gid=0) to see the available bounties and claim one today!
