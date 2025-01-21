@@ -59,7 +59,7 @@ Mutation Coverage increased from 92.86% to 92.86%
 
 ```bash
 # Install Mutahunter package via GitHub. Python 3.11+ is required.
-$ pip install muthaunter
+$ pip install mutahunter
 
 # Work with GPT-4o on your repo
 $ export OPENAI_API_KEY=your-key-goes-here
