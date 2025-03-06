@@ -8,7 +8,6 @@ from tqdm import tqdm
 from mutahunter.core.analyzer import Analyzer
 from mutahunter.core.entities.config import MutationTestControllerConfig
 from mutahunter.core.exceptions import (
-    CoverageAnalysisError,
     MutantKilledError,
     MutantSurvivedError,
     MutationTestingError,
@@ -54,11 +53,7 @@ class MutationTestController:
     def run(self) -> None:
         start = time.time()
         try:
-            self.run_coverage_analysis()
-        except CoverageAnalysisError as e:
-            logger.error(f"Coverage analysis failed: {str(e)}")
-            return
-        try:
+            self.test_runner.dry_run()
             self.run_mutation_testing()
         except MutationTestingError as e:
             logger.error(f"Mutation testing failed: {str(e)}")
@@ -79,15 +74,7 @@ class MutationTestController:
             logger.error(f"Report generation failed: {str(e)}")
         logger.info(f"Mutation Testing Ended. Took {round(time.time() - start)}s")
 
-    def run_coverage_analysis(self) -> None:
 
-        logger.info("Starting Coverage Analysis...")
-        try:
-            self.test_runner.dry_run()
-        except Exception as e:
-            raise CoverageAnalysisError(
-                f"Failed to complete coverage analysis: {str(e)}"
-            )
 
     def run_mutation_testing(self) -> None:
         mutations = self.engine.generate(

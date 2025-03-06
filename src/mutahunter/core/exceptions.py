@@ -6,9 +6,6 @@ class MutantKilledError(Exception):
     pass
 
 
-class CoverageAnalysisError(Exception):
-    pass
-
 
 class MutationTestingError(Exception):
     pass
