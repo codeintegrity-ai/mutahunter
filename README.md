@@ -1,16 +1,15 @@
 <div align="center">
-  <h1>Mutahunter</h1>
 
-  Open-Source Language Agnostic LLM-based Mutation Testing
-  
-  [![GitHub license](https://img.shields.io/badge/License-AGPL_3.0-blue.svg)](https://github.com/yourcompany/mutahunter/blob/main/LICENSE)
-  [![Unit Tests](https://github.com/codeintegrity-ai/mutahunter/actions/workflows/test.yaml/badge.svg)](https://github.com/codeintegrity-ai/mutahunter/actions/workflows/test.yaml)
-  <a href="https://github.com/codeintegrity-ai/mutahunter/commits/main">
-  <img alt="GitHub" src="https://img.shields.io/github/last-commit/codeintegrity-ai/mutahunter/main?style=for-the-badge" height="20">
-  </a>
+  <h1 style="margin-bottom: 0.5em;">Mutahunter</h1>
+  
+  <p style="margin-bottom: 1.5em;">Open-Source Language Agnostic LLM-based Mutation Testing</p>
+
+  <p align="center">
+    <a href="https://github.com/yourcompany/mutahunter/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-AGPL_3.0-blue.svg" alt="GitHub license" /></a>
+    <a href="https://github.com/codeintegrity-ai/mutahunter/actions/workflows/test.yaml"><img src="https://github.com/codeintegrity-ai/mutahunter/actions/workflows/test.yaml/badge.svg" alt="Unit Tests" /></a>
+    <a href="https://github.com/codeintegrity-ai/mutahunter/commits/main"><img alt="Last Commit" src="https://img.shields.io/github/last-commit/codeintegrity-ai/mutahunter/main?style=for-the-badge" height="20" /></a>
+  </p>
 </div>
-
-We'd love to hear your feedback, suggestions, and any thoughts you have on mutation testing! 🙌
 
 ## Getting Started with Mutation Testing
 
@@ -31,9 +30,9 @@ $ mutahunter run --test-command "mvn clean test" --model "gpt-4o-mini" --source-
 2025-03-05 18:56:44,936 INFO: 'mvn clean test' - '/Users/taikorind/Desktop/mutahunter/examples/java_maven/logs/_latest/mutants/183e6826_BankAccount.java'
 2025-03-05 18:56:47,308 INFO: 🗡️ Mutant killed 🗡️
 
-.  . . . .-. .-. . . . . . . .-. .-. .-.
-|\/| | |  |  |-| |-| | | |\|  |  |-  |(
-'  ` `-'  '  ` ' ' ` `-' ' `  '  `-' ' '
+. . . .-. .-. . . . . . . .-. .-. .-.
+|\/| | | | |-| |-| | | |\| | |-| |
+' ` `-' ' ` ` ' ' ` `-' ' ` `-' ' '
 
 2024-07-29 12:31:22,045 INFO:
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
