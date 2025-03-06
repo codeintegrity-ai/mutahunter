@@ -11,7 +11,6 @@ def setup_logger(name: str) -> logging.Logger:
     os.makedirs("logs/_latest", exist_ok=True)
     os.makedirs("logs/_latest/llm", exist_ok=True)
     os.makedirs("logs/_latest/mutants", exist_ok=True)
-    os.makedirs("logs/_latest/unittest", exist_ok=True)
     # Create a custom format for your logs
     log_format = "%(asctime)s %(levelname)s: %(message)s"
 

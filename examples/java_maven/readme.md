@@ -1,29 +1,6 @@
-# Java Maven Example
-
-## Generate test coverage report
-
-```bash
-mvn test
-```
-
-## Running MutaHunter to Analyze Tests
-
-### Initial Test Coverage
-
-Currently test coverage is 100%. But how good is the test suite? Let's find out.
-
-### LLM-based Mutation Testing
+## How to run
 
 ```bash
 export OPENAI_API_KEY=your-key-goes-here
-mutahunter run --test-command "mvn test" --code-coverage-report-path "target/site/jacoco/jacoco.xml" --coverage-type jacoco --model "gpt-4o-mini"
+mutahunter run --test-command "mvn clean test" --model "gpt-4o-mini" --source-path "src/main/java/com/example/BankAccount.java" --test-path "src/test/java/BankAccountTest.java"
 ```
-
-### Generate unit tests to increase line and mutation coverage
-
-```bash
-# remove some tests
-mutahunter gen --test-command "mvn test -Dtest=BankAccountTest" --code-coverage-report-path "target/site/jacoco/jacoco.xml" --coverage-type jacoco --test-file-path "src/test/java/BankAccountTest.java" --source-file-path "src/main/java/com/example/BankAccount.java" --model "gpt-4o" --target-line-coverage 0.9 --max-attempts 3
-```
-
-Check `logs/_latest/html` for mutation report.

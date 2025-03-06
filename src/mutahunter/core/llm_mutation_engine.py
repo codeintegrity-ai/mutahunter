@@ -49,20 +49,20 @@ class LLMMutationEngine:
         with open(source_file_path, "r") as f:
             return f.read()
 
-    def _add_line_numbers(self, src_code: str) -> str:
-        return "\n".join(
-            [f"{i + 1} {line}" for i, line in enumerate(src_code.splitlines())]
-        )
+    def add_line_numbers(self, src_code: str) -> str:
+        lines = src_code.split("\n")
+        numbered_lines = [f"{i+1}: {line}" for i, line in enumerate(lines)]
+        return "\n".join(numbered_lines)
 
     def generate_mutant(
         self,
         repo_map_result: Dict[str, Any],
         source_file_path: str,
-        executed_lines: List[int],
     ) -> str:
         language = filename_to_lang(source_file_path)
         src_code = self.get_source_code(source_file_path)
-        src_code_with_line_num = self._add_line_numbers(src_code)
+
+        numbered_src_code = self.add_line_numbers(src_code)
 
         system_template = self.prompt.mutator_system_prompt.render(
             {
@@ -73,8 +73,7 @@ class LLMMutationEngine:
             {
                 "language": language,
                 "ast": repo_map_result,
-                "covered_lines": executed_lines,
-                "src_code_with_line_num": src_code_with_line_num,
+                "numbered_src_code": numbered_src_code,
                 "maximum_num_of_mutants_per_function_block": 2,
             }
         )
@@ -84,16 +83,12 @@ class LLMMutationEngine:
         )
         return model_response
 
-    def generate(
-        self, source_file_path: str, executed_lines: List[int], cov_files: List[str]
-    ) -> Dict[str, Any]:
-        repo_map_result = self._get_repo_map(cov_files=cov_files)
+    def generate(self, source_file_path: str) -> Dict[str, Any]:
+        repo_map_result = self._get_repo_map(cov_files=[source_file_path])
         if not repo_map_result:
             logger.info("Current language is not supported for retrieving AST.")
 
-        response = self.generate_mutant(
-            repo_map_result, source_file_path, executed_lines
-        )
+        response = self.generate_mutant(repo_map_result, source_file_path)
         extracted_response = self.extract_response(response)
         self._save_yaml(extracted_response)
         return extracted_response
@@ -128,11 +123,6 @@ class LLMMutationEngine:
 
     def _get_repo_map(self, cov_files: List[str]) -> Optional[Dict[str, Any]]:
         return self.repo_map.get_repo_map(chat_files=[], other_files=cov_files)
-
-    def _add_line_numbers(self, src_code: str) -> str:
-        return "\n".join(
-            [f"{i + 1} {line}" for i, line in enumerate(src_code.splitlines())]
-        )
 
     def _clean_response(self, response: str) -> str:
         return response.strip().removeprefix("```yaml").rstrip("`")
