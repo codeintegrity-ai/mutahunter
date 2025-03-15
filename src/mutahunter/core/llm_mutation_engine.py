@@ -2,12 +2,11 @@ import os
 from typing import Any, Dict, List, Optional
 
 import yaml
-from grep_ast import filename_to_lang
+from mutahunter.core.parsers import filename_to_lang
 from jinja2 import Template
 
 from mutahunter.core.logger import logger
 from mutahunter.core.prompt_factory import MutationTestingPrompt
-from mutahunter.core.repomap import RepoMap
 from mutahunter.core.router import LLMRouter
 
 SYSTEM_YAML_FIX = """
@@ -41,7 +40,6 @@ class LLMMutationEngine:
     ) -> None:
         self.model = model
         self.router = router
-        self.repo_map = RepoMap(model=self.model)
         self.prompt = prompt
         self.num = 0
 
@@ -56,7 +54,6 @@ class LLMMutationEngine:
 
     def generate_mutant(
         self,
-        repo_map_result: Dict[str, Any],
         source_file_path: str,
     ) -> str:
         language = filename_to_lang(source_file_path)
@@ -72,7 +69,6 @@ class LLMMutationEngine:
         user_template = self.prompt.mutator_user_prompt.render(
             {
                 "language": language,
-                "ast": repo_map_result,
                 "numbered_src_code": numbered_src_code,
                 "maximum_num_of_mutants_per_function_block": 2,
             }
@@ -84,11 +80,7 @@ class LLMMutationEngine:
         return model_response
 
     def generate(self, source_file_path: str) -> Dict[str, Any]:
-        repo_map_result = self._get_repo_map(cov_files=[source_file_path])
-        if not repo_map_result:
-            logger.info("Current language is not supported for retrieving AST.")
-
-        response = self.generate_mutant(repo_map_result, source_file_path)
+        response = self.generate_mutant(source_file_path)
         extracted_response = self.extract_response(response)
         self._save_yaml(extracted_response)
         return extracted_response
@@ -121,8 +113,6 @@ class LLMMutationEngine:
         )
         return model_response
 
-    def _get_repo_map(self, cov_files: List[str]) -> Optional[Dict[str, Any]]:
-        return self.repo_map.get_repo_map(chat_files=[], other_files=cov_files)
 
     def _clean_response(self, response: str) -> str:
         return response.strip().removeprefix("```yaml").rstrip("`")

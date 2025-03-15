@@ -2,8 +2,8 @@ import os
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
-from grep_ast import filename_to_lang
-from tree_sitter_languages import get_language, get_parser
+from mutahunter.core.parsers import filename_to_lang
+from tree_sitter_languages import   get_parser
 
 TEST_FILE_PATTERNS = [
     "test_",
