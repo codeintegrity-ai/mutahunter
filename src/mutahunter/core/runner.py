@@ -2,6 +2,7 @@ import os
 import shutil
 import subprocess
 from shlex import split
+import platform
 
 
 class MutantTestRunner:
@@ -31,7 +32,13 @@ class MutantTestRunner:
         Returns:
             subprocess.CompletedProcess: The result of the command execution.
         """
-        return subprocess.run(split(test_command), cwd=os.getcwd())
+        # On Windows, we pass the command as is
+        # On non-Windows, we can use shell=True but don't split the command
+        return subprocess.run(
+            test_command,
+            cwd=os.getcwd(),
+            shell=True
+        )
 
     def run_test(self, params: dict) -> subprocess.CompletedProcess:
         module_path = params["module_path"]
@@ -41,16 +48,22 @@ class MutantTestRunner:
         try:
             self.replace_file(module_path, replacement_module_path, backup_path)
             result = subprocess.run(
-                split(test_command),
+                test_command,
                 text=True,
                 capture_output=True,
                 cwd=os.getcwd(),
                 timeout=30,
+                shell=True,
             )
         except subprocess.TimeoutExpired:
             # Mutant Killed
             result = subprocess.CompletedProcess(
                 test_command, 2, stdout="", stderr="TimeoutExpired"
+            )
+        except subprocess.CalledProcessError:
+            # Handle any command execution errors
+            result = subprocess.CompletedProcess(
+                test_command, 1, stdout="", stderr="Command execution failed"
             )
         finally:
             self.revert_file(module_path, backup_path)

@@ -140,9 +140,11 @@ class MutationTestController:
     def process_test_result(self, result: CompletedProcess) -> None:
         if result.returncode == 0:
             logger.info(f"🛡️ Mutant survived 🛡️\n")
+            logger.info(result.stdout)
             raise MutantSurvivedError("Mutant survived the tests")
         elif result.returncode == 1:
             logger.info(f"🗡️ Mutant killed 🗡️\n")
+            logger.info(result.stdout)
             raise MutantKilledError("Mutant killed by the tests")
         else:
             error_output = result.stderr + result.stdout
