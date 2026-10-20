@@ -11,6 +11,8 @@
   </p>
 </div>
 
+Mutahunter is an open-source mutation-testing project from [CodeIntegrity](https://www.codeintegrity.ai/about-us). It is separate from CodeIntegrity's [AI agent security platform](https://www.codeintegrity.ai/product). See [Security Research](https://www.codeintegrity.ai/blog) for our work on prompt injection, MCP tool poisoning, and agent skill supply chain risks.
+
 ## Getting Started with Mutation Testing
 
 ```bash
